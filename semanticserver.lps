@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectSession>
+    <Version Value="12"/>
+    <BuildModes Active="Default"/>
+    <Units>
+      <Unit>
+        <Filename Value="semanticserver.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <TopLine Value="93"/>
+        <CursorPos X="11" Y="51"/>
+        <UsageCount Value="23"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unit_worker.pas"/>
+        <UnitName Value="Unit_Worker"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="185"/>
+        <CursorPos X="19" Y="210"/>
+        <UsageCount Value="12"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unit_db.pas"/>
+        <UnitName Value="Unit_DB"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="272"/>
+        <CursorPos X="26" Y="107"/>
+        <UsageCount Value="12"/>
+        <Loaded Value="True"/>
+      </Unit>
+    </Units>
+    <JumpHistory HistoryIndex="8">
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="7" Column="45"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_worker.pas"/>
+        <Caret Line="6" Column="22"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="31" Column="85" TopLine="11"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_worker.pas"/>
+        <Caret Line="34" Column="5"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="32" Column="45" TopLine="7"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_db.pas"/>
+        <Caret Line="111" Column="5" TopLine="78"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_db.pas"/>
+        <Caret Line="115" TopLine="81"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_db.pas"/>
+        <Caret Line="88" TopLine="80"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="107" TopLine="68"/>
+      </Position>
+    </JumpHistory>
+    <RunParams>
+      <FormatVersion Value="2"/>
+      <Modes ActiveMode=""/>
+    </RunParams>
+  </ProjectSession>
+</CONFIG>
