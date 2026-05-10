@@ -17,8 +17,8 @@
         <UnitName Value="Unit_Worker"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="228"/>
-        <CursorPos X="6" Y="254"/>
+        <TopLine Value="237"/>
+        <CursorPos X="37" Y="249"/>
         <UsageCount Value="14"/>
         <Loaded Value="True"/>
       </Unit>
@@ -32,7 +32,7 @@
         <Loaded Value="True"/>
       </Unit>
     </Units>
-    <JumpHistory HistoryIndex="19">
+    <JumpHistory HistoryIndex="21">
       <Position>
         <Filename Value="semanticserver.lpr"/>
         <Caret Line="7" Column="45"/>
@@ -99,10 +99,6 @@
       </Position>
       <Position>
         <Filename Value="unit_worker.pas"/>
-        <Caret Line="165" TopLine="235"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_worker.pas"/>
         <Caret Line="166" Column="22" TopLine="147"/>
       </Position>
       <Position>
@@ -112,6 +108,18 @@
       <Position>
         <Filename Value="unit_worker.pas"/>
         <Caret Line="251" TopLine="235"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_worker.pas"/>
+        <Caret Line="104" Column="10" TopLine="85"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_worker.pas"/>
+        <Caret Line="112" Column="4" TopLine="92"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_worker.pas"/>
+        <Caret Line="114" Column="18" TopLine="94"/>
       </Position>
     </JumpHistory>
     <RunParams>

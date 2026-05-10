@@ -101,16 +101,17 @@ procedure TServerWorker.ExposeSystem(AStartID: Integer);
 var
   CurrentID, NodeB, NodeT, i, j, VisualLevel: Integer;
   Chrono, NodeContent, S_Open, S_Close, HTML_Row: string;
-  StrList, HTML_Acc: TStringList;
+  StrList: TStringList;
    TailStack: array of Integer; // Теперь это массив чисел, а не строк
     S_Prefix: string; // ВОТ ОНА! Добавь эту строчку
     LastLevel: Integer;
       LineColor: string;
+       HTML_Acc: TStringBuilder; // Переименовали тип, сохранили имя
 begin
   LastLevel := 0;
-  HTML_Acc := TStringList.Create;
+   HTML_Acc := TStringBuilder.Create;
   // Темная тема: фон #1e1e1e, текст #d4d4d4
-  HTML_Acc.Add('<html><body style="font-family:sans-serif; background:#1e1e1e; color:#d4d4d4; padding:15px;">');
+  HTML_Acc.Append('<html><body style="font-family:sans-serif; background:#1e1e1e; color:#d4d4d4; padding:15px;">');
 
   DoLog('--- СТАРТ ФОРМИРОВАНИЯ СТРУКТУРЫ ---');
     WriteLn('   [DEBUG] Создаю списки...');
@@ -216,7 +217,7 @@ begin
       '</tr>' +
       '</table><br>';
 
-    HTML_Acc.Add(HTML_Row);
+    HTML_Acc.Append(HTML_Row);
         end;
 
       emToArtist:
@@ -244,8 +245,8 @@ begin
       CurrentID := NodeB;
     end;
 
-    HTML_Acc.Add('</body></html>');
-    FHtmlBuffer := HTML_Acc.Text;
+    HTML_Acc.Append('</body></html>');
+    FHtmlBuffer := HTML_Acc.ToString;
         if Assigned(FOnHtml) then SyncHtml;
 
   finally
