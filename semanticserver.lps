@@ -9,7 +9,7 @@
         <IsPartOfProject Value="True"/>
         <TopLine Value="93"/>
         <CursorPos X="11" Y="51"/>
-        <UsageCount Value="23"/>
+        <UsageCount Value="27"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -17,9 +17,9 @@
         <UnitName Value="Unit_Worker"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="185"/>
-        <CursorPos X="19" Y="210"/>
-        <UsageCount Value="12"/>
+        <TopLine Value="228"/>
+        <CursorPos X="6" Y="254"/>
+        <UsageCount Value="14"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -28,11 +28,11 @@
         <EditorIndex Value="2"/>
         <TopLine Value="272"/>
         <CursorPos X="26" Y="107"/>
-        <UsageCount Value="12"/>
+        <UsageCount Value="14"/>
         <Loaded Value="True"/>
       </Unit>
     </Units>
-    <JumpHistory HistoryIndex="8">
+    <JumpHistory HistoryIndex="19">
       <Position>
         <Filename Value="semanticserver.lpr"/>
         <Caret Line="7" Column="45"/>
@@ -68,6 +68,50 @@
       <Position>
         <Filename Value="semanticserver.lpr"/>
         <Caret Line="107" TopLine="68"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_worker.pas"/>
+        <Caret Line="244" Column="26" TopLine="218"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_worker.pas"/>
+        <Caret Line="165" Column="18" TopLine="146"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_worker.pas"/>
+        <Caret Line="168" Column="22" TopLine="149"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_worker.pas"/>
+        <Caret Line="165" Column="18" TopLine="146"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_worker.pas"/>
+        <Caret Line="166" Column="22" TopLine="147"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_worker.pas"/>
+        <Caret Line="168" Column="22" TopLine="149"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_worker.pas"/>
+        <Caret Line="254" Column="15" TopLine="235"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_worker.pas"/>
+        <Caret Line="165" TopLine="235"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_worker.pas"/>
+        <Caret Line="166" Column="22" TopLine="147"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_worker.pas"/>
+        <Caret Line="168" Column="22" TopLine="149"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_worker.pas"/>
+        <Caret Line="251" TopLine="235"/>
       </Position>
     </JumpHistory>
     <RunParams>

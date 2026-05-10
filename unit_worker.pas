@@ -10,12 +10,9 @@ type
   TLogEvent = procedure(const AMsg: string) of object;
   THTMLEvent = procedure(const AHtml: string) of object; // Добавь это
   TExtractMode = (emToViewer, emToArtist, emToNetwork);
-
   TWorkerTask = (wtIdle, wtModeration, wtForecast, wtVacuum);
 
   TServerWorker = class(TThread)
-
-
   private
     FDB: TDatabaseModule;
     FOnLog: TLogEvent; // Теперь компилятор знает, что это такое
@@ -23,10 +20,8 @@ type
     FMode: TExtractMode; // Скрытое поле режима
     FOnHtml: THTMLEvent; // Ссылка на вывод HTML
 
-    // ... остальное
-
     procedure DoLog(const AMsg: string);
-    procedure SyncLog;  // Метод для синхронизации
+    procedure SyncLog;  // Метод для синхронизации ..................................................................................................................
     procedure SyncHtml;
   protected
     procedure Execute; override;
@@ -106,7 +101,8 @@ procedure TServerWorker.ExposeSystem(AStartID: Integer);
 var
   CurrentID, NodeB, NodeT, i, j, VisualLevel: Integer;
   Chrono, NodeContent, S_Open, S_Close, HTML_Row: string;
-  StrList, TailStack, HTML_Acc: TStringList;
+  StrList, HTML_Acc: TStringList;
+   TailStack: array of Integer; // Теперь это массив чисел, а не строк
     S_Prefix: string; // ВОТ ОНА! Добавь эту строчку
     LastLevel: Integer;
       LineColor: string;
@@ -120,7 +116,7 @@ begin
     WriteLn('   [DEBUG] Создаю списки...');
   CurrentID := AStartID;
   StrList := TStringList.Create;
-  TailStack := TStringList.Create;
+  SetLength(TailStack, 0);
    // МАЯК Б: После создания
   WriteLn('   [DEBUG] Списки созданы. ID старта: ', AStartID);
   try
@@ -139,10 +135,12 @@ begin
       NodeT := StrToIntDef(StrList[2], 0);
 
       // --- ШАГ 1: НЫРОК ---
-      if (NodeT <> 0) and (TailStack.IndexOf(IntToStr(CurrentID)) = -1) then
+      if (NodeT <> 0) and
+         ((Length(TailStack) = 0) or (TailStack[High(TailStack)] <> CurrentID)) then
       begin
         DoLog('>>> НЫРОК В ВЕТКУ (из ' + IntToStr(CurrentID) + ')');
-        TailStack.Add(IntToStr(CurrentID));
+        SetLength(TailStack, Length(TailStack) + 1);
+        TailStack[High(TailStack)] := CurrentID;
         CurrentID := NodeT;
         Continue;
       end;
@@ -150,10 +148,10 @@ begin
       // --- ШАГ 2: ОПРЕДЕЛЯЕМ ВИЗУАЛЬНЫЙ УРОВЕНЬ ---
       // Если узел в стеке — значит это РОДИТЕЛЬ, из которого мы вынырнули.
       // Чтобы дети были ПРАВЕЕ него, его уровень должен быть меньше.
-      if TailStack.IndexOf(IntToStr(CurrentID)) <> -1 then
-        VisualLevel := TailStack.Count - 1
+      if (Length(TailStack) > 0) and (TailStack[High(TailStack)] = CurrentID) then
+        VisualLevel := Length(TailStack) - 1
       else
-        VisualLevel := TailStack.Count;
+        VisualLevel := Length(TailStack);
 
       // Защита от отрицательного уровня
 
@@ -164,10 +162,10 @@ begin
     DoLog('ВЫДЕРНУТ УЗЕЛ: ' + IntToStr(CurrentID));
 
     // Вычисляем уровень вложенности
-    if TailStack.IndexOf(IntToStr(CurrentID)) <> -1 then
-      i := TailStack.Count - 1
-    else
-      i := TailStack.Count;
+      if (Length(TailStack) > 0) and (TailStack[High(TailStack)] = CurrentID) then
+        i := Length(TailStack) - 1
+      else
+        i := Length(TailStack);
 
     if (CurrentID <> AStartID) and (i = 0) then i := 1;
     //   LastLevel := i; // возможно понадобится где-то ещё
@@ -236,13 +234,13 @@ begin
 
     end; // Конец case
       // --- ШАГ 4: ВСПЛЫТИЕ ---
-      if TailStack.IndexOf(IntToStr(CurrentID)) <> -1 then
+      if (Length(TailStack) > 0) and (TailStack[High(TailStack)] = CurrentID) then
       begin
-         TailStack.Delete(TailStack.IndexOf(IntToStr(CurrentID)));
+         SetLength(TailStack, Length(TailStack) - 1);
          DoLog('<<< ВСПЛЫТИЕ ИЗ ВЕТКИ (возврат в ' + IntToStr(CurrentID) + ')');
       end;
 
-      if (CurrentID = AStartID) and (TailStack.Count = 0) then Break;
+           if (CurrentID = AStartID) and (Length(TailStack) = 0) then Break;
       CurrentID := NodeB;
     end;
 
@@ -253,7 +251,7 @@ begin
   finally
     HTML_Acc.Free;
     StrList.Free;
-    TailStack.Free;
+   // TailStack.Free;
   end;
   DoLog('--- СТРУКТУРА ЗАВЕРШЕНА ---');
 end;
