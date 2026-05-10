@@ -19,7 +19,7 @@ type
     FMsgForLog: string;
     FMode: TExtractMode; // Скрытое поле режима
     FOnHtml: THTMLEvent; // Ссылка на вывод HTML
-
+    function RenderNodeHTML(AID, ALevel, ALastLevel: Integer; const AContent: string): string;
     procedure DoLog(const AMsg: string);
     procedure SyncLog;  // Метод для синхронизации ..................................................................................................................
     procedure SyncHtml;
@@ -38,6 +38,38 @@ type
   end;
 
 implementation
+
+function TServerWorker.RenderNodeHTML(AID, ALevel, ALastLevel: Integer; const AContent: string): string;
+var
+  S_Prefix, LineColor: string;
+  j: Integer;
+begin
+  S_Prefix := '';
+  for j := 1 to ALevel do
+  begin
+    LineColor := '#4A90E2';
+    if (j = ALevel) then
+    begin
+      if ALevel < ALastLevel then LineColor := '#FF0000'; // Всплытие
+      if ALevel > ALastLevel then LineColor := '#00FFFF'; // Нырок
+    end;
+
+    if j < ALevel then
+      S_Prefix := S_Prefix + '<font color="#4A90E2">┃&nbsp;&nbsp;</font>'
+    else
+      S_Prefix := S_Prefix + '<font color="' + LineColor + '">┃(' + IntToStr(ALevel) + ')━&nbsp;</font>';
+  end;
+
+  Result :=
+    '<table border="0" cellpadding="0" cellspacing="0" width="100%"><tr>' +
+    '<td valign="top" style="white-space:nowrap;">' + S_Prefix + '</td>' +
+    '<td width="100%">' +
+    '<div style="color: #6a9955; font-size: 14px; font-weight: bold; margin-bottom: 4px;">ID: ' + IntToStr(AID) + '</div>' +
+    '<table border="1" bordercolor="#2d5a27" cellpadding="10" cellspacing="0" width="100%" bgcolor="#3d3d3d" style="border-collapse: collapse;">' +
+    '<tr><td><font color="#FFFFFF">' + AContent + '</font></td></tr></table>' +
+    '</td></tr></table><br>';
+end;
+
 
 constructor TServerWorker.Create(ADB: TDatabaseModule; ALogEv: TLogEvent; AHtmlEv: THTMLEvent; AMode: TExtractMode; CreateSuspended: boolean);
 begin
@@ -99,16 +131,15 @@ end;
 
 procedure TServerWorker.ExposeSystem(AStartID: Integer);
 var
-  CurrentID, NodeB, NodeT, i, j, VisualLevel: Integer;
-  Chrono, NodeContent, S_Open, S_Close, HTML_Row: string;
+  CurrentID, NodeB, NodeT, i, VisualLevel: Integer;
+  Chrono: string;
   StrList: TStringList;
    TailStack: array of Integer; // Теперь это массив чисел, а не строк
-    S_Prefix: string; // ВОТ ОНА! Добавь эту строчку
     LastLevel: Integer;
-      LineColor: string;
        HTML_Acc: TStringBuilder; // Переименовали тип, сохранили имя
 begin
   LastLevel := 0;
+  TailStack := nil; // Явно говорим компилятору: "Массив пуст, я это знаю"
    HTML_Acc := TStringBuilder.Create;
   // Темная тема: фон #1e1e1e, текст #d4d4d4
   HTML_Acc.Append('<html><body style="font-family:sans-serif; background:#1e1e1e; color:#d4d4d4; padding:15px;">');
@@ -176,48 +207,10 @@ begin
 
       emToViewer:
         begin
-          // Весь твой "шикарный" код отрисовки карточек переезжает сюда:
-          NodeContent := FDB.GetNodeContent(CurrentID);
-
-         S_Prefix := '';
-    for j := 1 to i do
-    begin
-      LineColor := '#4A90E2';
-      if (j = i) then
-      begin
-        if i < LastLevel then LineColor := '#FF0000'; // Всплытие
-        if i > LastLevel then LineColor := '#00FFFF'; // Нырок
-      end;
-
-      if j < i then
-        S_Prefix := S_Prefix + '<font color="#4A90E2">┃&nbsp;&nbsp;</font>'
-      else
-        S_Prefix := S_Prefix + '<font color="' + LineColor + '">┃(' + IntToStr(i) + ')━&nbsp;</font>';
-    end;
-    LastLevel := i;
-
-    // 2. СТРОИМ СТРУКТУРУ: Заголовок с ID сверху, Карточка снизу
-    HTML_Row :=
-      '<table border="0" cellpadding="0" cellspacing="0" width="100%">' +
-      '<tr>' +
-        // Колонка отступа для всей конструкции
-        '<td valign="top" style="white-space:nowrap;">' + S_Prefix + '</td>' +
-        '<td width="100%">' +
-        // 2.1. Заголовок с ID (стал крупнее и чуть ярче)
-        '<div style="color: #6a9955; font-size: 14px; font-weight: bold; margin-bottom: 4px;">' +
-        'ID: ' + IntToStr(CurrentID) +
-        '</div>' +
-          // 2.2. Сама карточка сообщения
-          '<table border="1" bordercolor="#2d5a27" cellpadding="10" cellspacing="0" width="100%" bgcolor="#3d3d3d" style="border-collapse: collapse;">' +
-          '<tr><td>' +
-            '<font color="#FFFFFF">' + NodeContent + '</font>' +
-          '</td></tr>' +
-          '</table>' +
-        '</td>' +
-      '</tr>' +
-      '</table><br>';
-
-    HTML_Acc.Append(HTML_Row);
+        // Вызываем генерацию HTML function TServerWorker.RenderNodeHTML(AID, ALevel, ALastLevel: Integer; const AContent: string): string;
+         // и сразу кладем в список
+        HTML_Acc.Append(RenderNodeHTML(CurrentID, i, LastLevel, FDB.GetNodeContent(CurrentID)));
+        LastLevel := i;
         end;
 
       emToArtist:
@@ -247,12 +240,9 @@ begin
 
     HTML_Acc.Append('</body></html>');
     FHtmlBuffer := HTML_Acc.ToString;
-        if Assigned(FOnHtml) then SyncHtml;
-
   finally
     HTML_Acc.Free;
     StrList.Free;
-   // TailStack.Free;
   end;
   DoLog('--- СТРУКТУРА ЗАВЕРШЕНА ---');
 end;
