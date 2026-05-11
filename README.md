@@ -62,3 +62,7 @@
 2. Положите файл `forum.db` в папку с программой.
 3. Запустите: `./semanticserver`
 4. Браузер: `http://localhost:8080/forum`
+
+
+
+   Подробнее в WIKI и тут https://habr.com/ru/articles/1030914/
