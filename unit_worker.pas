@@ -11,6 +11,7 @@ type
   THTMLEvent = procedure(const AHtml: string) of object; // Добавь это
   TExtractMode = (emToViewer, emToArtist, emToNetwork);
   TWorkerTask = (wtIdle, wtModeration, wtForecast, wtVacuum);
+  TArtistGoal = (agWebSync, agDeepAnalysis);
 
   TServerWorker = class(TThread)
   private
@@ -23,10 +24,14 @@ type
     procedure DoLog(const AMsg: string);
     procedure SyncLog;  // Метод для синхронизации ..................................................................................................................
     procedure SyncHtml;
+    procedure ArtistDispatcher(AID, ALevel: Integer; const AChrono: string);
+   function RenderNodeArtist(AID, ALevel: Integer; const AChrono: string): string;
   protected
     procedure Execute; override;
   public
     FHtmlBuffer: string; // Временный буфер
+    FArtistBuffer: string;
+    ArtistGoal: TArtistGoal; // Кто нас вызвал?
     constructor Create(ADB: TDatabaseModule; ALogEv: TLogEvent; AHtmlEv: THTMLEvent; AMode: TExtractMode; CreateSuspended: boolean);
     procedure AddMessageTask(AParentID: Integer; AContent: string);
     procedure ExposeSystem(AStartID: Integer);
@@ -38,6 +43,26 @@ type
   end;
 
 implementation
+
+function TServerWorker.RenderNodeArtist(AID, ALevel: Integer; const AChrono: string): string;
+begin
+  // Формируем простую строку данных для JavaScript: ID|Уровень|Хроно;
+  Result := IntToStr(AID) + '|' + IntToStr(ALevel) + '|' + AChrono + ';';
+end;
+
+procedure TServerWorker.ArtistDispatcher(AID, ALevel: Integer; const AChrono: string);
+begin
+  case ArtistGoal of
+    agWebSync:
+      // Быстрая подготовка данных для JS
+      FArtistBuffer := FArtistBuffer + RenderNodeArtist(AID, ALevel, AChrono);
+
+    agDeepAnalysis:
+      // Вызов тяжелых методов аналитики, нейросетей и т.д.
+//      PerformDeepAnalysis(AID, ALevel); // для будущего анализа
+  end;
+end;
+
 
 function TServerWorker.RenderNodeHTML(AID, ALevel, ALastLevel: Integer; const AContent: string): string;
 var
@@ -203,7 +228,7 @@ begin
     //   LastLevel := i; // возможно понадобится где-то ещё
     // 1. Формируем префикс (только линии и уровень)
 
-     case FMode of
+     case FMode of //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
       emToViewer:
         begin
@@ -215,10 +240,9 @@ begin
 
       emToArtist:
         begin
-          // Режим Художника: только структура
-          // Здесь мы НЕ вызываем GetNodeContent — это экономит время
           DoLog('ПОСЫЛКА ХУДОЖНИКУ: ID ' + IntToStr(CurrentID) + ' L:' + IntToStr(VisualLevel));
-          // В будущем здесь будет: FArtist.AddPlanet(CurrentID, NodeB, VisualLevel, Chrono);
+                    // Просто передаем управление диспетчеру
+          ArtistDispatcher(CurrentID, i, Chrono);
         end;
 
       emToNetwork:
