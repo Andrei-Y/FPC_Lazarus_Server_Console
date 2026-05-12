@@ -20,7 +20,10 @@ type
     FMsgForLog: string;
     FMode: TExtractMode; // Скрытое поле режима
     FOnHtml: THTMLEvent; // Ссылка на вывод HTML
-    function RenderNodeHTML(AID, ALevel, ALastLevel: Integer; const AContent: string): string;
+    function RenderNodeHTML(AID, ALevel, ALastLevel: Integer;
+                            const AContent: string;
+                            const AStack: array of Integer): string;
+
     procedure DoLog(const AMsg: string);
     procedure SyncLog;  // Метод для синхронизации ..................................................................................................................
     procedure SyncHtml;
@@ -64,36 +67,90 @@ begin
 end;
 
 
-function TServerWorker.RenderNodeHTML(AID, ALevel, ALastLevel: Integer; const AContent: string): string;
+//function TServerWorker.RenderNodeHTML(AID, ALevel, ALastLevel: Integer; const AContent: string): string;
+//var
+//  S_Prefix, LineColor: string;
+//  j: Integer;
+//begin
+//  S_Prefix := '';
+//  for j := 1 to ALevel do
+//  begin
+//    LineColor := '#4A90E2';
+//    if (j = ALevel) then
+//    begin
+//      if ALevel < ALastLevel then LineColor := '#FF0000'; // Всплытие
+//      if ALevel > ALastLevel then LineColor := '#00FFFF'; // Нырок
+//    end;
+//
+//    if j < ALevel then
+//      S_Prefix := S_Prefix + '<font color="#4A90E2">┃&nbsp;&nbsp;</font>'
+//    else
+//      S_Prefix := S_Prefix + '<font color="' + LineColor + '">┃(' + IntToStr(ALevel) + ')━&nbsp;</font>';
+//  end;
+//
+//  Result :=
+//    '<table border="0" cellpadding="0" cellspacing="0" width="100%"><tr>' +
+//    '<td valign="top" style="white-space:nowrap;">' + S_Prefix + '</td>' +
+//    '<td width="100%">' +
+//    '<div style="color: #6a9955; font-size: 14px; font-weight: bold; margin-bottom: 4px;">ID: ' + IntToStr(AID) + '</div>' +
+//    '<table border="1" bordercolor="#2d5a27" cellpadding="10" cellspacing="0" width="100%" bgcolor="#3d3d3d" style="border-collapse: collapse;">' +
+//    '<tr><td><font color="#FFFFFF">' + AContent + '</font></td></tr></table>' +
+//    '</td></tr></table><br>';
+//end;
+
+  function TServerWorker.RenderNodeHTML(AID, ALevel, ALastLevel: Integer;
+                                       const AContent: string;
+                                       const AStack: array of Integer): string;
 var
   S_Prefix, LineColor: string;
   j: Integer;
+  TargetParentID: Integer;
 begin
   S_Prefix := '';
+
   for j := 1 to ALevel do
   begin
-    LineColor := '#4A90E2';
-    if (j = ALevel) then
-    begin
-      if ALevel < ALastLevel then LineColor := '#FF0000'; // Всплытие
-      if ALevel > ALastLevel then LineColor := '#00FFFF'; // Нырок
-    end;
+    if (j - 1 >= 0) and (j - 1 < Length(AStack)) then
+      TargetParentID := AStack[j - 1]
+    else
+      TargetParentID := 0;
 
     if j < ALevel then
-      S_Prefix := S_Prefix + '<font color="#4A90E2">┃&nbsp;&nbsp;</font>'
+      // 1. Промежуточные синие палочки-ссылки
+      S_Prefix := S_Prefix + '<a href="#node_' + IntToStr(TargetParentID) +
+                  '" style="color:#4A90E2; text-decoration:none; font-weight:bold;">┃</a>&nbsp;&nbsp;'
     else
-      S_Prefix := S_Prefix + '<font color="' + LineColor + '">┃(' + IntToStr(ALevel) + ')━&nbsp;</font>';
+      begin
+        // 2. Последняя палочка: вычисляем её цвет по твоей изначальной логике
+        LineColor := '#00FFFF'; // По умолчанию бирюзовый (нырок)
+        if ALevel < ALastLevel then LineColor := '#FF0000'; // Всплытие красным
+
+        // Оставляем красивое раздельное оформление, где палочка красится в нужный цвет,
+        // но при этом ВСЁ остается кликабельной ссылкой
+        S_Prefix := S_Prefix + '<a href="#node_' + IntToStr(TargetParentID) +
+                    '" style="color:' + LineColor + '; text-decoration:none; font-weight:bold;">' +
+                    '┃(' + IntToStr(TargetParentID) + ')━&nbsp;</a>';
+      end;
   end;
 
+  // Оставшаяся часть функции Result := ... остается без изменений
   Result :=
+    '<div id="node_' + IntToStr(AID) + '">' +
     '<table border="0" cellpadding="0" cellspacing="0" width="100%"><tr>' +
     '<td valign="top" style="white-space:nowrap;">' + S_Prefix + '</td>' +
     '<td width="100%">' +
-    '<div style="color: #6a9955; font-size: 14px; font-weight: bold; margin-bottom: 4px;">ID: ' + IntToStr(AID) + '</div>' +
-    '<table border="1" bordercolor="#2d5a27" cellpadding="10" cellspacing="0" width="100%" bgcolor="#3d3d3d" style="border-collapse: collapse;">' +
-    '<tr><td><font color="#FFFFFF">' + AContent + '</font></td></tr></table>' +
-    '</td></tr></table><br>';
+      '<div style="color: #6a9955; font-size: 11px; font-weight: bold; margin-bottom: 2px;">ID: ' + IntToStr(AID) + '</div>' +
+      '<table border="1" bordercolor="#2d5a27" cellpadding="10" cellspacing="0" width="100%" bgcolor="#3d3d3d" style="border-collapse: collapse;">' +
+      '<tr><td>' +
+        '<div style="color: #FFFFFF; line-height: 1.4; margin-bottom: 10px;">' + AContent + '</div>' +
+        '<div style="border-top: 1px dotted #555; padding-top: 5px; font-size: 11px; display: flex; justify-content: space-between;">' +
+          '<a href="/edit?pid='+IntToStr(AID)+'" style="color:#4A90E2; text-decoration:none; font-weight:bold;">[ ДЕЙСТВИЕ ]</a>' +
+          '<a href="/report?id='+IntToStr(AID)+'" style="color:#888; text-decoration:none;">[ Позвать бота ]</a>' +
+        '</div>' +
+      '</td></tr></table>' +
+    '</td></tr></table><br></div>';
 end;
+
 
 
 constructor TServerWorker.Create(ADB: TDatabaseModule; ALogEv: TLogEvent; AHtmlEv: THTMLEvent; AMode: TExtractMode; CreateSuspended: boolean);
@@ -234,7 +291,7 @@ begin
         begin
         // Вызываем генерацию HTML function TServerWorker.RenderNodeHTML(AID, ALevel, ALastLevel: Integer; const AContent: string): string;
          // и сразу кладем в список
-        HTML_Acc.Append(RenderNodeHTML(CurrentID, i, LastLevel, FDB.GetNodeContent(CurrentID)));
+        HTML_Acc.Append(RenderNodeHTML(CurrentID, i, LastLevel, FDB.GetNodeContent(CurrentID), TailStack));
         LastLevel := i;
         end;
 

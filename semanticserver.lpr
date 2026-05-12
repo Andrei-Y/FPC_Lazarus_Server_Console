@@ -77,20 +77,75 @@ begin
   end
 
   // 2. Твой рабочий блок Форума
-  else if Path = '/forum' then
+  //else if Path = '/forum' then
+  //begin
+  //  WriteLn('   [СИСТЕМА] Запуск обхода дерева для браузера...');
+  //  // Создаем воркер (Self.FDB - наша база)
+  //  TempWorker := TServerWorker.Create(Self.FDB, nil, nil, emToViewer, True);
+  //  try
+  //    TempWorker.ExposeSystem(1); // Твоя ювелирная процедура
+  //
+  //    AResponse.ContentType := 'text/html; charset=utf-8';
+  //    // Если буфер пуст (не настроено накопление), выдаст ошибку
+  //    if TempWorker.FHtmlBuffer = '' then
+  //      AResponse.Content := '<html><body><h1>Ошибка: Буфер пуст</h1></body></html>'
+  //    else
+  //      AResponse.Content := TempWorker.FHtmlBuffer;
+  //
+  //  finally
+  //    TempWorker.Free;
+  //  end;
+  //end
+
+    else if Path = '/forum' then
   begin
     WriteLn('   [СИСТЕМА] Запуск обхода дерева для браузера...');
-    // Создаем воркер (Self.FDB - наша база)
     TempWorker := TServerWorker.Create(Self.FDB, nil, nil, emToViewer, True);
     try
-      TempWorker.ExposeSystem(1); // Твоя ювелирная процедура
+      TempWorker.ExposeSystem(1);
 
       AResponse.ContentType := 'text/html; charset=utf-8';
-      // Если буфер пуст (не настроено накопление), выдаст ошибку
+
       if TempWorker.FHtmlBuffer = '' then
         AResponse.Content := '<html><body><h1>Ошибка: Буфер пуст</h1></body></html>'
       else
-        AResponse.Content := TempWorker.FHtmlBuffer;
+        // Формируем "умную" оболочку вокруг буфера
+        AResponse.Content :=
+          '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Semantic Artist</title>' +
+          '<style>' +
+          '  body { margin: 0; padding: 0; overflow: hidden; display: flex; height: 100vh; background: #1e1e1e; color: #d4d4d4; font-family: sans-serif; }' +
+          '  #left-panel { width: 50%; min-width: 150px; overflow-y: auto; padding: 10px; box-sizing: border-box; }' +
+          '  #resizer { width: 6px; cursor: col-resize; background: #333; transition: 0.2s; }' +
+          '  #resizer:hover { background: #4A90E2; }' +
+          '  #right-panel { flex-grow: 1; background: #111; position: relative; overflow: hidden; }' +
+          '  canvas { display: block; width: 100%; height: 100%; }' +
+          '</style></head><body>' +
+
+          // Левая часть: твое дерево
+          '<div id="left-panel">' + TempWorker.FHtmlBuffer + '</div>' +
+
+          // Разделитель
+          '<div id="resizer"></div>' +
+
+          // Правая часть: будущая графика
+          '<div id="right-panel"><canvas id="artistCanvas"></canvas></div>' +
+
+          '<script>' +
+          '  const left = document.getElementById("left-panel");' +
+          '  const resizer = document.getElementById("resizer");' +
+          '  let isResizing = false;' +
+
+          '  resizer.addEventListener("mousedown", (e) => { isResizing = true; document.body.style.userSelect = "none"; });' +
+          '  document.addEventListener("mouseup", () => { isResizing = false; document.body.style.userSelect = "auto"; });' +
+          '  document.addEventListener("mousemove", (e) => {' +
+          '    if (!isResizing) return;' +
+          '    left.style.width = e.clientX + "px";' +
+          '  });' +
+
+          // Проверка посылки для Художника (которую мы добавили в воркер)
+          '  console.log("Artist Data Ready: ' + TempWorker.FArtistBuffer + '");' +
+          '</script>' +
+          '</body></html>';
 
     finally
       TempWorker.Free;
