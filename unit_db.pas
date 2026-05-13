@@ -33,8 +33,10 @@ type
       function LandingNode(AParentID: Integer; AContent: string): Integer;
       function GetNodeChrono(AID: Integer): string;
       function GetNodeContent(AID: Integer): string;
-        procedure ExecSQL(const ASQL: string);
-        function CreateHead(AContent: string): Integer;
+      function RegisterUser(const AName, APassHash: string; AProfileNodeID: Integer = 0): Boolean;
+      function VerifyUser(const AName, APassHash: string; out AUserID, ANodesLimit: Integer; out ATheme: string): Boolean;
+      procedure ExecSQL(const ASQL: string);
+      function CreateHead(AContent: string): Integer;
 
   end;
 
@@ -116,8 +118,6 @@ begin
   end;
 end;
 
-
-
 function TDatabaseModule.LandingNode(AParentID: Integer; AContent: string): Integer;
 var
   ParentChrono, OldTailID, NewChrono, UpdatedParentChrono: string;
@@ -170,10 +170,6 @@ begin
     on E: Exception do begin FTran.RollbackRetaining; raise; end;
   end;
 end;
-
-
-
-
 
 constructor TDatabaseModule.Create(ADBPath: string);
 begin
@@ -236,6 +232,19 @@ begin
     'img_data BLOB, ' +               // Бинарные данные картинки (PNG/BMP)
     'last_update INTEGER);');         // Когда кэш был создан (хронология)
 
+    //  6 Инициализация таблицы пользователей (Авторизация + Настройки + Связь с графом)
+  FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS users (' +
+    'id INTEGER PRIMARY KEY AUTOINCREMENT, ' + // Уникальный ID пользователя
+    'username TEXT UNIQUE, ' +                 // Уникальный логин
+    'pass_hash TEXT, ' +                       // Хеш пароля для безопасности
+    'reg_date DATETIME DEFAULT CURRENT_TIMESTAMP, ' + // Дата регистрации
+
+    // НАСТРОЙКИ (Воркер подхватит их мгновенно при входе)
+    'pref_nodes_limit INTEGER DEFAULT 50, ' +  // Лимит узлов на страницу
+    'pref_theme TEXT DEFAULT "dark", ' +       // Тема оформления (dark/light)
+
+    // СВЯЗЬ С СЕМАНТИЧЕСКИМ ПРОФИЛЕМ В ТАБЛИЦЕ NODES
+    'profile_node_id INTEGER DEFAULT 0);');    // ID корня личной ветки
 
       FTran.Commit;
   except
@@ -269,7 +278,6 @@ begin
   FConn.ExecuteDirect('VACUUM;');
 end;
 
-
  function TDatabaseModule.GetTailFromDB(AID: Integer): Integer;
 var Parts: TStringArray;
 begin
@@ -294,6 +302,62 @@ end;
    FQuery.Close;
  end;
 
+ function TDatabaseModule.RegisterUser(const AName, APassHash: string; AProfileNodeID: Integer = 0): Boolean;
+begin
+  Result := False;
+  try
+    // Стартуем транзакцию, чтобы гарантировать целостность данных
+    FTran.StartTransaction;
+
+    FQuery.SQL.Text := 'INSERT INTO users (username, pass_hash, profile_node_id) ' +
+                       'VALUES (:name, :pass, :pid)';
+
+    FQuery.ParamByName('name').AsString := AName;
+    FQuery.ParamByName('pass').AsString := APassHash;
+    FQuery.ParamByName('pid').AsInteger := AProfileNodeID;
+    FQuery.ExecSQL;
+
+    // Фиксируем изменения в базе данных
+    FTran.Commit;
+    Result := True;
+    WriteLn('   [БАЗА] Успешно создан аккаунт для: ', AName);
+  except
+    on E: Exception do
+    begin
+      // В случае любой ошибки (например, имя уже занято) откатываем изменения
+      FTran.Rollback;
+      WriteLn('!!! [БАЗА] Сбой при регистрации пользователя: ', E.Message);
+    end;
+  end;
+end;
+
+
+ function TDatabaseModule.VerifyUser(const AName, APassHash: string; out AUserID, ANodesLimit: Integer; out ATheme: string): Boolean;
+begin
+  Result := False;
+  AUserID := 0;
+  ANodesLimit := 50;
+  ATheme := 'dark';
+
+  try
+    FQuery.SQL.Text := 'SELECT id, pref_nodes_limit, pref_theme FROM users WHERE username = :name AND pass_hash = :pass';
+    FQuery.ParamByName('name').AsString := AName;
+    FQuery.ParamByName('pass').AsString := APassHash;
+    FQuery.Open;
+
+    if not FQuery.EOF then
+    begin
+      AUserID := FQuery.FieldByName('id').AsInteger;
+      ANodesLimit := FQuery.FieldByName('pref_nodes_limit').AsInteger;
+      ATheme := FQuery.FieldByName('pref_theme').AsString;
+      Result := True;
+    end;
+    FQuery.Close;
+  except
+    on E: Exception do
+      WriteLn('!!! [БАЗА] Ошибка авторизации: ', E.Message);
+  end;
+end;
 
  function TDatabaseModule.GetNodeContent(AID: Integer): string;
  begin
