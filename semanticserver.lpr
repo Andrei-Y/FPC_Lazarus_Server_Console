@@ -186,118 +186,105 @@ begin
     end;
   end
 
-      else if Path = '/register' then
-  begin
-    AResponse.ContentType := 'text/html; charset=utf-8';
-
-    // Если это обычный запрос страницы (GET) — показываем форму
-    if ARequest.Method = 'GET' then
+    // --- МАРШРУТ 3: РЕГИСТРАЦИЯ ---
+    else if Path = '/register' then
     begin
-      AResponse.Content :=
-        '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Регистрация</title>' +
-        '<style>' +
-        '  body { background: #1e1e1e; color: #eee; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }' +
-        '  .reg-box { background: #2d2d2d; padding: 30px; border-radius: 5px; border: 1px solid #444; width: 300px; }' +
-        '  h2 { margin-top: 0; color: #4A90E2; text-align: center; }' +
-        '  input[type="text"], input[type="password"] { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #555; background: #111; color: #fff; box-sizing: border-box; }' +
-        '  input[type="submit"] { width: 100%; padding: 10px; background: #4A90E2; border: none; color: white; font-weight: bold; cursor: pointer; transition: 0.2s; }' +
-        '  input[type="submit"]:hover { background: #357ABD; }' +
-        '  .link { text-align: center; margin-top: 15px; font-size: 13px; }' +
-        '  .link a { color: #888; text-decoration: none; }' +
-        '</style></head><body>' +
-
-        '<div class="reg-box">' +
-        '  <h2>Создать аккаунт</h2>' +
-        '  <form method="POST" action="/register">' +
-        '    <label>Имя пользователя:</label>' +
-        '    <input type="text" name="user" required autocomplete="off">' +
-        '    <label>Пароль:</label>' +
-        '    <input type="password" name="pass" required>' +
-        '    <input type="submit" value="Зарегистрироваться">' +
-        '  </form>' +
-        '  <div class="link"><a href="/forum">← Вернуться на форум</a></div>' +
-        '</div>' +
-
-        '</body></html>';
-    end
-    else
-    // Если пользователь нажал кнопку (POST) — обрабатываем данные
-    if ARequest.Method = 'POST' then
-    begin
-      ReqUser := ARequest.ContentFields.Values['user'];
-      ReqPass := ARequest.ContentFields.Values['pass'];
-
-      if Self.FDB.RegisterUser(ReqUser, ReqPass) then
+      AResponse.ContentType := 'text/html; charset=utf-8';
+      if ARequest.Method = 'GET' then
       begin
-        // Нативный редирект на авторизацию
-        AResponse.SendRedirect('/login');
+        AResponse.Content :=
+          '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Регистрация</title>' +
+          '<style>' +
+          '  body { background: #1e1e1e; color: #eee; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }' +
+          '  .reg-box { background: #2d2d2d; padding: 30px; border-radius: 5px; border: 1px solid #444; width: 300px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }' +
+          '  h2 { margin-top: 0; color: #4A90E2; text-align: center; font-size: 22px; }' +
+          '  label { display: block; font-size: 13px; color: #aaa; margin-top: 10px; }' +
+          '  input[type="text"], input[type="password"] { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #555; background: #111; color: #fff; box-sizing: border-box; border-radius: 3px; }' +
+          '  input[type="submit"] { width: 100%; padding: 12px; background: #4A90E2; border: none; color: white; font-weight: bold; cursor: pointer; border-radius: 3px; font-size: 14px; transition: 0.2s; }' +
+          '  input[type="submit"]:hover { background: #357ABD; }' +
+          '  .link { text-align: center; margin-top: 15px; font-size: 13px; }' +
+          '  .link a { color: #888; text-decoration: none; }' +
+          '  .link a:hover { color: #4A90E2; }' +
+          '</style></head><body>' +
+          '<div class="reg-box">' +
+          '  <h2>Создать аккаунт</h2>' +
+          '  <form method="POST" action="/register">' +
+          '    <label>Имя пользователя:</label>' +
+          '    <input type="text" name="user" required autocomplete="off">' +
+          '    <label>Пароль:</label>' +
+          '    <input type="password" name="pass" required>' +
+          '    <input type="submit" value="Зарегистрироваться">' +
+          '  </form>' +
+          '  <div class="link"><a href="/login">Уже есть аккаунт? Войти</a> | <a href="/">На главную</a></div>' +
+          '</div>' +
+          '</body></html>';
       end
-      else
+      else if ARequest.Method = 'POST' then
       begin
-        AResponse.Content := '<html><body><h2>Ошибка регистрации. Возможно, имя уже занято.</h2><a href="/register">Назад</a></body></html>';
+        ReqUser := ARequest.ContentFields.Values['user'];
+        ReqPass := ARequest.ContentFields.Values['pass'];
+        if Self.FDB.RegisterUser(ReqUser, ReqPass) then
+          AResponse.SendRedirect('/login')
+        else
+          AResponse.Content := '<html><body><h2>Ошибка регистрации. Возможно, имя уже занято.</h2><a href="/register">Назад</a></body></html>';
       end;
     end
 
-        else if Path = '/login' then
-  begin
-    AResponse.ContentType := 'text/html; charset=utf-8';
-
-    // GET: Показываем форму входа
-    if ARequest.Method = 'GET' then
+    // --- МАРШРУТ 4: ВХОД (ЛОГИН) ---
+    else if Path = '/login' then
     begin
-      AResponse.Content :=
-        '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Вход</title>' +
-        '<style>' +
-        '  body { background: #1e1e1e; color: #eee; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }' +
-        '  .login-box { background: #2d2d2d; padding: 30px; border-radius: 5px; border: 1px solid #444; width: 300px; }' +
-        '  h2 { margin-top: 0; color: #4A90E2; text-align: center; }' +
-        '  input[type="text"], input[type="password"] { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #555; background: #111; color: #fff; box-sizing: border-box; }' +
-        '  input[type="submit"] { width: 100%; padding: 10px; background: #4A90E2; border: none; color: white; font-weight: bold; cursor: pointer; }' +
-        '  .link { text-align: center; margin-top: 15px; font-size: 13px; }' +
-        '  .link a { color: #888; text-decoration: none; }' +
-        '</style></head><body>' +
-
-        '<div class="login-box">' +
-        '  <h2>Авторизация</h2>' +
-        '  <form method="POST" action="/login">' +
-        '    <label>Имя пользователя:</label>' +
-        '    <input type="text" name="user" required autocomplete="off">' +
-        '    <label>Пароль:</label>' +
-        '    <input type="password" name="pass" required>' +
-        '    <input type="submit" value="Войти">' +
-        '  </form>' +
-        '  <div class="link"><a href="/register">Регистрация</a> | <a href="/forum">На форум</a></div>' +
-        '</div>' +
-        '</body></html>';
-    end
-    else
-    // POST: Проверяем данные и ставим Cookie
-    begin
-      ReqUser := ARequest.ContentFields.Values['user'];
-      ReqPass := ARequest.ContentFields.Values['pass'];
-
-      if Self.FDB.VerifyUser(ReqUser, ReqPass, UID, ULimit, UTheme) then
+      AResponse.ContentType := 'text/html; charset=utf-8';
+      if ARequest.Method = 'GET' then
       begin
-        // ПРАВИЛЬНАЯ РАБОТА С COOKIES В FPC:
-        // Метод Add создает объект, и мы настраиваем его свойства
-        with AResponse.Cookies.Add do
+        AResponse.Content :=
+          '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Вход</title>' +
+          '<style>' +
+          '  body { background: #1e1e1e; color: #eee; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }' +
+          '  .login-box { background: #2d2d2d; padding: 30px; border-radius: 5px; border: 1px solid #444; width: 300px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }' +
+          '  h2 { margin-top: 0; color: #4A90E2; text-align: center; font-size: 22px; }' +
+          '  label { display: block; font-size: 13px; color: #aaa; margin-top: 10px; }' +
+          '  input[type="text"], input[type="password"] { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #555; background: #111; color: #fff; box-sizing: border-box; border-radius: 3px; }' +
+          '  input[type="submit"] { width: 100%; padding: 12px; background: #4A90E2; border: none; color: white; font-weight: bold; cursor: pointer; border-radius: 3px; font-size: 14px; transition: 0.2s; }' +
+          '  input[type="submit"]:hover { background: #357ABD; }' +
+          '  .link { text-align: center; margin-top: 15px; font-size: 13px; }' +
+          '  .link a { color: #888; text-decoration: none; }' +
+          '  .link a:hover { color: #4A90E2; }' +
+          '</style></head><body>' +
+          '<div class="login-box">' +
+          '  <h2>Авторизация</h2>' +
+          '  <form method="POST" action="/login">' +
+          '    <label>Имя пользователя:</label>' +
+          '    <input type="text" name="user" required autocomplete="off">' +
+          '    <label>Пароль:</label>' +
+          '    <input type="password" name="pass" required>' +
+          '    <input type="submit" value="Войти">' +
+          '  </form>' +
+          '  <div class="link"><a href="/register">Регистрация</a> | <a href="/">На главную</a></div>' +
+          '</div>' +
+          '</body></html>';
+      end
+      else if ARequest.Method = 'POST' then
+      begin
+        ReqUser := ARequest.ContentFields.Values['user'];
+        ReqPass := ARequest.ContentFields.Values['pass'];
+        if Self.FDB.VerifyUser(ReqUser, ReqPass, UID, ULimit, UTheme) then
         begin
-          Name := 'auth_user';
-          Value := ReqUser;
-          Path := '/';
-          HttpOnly := True;
+          with AResponse.Cookies.Add do
+          begin
+            Name := 'auth_user';
+            Value := ReqUser;
+            Path := '/';
+            HttpOnly := True;
+          end;
+          AResponse.SendRedirect('/forum');
+        end
+        else
+        begin
+          AResponse.Content := '<html><body><h2>Ошибка: Неверный логин или пароль</h2><a href="/login">Попробуйте снова</a></body></html>';
         end;
-
-        // НАТИВНЫЙ РЕДИРЕКТ НА ФОРУМ (устанавливает 302 и Location автоматически)
-        AResponse.SendRedirect('/forum');
-        WriteLn('   [СЕРВЕР] Пользователь ', ReqUser, ' успешно авторизован.');
-      end
-      else
-      begin
-        AResponse.Content := '<html><body><h2>Ошибка: Неверный логин или пароль</h2><a href="/login">Попробуйте снова</a></body></html>';
       end;
-    end;
-  end
+    end
+
         else if Path = '/logout' then
         begin
           // Очищаем куку по стандартам Free Pascal
@@ -319,7 +306,6 @@ begin
   end;
 end;
 
-end;
 
 
 

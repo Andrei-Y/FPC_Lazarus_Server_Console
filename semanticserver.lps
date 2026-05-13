@@ -8,10 +8,10 @@
         <Filename Value="semanticserver.lpr"/>
         <IsPartOfProject Value="True"/>
         <IsVisibleTab Value="True"/>
-        <TopLine Value="45"/>
-        <CursorPos Y="63"/>
-        <FoldState Value=" T0k52q TMoP0L T3p50O9"/>
-        <UsageCount Value="46"/>
+        <TopLine Value="288"/>
+        <CursorPos Y="308"/>
+        <FoldState Value=" T0iT2c1 Pi9mF2 TMoB0L T3oY0ON"/>
+        <UsageCount Value="47"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -35,10 +35,6 @@
       </Unit>
     </Units>
     <JumpHistory HistoryIndex="29">
-      <Position>
-        <Filename Value="unit_worker.pas"/>
-        <Caret Line="56" Column="84" TopLine="36"/>
-      </Position>
       <Position>
         <Filename Value="semanticserver.lpr"/>
         <Caret Line="153" Column="7" TopLine="109"/>
@@ -154,6 +150,10 @@
       <Position>
         <Filename Value="semanticserver.lpr"/>
         <Caret Line="324" Column="2" TopLine="39"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="287" TopLine="249"/>
       </Position>
     </JumpHistory>
     <RunParams>
