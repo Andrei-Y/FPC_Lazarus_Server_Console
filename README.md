@@ -1,6 +1,6 @@
 # SemanticServer (Console Edition)
 
-Ультракомпактный семантический сервер на Free Pascal (Lazarus). Оптимизирован для работы на Edge-устройствах и Jetson Nano.
+Ультракомпактный семантический сервер на Free Pascal (Lazarus).
 
 ---
 
