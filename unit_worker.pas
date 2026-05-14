@@ -34,6 +34,10 @@ type
   public
     FHtmlBuffer: string; // Временный буфер
     FArtistBuffer: string;
+        // ВОТ ОНО! Добавь это поле для хранения лимита:
+    FMaxNodes: Integer;
+        FNextStartID: Integer;
+    FSavedStack: string;
     ArtistGoal: TArtistGoal; // Кто нас вызвал?
     constructor Create(ADB: TDatabaseModule; ALogEv: TLogEvent; AHtmlEv: THTMLEvent; AMode: TExtractMode; CreateSuspended: boolean);
     procedure AddMessageTask(AParentID: Integer; AContent: string);
@@ -219,7 +223,10 @@ var
    TailStack: array of Integer; // Теперь это массив чисел, а не строк
     LastLevel: Integer;
        HTML_Acc: TStringBuilder; // Переименовали тип, сохранили имя
+       NodeCount: Integer; // <--- ДОБАВЬ ЭТУ СТРОКУ
 begin
+    NodeCount := 0;
+  if FMaxNodes <= 0 then FMaxNodes := 50; // Страховка
   LastLevel := 0;
   TailStack := nil; // Явно говорим компилятору: "Массив пуст, я это знаю"
    HTML_Acc := TStringBuilder.Create;
@@ -293,6 +300,13 @@ begin
          // и сразу кладем в список
         HTML_Acc.Append(RenderNodeHTML(CurrentID, i, LastLevel, FDB.GetNodeContent(CurrentID), TailStack));
         LastLevel := i;
+                  // ВОТ СЮДА МЫ ВПЕРВЫЕ ВНЕДРЯЕМ BREAK:
+          Inc(NodeCount);
+          if NodeCount >= FMaxNodes then
+          begin
+            WriteLn('   [ВОРКЕР] Достигнут лимит пилота в ', FMaxNodes, ' узлов. Эстафета прервана на ID: ', CurrentID);
+            Break; // Мгновенно выходим из цикла while, завершая генерацию страницы
+          end;
         end;
 
       emToArtist:
@@ -320,6 +334,7 @@ begin
     end;
 
     HTML_Acc.Append('</body></html>');
+    HTML_Acc.Append('<div style="text-align:center; margin:20px;"><a href="/forum?start=' + IntToStr(FNextStartID) + '&stack=' + FSavedStack + '" style="...">👉 Загрузить еще сообщения</a></div>');
     FHtmlBuffer := HTML_Acc.ToString;
   finally
     HTML_Acc.Free;

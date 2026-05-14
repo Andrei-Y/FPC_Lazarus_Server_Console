@@ -168,19 +168,8 @@ end;
 
 constructor TDatabaseModule.Create(ADBPath: string);
 begin
-    //FConn := TSQLite3Connection.Create(nil);
-    //FTran := TSQLTransaction.Create(FConn);
-    //FQuery := TSQLQuery.Create(nil);
-    //FQuery.Database := FConn;
-    //FQuery.Transaction := FTran;
-    //
-    //FConn.DatabaseName := ADBPath;
-    //FConn.Open;
-    //
-    //// Включаем режим WAL и быструю синхронизацию
-    //FConn.ExecuteDirect('PRAGMA journal_mode=WAL;');
-    //FConn.ExecuteDirect('PRAGMA synchronous=NORMAL;');
-    inherited Create; // Хороший тон для классов
+  inherited Create; // Хороший тон для классов
+
   FConn := TSQLite3Connection.Create(nil);
   FTran := TSQLTransaction.Create(FConn);
   FQuery := TSQLQuery.Create(nil);
@@ -193,8 +182,23 @@ begin
   FConn.DatabaseName := ExtractFilePath(ParamStr(0)) + ADBPath;
 
   try
+    //FConn.Open;
+    //FTran.Active := True;
+    //
+    //// Включаем режим WAL и быструю синхронизацию для оптимизации I/O
+    //FConn.ExecuteDirect('PRAGMA journal_mode=WAL;');
+    //FConn.ExecuteDirect('PRAGMA synchronous=NORMAL;');
     FConn.Open;
+
+    // ЭТИ СТРОКИ ОСТАВЛЯЕМ (Они безопасны внутри транзакций)
+    //FConn.ExecuteDirect('PRAGMA synchronous=NORMAL;');
+    //FConn.ExecuteDirect('PRAGMA busy_timeout = 5000;');
+
+    // СТРОКУ С WAL ПОЛНОСТЬЮ УДАЛЯЕМ ИЗ КОДА!
+
     FTran.Active := True;
+
+    // ... дальше твой стандартный код создания таблиц ...
 
     // Создаем таблицы
     // 1. Nodes - Хранилище данных
@@ -202,50 +206,44 @@ begin
           'id INTEGER PRIMARY KEY AUTOINCREMENT, ' +
           'content TEXT, ' +
           'coords_x REAL, coords_y REAL, ' +
-          'chronology TEXT, ' +         // ТЕПЕРЬ ЭТО ТЕКСТ
+          'chronology TEXT, ' +
           'activity_index REAL DEFAULT 0);');
-
 
     // 2. ID_Map - Таблица переадресации (Маппинг)
     FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS id_map (' +
       'perm_id INTEGER PRIMARY KEY AUTOINCREMENT, ' +
       'phys_id INTEGER);');
 
-    // 3. Users - Карма и баллы
-    FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS users (' +
-      'id INTEGER PRIMARY KEY AUTOINCREMENT, ' +
-      'name TEXT, karma INTEGER DEFAULT 100);');
-
-    // 4. Mod_Queue - Очередь для "Судьи"
+    // 3. Mod_Queue - Очередь для "Судьи" / Бота-модератора
     FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS mod_queue (' +
       'id INTEGER PRIMARY KEY AUTOINCREMENT, ' +
       'node_id INTEGER, report TEXT, status INTEGER DEFAULT 0);');
 
-      // 5. RenderCache - кэш отрисованных объектов (звезд, планет, систем)
-  FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS render_cache (' +
-    'perm_id INTEGER PRIMARY KEY, ' + // Вечный ID из маппинга
-    'img_data BLOB, ' +               // Бинарные данные картинки (PNG/BMP)
-    'last_update INTEGER);');         // Когда кэш был создан (хронология)
+    // 4. RenderCache - кэш отрисованных объектов (звезд, планет, систем)
+    FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS render_cache (' +
+      'perm_id INTEGER PRIMARY KEY, ' + // Вечный ID из маппинга
+      'img_data BLOB, ' +               // Бинарные данные картинки (PNG/BMP)
+      'last_update INTEGER);');         // Когда кэш был создан (хронология)
 
-    //  6 Инициализация таблицы пользователей (Авторизация + Настройки + Связь с графом)
-  FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS users (' +
-    'id INTEGER PRIMARY KEY AUTOINCREMENT, ' + // Уникальный ID пользователя
-    'username TEXT UNIQUE, ' +                 // Уникальный логин
-    'pass_hash TEXT, ' +                       // Хеш пароля для безопасности
-    'reg_date DATETIME DEFAULT CURRENT_TIMESTAMP, ' + // Дата регистрации
+    // 5. Users - Единая расширенная таблица (Авторизация + Настройки + Карма + Профиль)
+    FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS users (' +
+      'id INTEGER PRIMARY KEY AUTOINCREMENT, ' + // Уникальный ID пользователя
+      'username TEXT UNIQUE, ' +                 // Уникальный логин
+      'pass_hash TEXT, ' +                       // Хеш пароля для безопасности
+      'reg_date DATETIME DEFAULT CURRENT_TIMESTAMP, ' + // Дата регистрации
+      'karma INTEGER DEFAULT 100, ' +            // Карма для модератора
+      'pref_nodes_limit INTEGER DEFAULT 50, ' +  // Лимит "эстафеты"
+      'pref_theme TEXT DEFAULT "dark", ' +       // Тема оформления (dark/light)
+      'profile_node_id INTEGER DEFAULT 0);');    // ID корня личной ветки в nodes
 
-    // НАСТРОЙКИ (Воркер подхватит их мгновенно при входе)
-    'pref_nodes_limit INTEGER DEFAULT 50, ' +  // Лимит узлов на страницу
-    'pref_theme TEXT DEFAULT "dark", ' +       // Тема оформления (dark/light)
-
-    // СВЯЗЬ С СЕМАНТИЧЕСКИМ ПРОФИЛЕМ В ТАБЛИЦЕ NODES
-    'profile_node_id INTEGER DEFAULT 0);');    // ID корня личной ветки
-
-      FTran.Commit;
+    FTran.Commit;
+    WriteLn('   [БАЗА] Все таблицы успешно инициализированы в режиме WAL.');
   except
-    on E: Exception do raise Exception.Create('Ошибка БД: ' + E.Message);
+    on E: Exception do
+      raise Exception.Create('Ошибка БД: ' + E.Message);
   end;
 end;
+
 
 // 1. Тело функции GetPhysicalID
 function TDatabaseModule.GetPhysicalID(APermanentID: Integer): Integer;
@@ -298,61 +296,141 @@ end;
  end;
 
  function TDatabaseModule.RegisterUser(const AName, APassHash: string; AProfileNodeID: Integer = 0): Boolean;
-begin
-  Result := False;
-  try
-    // Стартуем транзакцию, чтобы гарантировать целостность данных
-    FTran.StartTransaction;
+ begin
+   Result := False;
+   try
+     // Очищаем SQL и параметры от предыдущих запросов сервера
+     FQuery.Close;
+     FQuery.SQL.Clear;
 
-    FQuery.SQL.Text := 'INSERT INTO users (username, pass_hash, profile_node_id) ' +
-                       'VALUES (:name, :pass, :pid)';
+     // Задаем чистый INSERT
+     FQuery.SQL.Text := 'INSERT INTO users (username, pass_hash, profile_node_id) ' +
+                        'VALUES (:name, :pass, :pid);';
 
-    FQuery.ParamByName('name').AsString := AName;
-    FQuery.ParamByName('pass').AsString := APassHash;
-    FQuery.ParamByName('pid').AsInteger := AProfileNodeID;
-    FQuery.ExecSQL;
+     FQuery.ParamByName('name').AsString := AName;
+     FQuery.ParamByName('pass').AsString := APassHash;
+     FQuery.ParamByName('pid').AsInteger := AProfileNodeID;
 
-    // Фиксируем изменения в базе данных
-    FTran.Commit;
-    Result := True;
-    WriteLn('   [БАЗА] Успешно создан аккаунт для: ', AName);
-  except
-    on E: Exception do
-    begin
-      // В случае любой ошибки (например, имя уже занято) откатываем изменения
-      FTran.Rollback;
-      WriteLn('!!! [БАЗА] Сбой при регистрации пользователя: ', E.Message);
-    end;
-  end;
-end;
+     // Выполняем. SQLite сам атомарно запишет строку без конфликта с FTran
+     FQuery.ExecSQL;
+
+     Result := True;
+     WriteLn('   [БАЗА] Успешно создан аккаунт для: ', AName);
+   except
+     on E: Exception do
+     begin
+       WriteLn('!!! [БАЗА] Сбой при регистрации пользователя: ', E.Message);
+     end;
+   end;
+ end;
 
 
- function TDatabaseModule.VerifyUser(const AName, APassHash: string; out AUserID, ANodesLimit: Integer; out ATheme: string): Boolean;
+
+// function TDatabaseModule.VerifyUser(const AName, APassHash: string; out AUserID, ANodesLimit: Integer; out ATheme: string): Boolean;
+//begin
+//  Result := False;
+//  AUserID := 0;
+//  ANodesLimit := 50;
+//  ATheme := 'dark';
+//
+//  try
+//    FQuery.Close;
+//    FQuery.SQL.Clear;
+//
+//    // Если мы проверяем для ЛК (пароль пустой), ищем только по имени
+//    if APassHash = '' then
+//    begin
+//      FQuery.SQL.Text := 'SELECT id, pref_nodes_limit, pref_theme FROM users WHERE username = :name;';
+//      FQuery.ParamByName('name').AsString := AName;
+//    end
+//    else
+//    begin
+//      FQuery.SQL.Text := 'SELECT id, pref_nodes_limit, pref_theme FROM users WHERE username = :name AND pass_hash = :pass;';
+//      FQuery.ParamByName('name').AsString := AName;
+//      FQuery.ParamByName('pass').AsString := APassHash;
+//    end;
+//
+//    FQuery.Open;
+//
+//    if not FQuery.EOF then
+//    begin
+//      AUserID := FQuery.FieldByName('id').AsInteger;
+//      ANodesLimit := FQuery.FieldByName('pref_nodes_limit').AsInteger;
+//      ATheme := FQuery.FieldByName('pref_theme').AsString;
+//      Result := True;
+//    end;
+//    FQuery.Close;
+//  except
+//    on E: Exception do
+//      WriteLn('!!! [БАЗА] Ошибка авторизации: ', E.Message);
+//  end;
+//end;
+
+function TDatabaseModule.VerifyUser(const AName, APassHash: string; out AUserID, ANodesLimit: Integer; out ATheme: string): Boolean;
+var
+  LConn: TSQLite3Connection;
+  LTran: TSQLTransaction;
+  LQuery: TSQLQuery;
 begin
   Result := False;
   AUserID := 0;
   ANodesLimit := 50;
   ATheme := 'dark';
 
+  LConn := TSQLite3Connection.Create(nil);
+  LTran := TSQLTransaction.Create(LConn);
+  LQuery := TSQLQuery.Create(nil);
   try
-    FQuery.SQL.Text := 'SELECT id, pref_nodes_limit, pref_theme FROM users WHERE username = :name AND pass_hash = :pass';
-    FQuery.ParamByName('name').AsString := AName;
-    FQuery.ParamByName('pass').AsString := APassHash;
-    FQuery.Open;
+    LConn.Transaction := LTran;
+    LQuery.Database := LConn;
+    LQuery.Transaction := LTran;
+    LConn.DatabaseName := FConn.DatabaseName;
+    LConn.Open;
 
-    if not FQuery.EOF then
+    if APassHash = '' then
     begin
-      AUserID := FQuery.FieldByName('id').AsInteger;
-      ANodesLimit := FQuery.FieldByName('pref_nodes_limit').AsInteger;
-      ATheme := FQuery.FieldByName('pref_theme').AsString;
-      Result := True;
+      // СЦЕНАРИЙ А: Просто читаем настройки по имени (для /forum и /profile)
+      LQuery.SQL.Text := 'SELECT id, pref_nodes_limit, pref_theme FROM users WHERE username = :name;';
+      LQuery.ParamByName('name').AsString := AName;
+      LQuery.Open;
+
+      if not LQuery.EOF then
+      begin
+        AUserID := LQuery.FieldByName('id').AsInteger;
+        ANodesLimit := LQuery.FieldByName('pref_nodes_limit').AsInteger;
+        ATheme := LQuery.FieldByName('pref_theme').AsString;
+        Result := True; // Пользователь существует, настройки успешно считаны
+      end;
+    end
+    else
+    begin
+      // СЦЕНАРИЙ Б: Жесткая проверка пароля при входе (/login)
+      LQuery.SQL.Text := 'SELECT id, pref_nodes_limit, pref_theme FROM users WHERE username = :name AND pass_hash = :pass;';
+      LQuery.ParamByName('name').AsString := AName;
+      LQuery.ParamByName('pass').AsString := APassHash;
+      LQuery.Open;
+
+      if not LQuery.EOF then
+      begin
+        AUserID := LQuery.FieldByName('id').AsInteger;
+        ANodesLimit := LQuery.FieldByName('pref_nodes_limit').AsInteger;
+        ATheme := LQuery.FieldByName('pref_theme').AsString;
+        Result := True; // Пароль совпал, вход разрешен!
+      end;
     end;
-    FQuery.Close;
+
+    LQuery.Close;
   except
     on E: Exception do
-      WriteLn('!!! [БАЗА] Ошибка авторизации: ', E.Message);
+      WriteLn('!!! [ПОТОК БД] Ошибка в VerifyUser: ', E.Message);
   end;
+
+  LQuery.Free;
+  LTran.Free;
+  LConn.Free;
 end;
+
+
 
  function TDatabaseModule.GetNodeContent(AID: Integer): string;
  begin
@@ -366,28 +444,28 @@ end;
  end;
 
  function TDatabaseModule.UpdateUserPrefs(const AName: string; ALimit: Integer; const ATheme: string): Boolean;
- begin
-   Result := False;
-   try
-     FTran.StartTransaction;
+begin
+  Result := False;
+  try
+    FQuery.Close;
+    FQuery.SQL.Clear;
 
-     FQuery.SQL.Text := 'UPDATE users SET pref_nodes_limit = :limit, pref_theme = :theme WHERE username = :name';
-     FQuery.ParamByName('limit').AsInteger := ALimit;
-     FQuery.ParamByName('theme').AsString := ATheme;
-     FQuery.ParamByName('name').AsString := AName;
-     FQuery.ExecSQL;
+    FQuery.SQL.Text := 'UPDATE users SET pref_nodes_limit = :limit, pref_theme = :theme WHERE username = :name;';
+    FQuery.ParamByName('limit').AsInteger := ALimit;
+    FQuery.ParamByName('theme').AsString := ATheme;
+    FQuery.ParamByName('name').AsString := AName;
+    FQuery.ExecSQL;
 
-     FTran.Commit;
-     Result := True;
-     WriteLn('   [БАЗА] Обновлены настройки для пользователя: ', AName);
-   except
-     on E: Exception do
-     begin
-       FTran.Rollback;
-       WriteLn('!!! [БАЗА] Ошибка обновления настроек: ', E.Message);
-     end;
-   end;
- end;
+    Result := True;
+    WriteLn('   [БАЗА] Обновлены настройки для пользователя: ', AName);
+  except
+    on E: Exception do
+    begin
+      WriteLn('!!! [БАЗА] Ошибка обновления настроек: ', E.Message);
+    end;
+  end;
+end;
+
 
 destructor TDatabaseModule.Destroy;
 begin

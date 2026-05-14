@@ -128,8 +128,18 @@ begin
   else if Path = '/forum' then
   begin
     WriteLn('   [СИСТЕМА] Запуск обхода дерева для браузера...');
+    ULimit := 50;
+    UTheme := 'dark';
+        //  Если пилот распознан (ReqUser не пустой) — вытягиваем ЕГО личный лимит из базы
+    if ReqUser <> '' then
+    begin
+      // Вызываем наш VerifyUser с пустым паролем (он просто считает поля из БД по нику)
+      Self.FDB.VerifyUser(ReqUser, '', UID, ULimit, UTheme);
+      WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен лимит из БД: ', ULimit);
+    end;
     TempWorker := TServerWorker.Create(Self.FDB, nil, nil, emToViewer, True);
     try
+       TempWorker.FMaxNodes := ULimit;
       TempWorker.ExposeSystem(1);
       AResponse.ContentType := 'text/html; charset=utf-8';
 
@@ -421,26 +431,23 @@ begin
           '</div>' +
           '</body></html>';
       end
-      else
-      // POST: Принимаем измененные настройки от пользователя
-      if ARequest.Method = 'POST' then
+      else if ARequest.Method = 'POST' then
       begin
-        // Считываем данные из формы. Для надежности конвертируем лимит в Integer
-        ReqPass := ARequest.ContentFields.Values['limit']; // используем свободную строку ReqPass как буфер текста
+        ReqPass := ARequest.ContentFields.Values['limit'];
         ULimit := StrToIntDef(ReqPass, 50);
         UTheme := ARequest.ContentFields.Values['theme'];
 
-        // Записываем в базу данных
         if Self.FDB.UpdateUserPrefs(ReqUser, ULimit, UTheme) then
         begin
-          // Настройки сохранены, возвращаем пилота на главную или форум
-          AResponse.SendRedirect('/profile');
+          // ИСПРАВЛЕНО: отправляем пользователя на форум, сбрасывая POST-контекст
+          AResponse.SendRedirect('/forum');
         end
         else
         begin
           AResponse.Content := '<html><body><h2>Ошибка сохранения настроек</h2><a href="/profile">Назад</a></body></html>';
         end;
       end;
+
     end;
   end
 
