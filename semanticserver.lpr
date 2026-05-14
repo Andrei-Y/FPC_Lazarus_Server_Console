@@ -160,7 +160,7 @@ begin
     if ReqUser <> '' then
     begin
       // Вместо VerifyUser просто берем лимит по имени из куки
-ULimit := Self.FDB.GetUserLimit(ReqUser);
+//ULimit := Self.FDB.GetUserLimit(ReqUser);
 WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен лимит: ', ULimit);
     end;
     TempWorker := TServerWorker.Create(Self.FDB, nil, nil, emToViewer, True);
@@ -370,25 +370,31 @@ WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен л
           '</body></html>';
       end
       else if ARequest.Method = 'POST' then
-          begin
-            ReqUser := Trim(ARequest.ContentFields.Values['user']); // Исправлен пробел
-            ReqPass := Trim(ARequest.ContentFields.Values['pass']);
+      begin
+        ReqUser := Trim(ARequest.ContentFields.Values['user']);
+        ReqPass := ARequest.ContentFields.Values['pass']; // БЕЗ Trim! В первозданном виде
 
-            if Self.FDB.VerifyUser(ReqUser, ReqPass) then // Без лишних UID, ULimit
-            begin
-              with AResponse.Cookies.Add do
-              begin
-                Name := 'auth_user';
-                Value := ReqUser; // Теперь сюда запишется реальное имя, а не пустота
-                Path := '/';
-                HttpOnly := True;
-              end;
-              AResponse.SendRedirect('/forum');
-            end
-            else
-              AResponse.Content := '<html><body><h2>Неверный логин или пароль</h2><a href="/login">Назад</a></body></html>';
+        // Вызываем строго с ДВУМЯ параметрами, как сейчас реализовано в unit_db.pas
+        if Self.FDB.VerifyUser(ReqUser, ReqPass) then
+        begin
+          with AResponse.Cookies.Add do
+          begin
+            Name := 'auth_user';
+            Value := ReqUser;
+            Path := '/';
+            HttpOnly := True;
           end;
+          AResponse.SendRedirect('/forum');
+          Exit; // Защита от проваливания кода вниз
+        end
+        else
+        begin
+          AResponse.Content := '<html><body><h2>Неверный логин или пароль</h2><a href="/login">Назад</a></body></html>';
+        end;
+      end;
     end
+
+
 
         else if Path = '/logout' then
         begin
@@ -418,7 +424,7 @@ WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен л
          if ARequest.Method = 'GET' then
          begin
            // ИСПРАВЛЕНО: Вместо вызова VerifyUser с кучей параметров просто берём лимит из БД
-           ULimit := Self.FDB.GetUserLimit(ReqUser);
+//           ULimit := Self.FDB.GetUserLimit(ReqUser);
 
            AResponse.Content :=
              '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Личный кабинет</title>' +

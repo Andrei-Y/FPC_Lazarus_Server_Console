@@ -33,7 +33,6 @@ type
       procedure ExecSQL(const ASQL: string);
       function CreateHead(AContent: string): Integer;
       function UpdateUserPrefs(const AName: string; ALimit: Integer; const ATheme: string): Boolean;
-      function GetUserLimit(const AName: string): Integer;
   end;
 
 implementation
@@ -54,42 +53,6 @@ begin
   except
     on E: Exception do begin FTran.RollbackRetaining; raise; end;
   end;
-end;
-
-function TDatabaseModule.GetUserLimit(const AName: string): Integer;
-var
-  LConn: TSQLite3Connection; // Убедись, что тип совпадает с твоим (например, TSQLite3Connection)
-  LTran: TSQLTransaction;
-  LQuery: TSQLQuery;         // Вот она! Теперь компилятор её точно увидит
-begin
-  Result := 50; // Стандартный дефолт, если пользователь гость или произошла ошибка
-  if AName = '' then Exit;
-
-  LConn := TSQLite3Connection.Create(nil);
-  LTran := TSQLTransaction.Create(LConn);
-  LQuery := TSQLQuery.Create(nil);
-  try
-    LConn.Transaction := LTran;
-    LQuery.Database := LConn;
-    LQuery.Transaction := LTran;
-    LConn.DatabaseName := FConn.DatabaseName;
-    LConn.Open;
-
-    LQuery.SQL.Text := 'SELECT pref_nodes_limit FROM users WHERE username = :name;';
-    LQuery.ParamByName('name').AsString := AName;
-    LQuery.Open;
-
-    if not LQuery.EOF then
-      Result := LQuery.FieldByName('pref_nodes_limit').AsInteger;
-
-    LQuery.Close;
-  except
-    on E: Exception do
-      WriteLn('!!! [ПОТОК БД] Ошибка в GetUserLimit: ', E.Message);
-  end;
-  LQuery.Free;
-  LTran.Free;
-  LConn.Free;
 end;
 
 
@@ -333,6 +296,10 @@ end;
  end;
 
  function TDatabaseModule.RegisterUser(const AName, APassHash: string; AProfileNodeID: Integer = 0): Boolean;
+  var
+ LConn: TSQLite3Connection; // Локальное подключение для этого потока
+  LTran: TSQLTransaction;
+  LQuery: TSQLQuery;         // Обязательно объявляем LQuery здесь!
  begin
    Result := False;
    try
@@ -418,14 +385,14 @@ begin
     LConn.DatabaseName := FConn.DatabaseName;
     LConn.Open;
 
-    // Ищем пользователя строго по имени и паролю
+    // Чистая проверка без лимитов
     LQuery.SQL.Text := 'SELECT id FROM users WHERE username = :name AND password = :pass;';
     LQuery.ParamByName('name').AsString := AName;
     LQuery.ParamByName('pass').AsString := APassHash;
     LQuery.Open;
 
     if not LQuery.EOF then
-      Result := True; // Пользователь найден, пароль верный!
+      Result := True;
 
     LQuery.Close;
   except
@@ -434,6 +401,7 @@ begin
   end;
   LQuery.Free; LTran.Free; LConn.Free;
 end;
+
 
 
 
