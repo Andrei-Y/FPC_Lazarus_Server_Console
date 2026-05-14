@@ -8,10 +8,10 @@
         <Filename Value="semanticserver.lpr"/>
         <IsPartOfProject Value="True"/>
         <IsVisibleTab Value="True"/>
-        <TopLine Value="288"/>
-        <CursorPos Y="308"/>
-        <FoldState Value=" T0iT2c1 Pi9mF2 TMoB0L T3oY0ON"/>
-        <UsageCount Value="47"/>
+        <TopLine Value="176"/>
+        <CursorPos Y="202"/>
+        <FoldState Value=" T0if2c TMrS0L T3s80Oz"/>
+        <UsageCount Value="48"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -20,29 +20,21 @@
         <EditorIndex Value="1"/>
         <TopLine Value="266"/>
         <CursorPos X="108" Y="294"/>
-        <UsageCount Value="23"/>
+        <UsageCount Value="24"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="unit_db.pas"/>
         <UnitName Value="Unit_DB"/>
         <EditorIndex Value="2"/>
-        <TopLine Value="120"/>
-        <CursorPos Y="361"/>
-        <FoldState Value=" T3i10G3 pj7k00&apos;8]90lG194"/>
-        <UsageCount Value="23"/>
+        <TopLine Value="83"/>
+        <CursorPos X="59" Y="13"/>
+        <FoldState Value=" T3d0G3 pj7k00&apos;8]90lG191 PMB10"/>
+        <UsageCount Value="24"/>
         <Loaded Value="True"/>
       </Unit>
     </Units>
     <JumpHistory HistoryIndex="29">
-      <Position>
-        <Filename Value="semanticserver.lpr"/>
-        <Caret Line="153" Column="7" TopLine="109"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_worker.pas"/>
-        <Caret Line="137" TopLine="98"/>
-      </Position>
       <Position>
         <Filename Value="unit_worker.pas"/>
         <Caret Line="98" TopLine="66"/>
@@ -154,6 +146,14 @@
       <Position>
         <Filename Value="semanticserver.lpr"/>
         <Caret Line="287" TopLine="249"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="377" TopLine="339"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_db.pas"/>
+        <Caret Line="22" Column="22" TopLine="2"/>
       </Position>
     </JumpHistory>
     <RunParams>

@@ -16,17 +16,12 @@ type
   public
     constructor Create(ADBPath: string);
     destructor Destroy; override;
-
-
-    // Получить физический ID из постоянного (Маппинг)
+   // Получить физический ID из постоянного (Маппинг)
     function GetPhysicalID(APermanentID: Integer): Integer;
-
     // Добавление узла с автоматическим созданием маппинга
     function AddNode(AParentID: Integer; AContent: string; AX, AY: Double): Integer;
-
     // Получение данных для пульсации и рендера
     procedure GetSystemData(ARootID: Integer; AList: TList);
-
     procedure ExecuteMaintenance; // Для запуска VACUUM воркером
       function GetTailFromDB(AID: Integer): Integer;
       function GetNodeChronoFromDB(AID: Integer): string;
@@ -37,7 +32,7 @@ type
       function VerifyUser(const AName, APassHash: string; out AUserID, ANodesLimit: Integer; out ATheme: string): Boolean;
       procedure ExecSQL(const ASQL: string);
       function CreateHead(AContent: string): Integer;
-
+      function UpdateUserPrefs(const AName: string; ALimit: Integer; const ATheme: string): Boolean;
   end;
 
 implementation
@@ -370,8 +365,29 @@ end;
    FQuery.Close;
  end;
 
+ function TDatabaseModule.UpdateUserPrefs(const AName: string; ALimit: Integer; const ATheme: string): Boolean;
+ begin
+   Result := False;
+   try
+     FTran.StartTransaction;
 
+     FQuery.SQL.Text := 'UPDATE users SET pref_nodes_limit = :limit, pref_theme = :theme WHERE username = :name';
+     FQuery.ParamByName('limit').AsInteger := ALimit;
+     FQuery.ParamByName('theme').AsString := ATheme;
+     FQuery.ParamByName('name').AsString := AName;
+     FQuery.ExecSQL;
 
+     FTran.Commit;
+     Result := True;
+     WriteLn('   [БАЗА] Обновлены настройки для пользователя: ', AName);
+   except
+     on E: Exception do
+     begin
+       FTran.Rollback;
+       WriteLn('!!! [БАЗА] Ошибка обновления настроек: ', E.Message);
+     end;
+   end;
+ end;
 
 destructor TDatabaseModule.Destroy;
 begin

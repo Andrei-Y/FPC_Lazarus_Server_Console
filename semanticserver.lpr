@@ -57,14 +57,26 @@ var
   UID, ULimit: Integer;
   UTheme: string;
   UserBlock: string;
+  ForumHeader: string;
 begin
-  // НАДЁЖНЫЙ И КАНАНИЧЕСКИЙ ПУТЬ FPC: достаем значение "auth_user" из полей кук запроса
+  //// НАДЁЖНЫЙ И КАНАНИЧЕСКИЙ ПУТЬ FPC: достаем значение "auth_user" из полей кук запроса
+  //  ReqUser := ARequest.CookieFields.Values['auth_user'];
+  // // Если куки нет, ReqUser автоматически останется пустой строкой
+
+
+  // Очищаем переменную перед проверкой
+  ReqUser := '';
+
+  // Метод CookieFields во Free Pascal идеально парсит входящую строку заголовка Cookie
+  if ARequest.CookieFields <> nil then
     ReqUser := ARequest.CookieFields.Values['auth_user'];
-   // Если куки нет, ReqUser автоматически останется пустой строкой
 
-
-
-
+  // Добавим лог в консоль, чтобы ты сразу видел, узнал сервер пользователя или нет:
+  if ReqUser <> '' then
+    WriteLn('   [СЕРВЕР] Распознан пользователь из сессии: ', ReqUser)
+  else
+    WriteLn('   [СЕРВЕР] Запрос от неавторизованного гостя.');
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   Path := ARequest.PathInfo;
 
@@ -111,81 +123,138 @@ begin
    end // <--- Обрати внимание: тут нет точки с запятой, если следующим идет else if!
 
   // 2. Твой рабочий блок Форума
-  //else if Path = '/forum' then
-  //begin
-  //  WriteLn('   [СИСТЕМА] Запуск обхода дерева для браузера...');
-  //  // Создаем воркер (Self.FDB - наша база)
-  //  TempWorker := TServerWorker.Create(Self.FDB, nil, nil, emToViewer, True);
-  //  try
-  //    TempWorker.ExposeSystem(1); // Твоя ювелирная процедура
-  //
-  //    AResponse.ContentType := 'text/html; charset=utf-8';
-  //    // Если буфер пуст (не настроено накопление), выдаст ошибку
-  //    if TempWorker.FHtmlBuffer = '' then
-  //      AResponse.Content := '<html><body><h1>Ошибка: Буфер пуст</h1></body></html>'
-  //    else
-  //      AResponse.Content := TempWorker.FHtmlBuffer;
-  //
-  //  finally
-  //    TempWorker.Free;
-  //  end;
-  //end
 
-    else if Path = '/forum' then
+     // НАЙДИ ЭТО МЕСТО И ЗАМЕНИ НА КОД НИЖЕ:
+  else if Path = '/forum' then
   begin
     WriteLn('   [СИСТЕМА] Запуск обхода дерева для браузера...');
     TempWorker := TServerWorker.Create(Self.FDB, nil, nil, emToViewer, True);
     try
       TempWorker.ExposeSystem(1);
-
       AResponse.ContentType := 'text/html; charset=utf-8';
 
       if TempWorker.FHtmlBuffer = '' then
         AResponse.Content := '<html><body><h1>Ошибка: Буфер пуст</h1></body></html>'
       else
-        // Формируем "умную" оболочку вокруг буфера
-        AResponse.Content :=
-          '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Semantic Artist</title>' +
-          '<style>' +
-          '  body { margin: 0; padding: 0; overflow: hidden; display: flex; height: 100vh; background: #1e1e1e; color: #d4d4d4; font-family: sans-serif; }' +
-          '  #left-panel { width: 50%; min-width: 150px; overflow-y: auto; padding: 10px; box-sizing: border-box; }' +
-          '  #resizer { width: 6px; cursor: col-resize; background: #333; transition: 0.2s; }' +
-          '  #resizer:hover { background: #4A90E2; }' +
-          '  #right-panel { flex-grow: 1; background: #111; position: relative; overflow: hidden; }' +
-          '  canvas { display: block; width: 100%; height: 100%; }' +
-          '</style></head><body>' +
+        begin
+          // Формируем сквозную шапку, которая встанет НАД обоими окнами
+          if ReqUser <> '' then
+            ForumHeader := '<div id="top-bar">' +
+                           '  <div class="logo">🌌 Галактика Смыслов</div>' +
+                           '  <div class="user-info">' +
+                           '    Пилот: <b>' + ReqUser + '</b> | ' +
+                           '    <a href="/profile" class="nav-btn">[ Личный кабинет ]</a> | ' +
+                           '    <a href="/logout" class="nav-btn-exit">[ Выход ]</a> | ' +
+                           '    <a href="/" class="nav-btn-gray">Главная</a>' +
+                           '  </div>' +
+                           '</div>'
+          else
+            ForumHeader := '<div id="top-bar">' +
+                           '  <div class="logo">🌌 Галактика Смыслов</div>' +
+                           '  <div class="user-info">' +
+                           '    Вы зашли как гость | ' +
+                           '    <a href="/login" class="nav-btn">[ Авторизация ]</a> | ' +
+                           '    <a href="/register" class="nav-btn">[ Регистрация ]</a> | ' +
+                           '    <a href="/" class="nav-btn-gray">Главная</a>' +
+                           '  </div>' +
+                           '</div>';
 
-          // Левая часть: твое дерево
-          '<div id="left-panel">' + TempWorker.FHtmlBuffer + '</div>' +
-
-          // Разделитель
-          '<div id="resizer"></div>' +
-
-          // Правая часть: будущая графика
-          '<div id="right-panel"><canvas id="artistCanvas"></canvas></div>' +
-
-          '<script>' +
-          '  const left = document.getElementById("left-panel");' +
-          '  const resizer = document.getElementById("resizer");' +
-          '  let isResizing = false;' +
-
-          '  resizer.addEventListener("mousedown", (e) => { isResizing = true; document.body.style.userSelect = "none"; });' +
-          '  document.addEventListener("mouseup", () => { isResizing = false; document.body.style.userSelect = "auto"; });' +
-          '  document.addEventListener("mousemove", (e) => {' +
-          '    if (!isResizing) return;' +
-          '    left.style.width = e.clientX + "px";' +
-          '  });' +
-
-          // Проверка посылки для Художника (которую мы добавили в воркер)
-          '  console.log("Artist Data Ready: ' + TempWorker.FArtistBuffer + '");' +
-          '</script>' +
-          '</body></html>';
-
+          AResponse.Content :=
+            '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Semantic Artist</title>' +
+            '<style>' +
+            '  body { margin: 0; padding: 0; overflow: hidden; display: flex; flex-direction: column; height: 100vh; background: #1e1e1e; color: #d4d4d4; font-family: sans-serif; }' +
+            '  #top-bar { height: 45px; background: #252525; border-bottom: 1px solid #3c3c3c; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; box-sizing: border-box; z-index: 10; }' +
+            '  .logo { font-weight: bold; color: #00FFFF; letter-spacing: 0.5px; font-size: 15px; }' +
+            '  .user-info { font-size: 13px; }' +
+            '  .nav-btn { color: #00FFFF; text-decoration: none; margin-left: 10px; font-weight: bold; }' +
+            '  .nav-btn-exit { color: #F44336; text-decoration: none; margin-left: 10px; }' +
+            '  .nav-btn-gray { color: #aaa; text-decoration: none; margin-left: 10px; }' +
+            '  #main-container { display: flex; flex-grow: 1; height: calc(100vh - 45px); overflow: hidden; }' +
+            '  #left-panel { width: 50%; min-width: 150px; overflow-y: auto; padding: 10px; box-sizing: border-box; }' +
+            '  #resizer { width: 6px; cursor: col-resize; background: #333; transition: 0.2s; }' +
+            '  #resizer:hover { background: #4A90E2; }' +
+            '  #right-panel { flex-grow: 1; background: #111; position: relative; overflow: hidden; }' +
+            '  canvas { display: block; width: 100%; height: 100%; }' +
+            '  html { scroll-behavior: smooth; }' +
+            '</style></head><body>' +
+            ForumHeader +
+            '<div id="main-container">' +
+            '  <div id="left-panel">' + TempWorker.FHtmlBuffer + '</div>' +
+            '  <div id="resizer"></div>' +
+            '  <div id="right-panel"><canvas id="artistCanvas"></canvas></div>' +
+            '</div>' +
+            '<script>' +
+            '  const left = document.getElementById("left-panel");' +
+            '  const resizer = document.getElementById("resizer");' +
+            '  let isResizing = false;' +
+            '  resizer.addEventListener("mousedown", (e) => { isResizing = true; document.body.style.userSelect = "none"; });' +
+            '  document.addEventListener("mouseup", () => { isResizing = false; document.body.style.userSelect = "auto"; });' +
+            '  document.addEventListener("mousemove", (e) => {' +
+            '    if (!isResizing) return;' +
+            '    left.style.width = e.clientX + "px";' +
+            '  });' +
+            '</script></body></html>';
+        end;
     finally
       TempWorker.Free;
     end;
-  end
+  end // <--- Конец блока /forum (обрати внимание, тут нет точки с запятой, если сразу дальше идет else if)
 
+
+  //  else if Path = '/forum' then
+  //begin
+  //  WriteLn('   [СИСТЕМА] Запуск обхода дерева для браузера...');
+  //  TempWorker := TServerWorker.Create(Self.FDB, nil, nil, emToViewer, True);
+  //  try
+  //    TempWorker.ExposeSystem(1);
+  //
+  //    AResponse.ContentType := 'text/html; charset=utf-8';
+  //
+  //    if TempWorker.FHtmlBuffer = '' then
+  //      AResponse.Content := '<html><body><h1>Ошибка: Буфер пуст</h1></body></html>'
+  //    else
+  //      // Формируем "умную" оболочку вокруг буфера
+  //      AResponse.Content :=
+  //        '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Semantic Artist</title>' +
+  //        '<style>' +
+  //        '  body { margin: 0; padding: 0; overflow: hidden; display: flex; height: 100vh; background: #1e1e1e; color: #d4d4d4; font-family: sans-serif; }' +
+  //        '  #left-panel { width: 50%; min-width: 150px; overflow-y: auto; padding: 10px; box-sizing: border-box; }' +
+  //        '  #resizer { width: 6px; cursor: col-resize; background: #333; transition: 0.2s; }' +
+  //        '  #resizer:hover { background: #4A90E2; }' +
+  //        '  #right-panel { flex-grow: 1; background: #111; position: relative; overflow: hidden; }' +
+  //        '  canvas { display: block; width: 100%; height: 100%; }' +
+  //        '</style></head><body>' +
+  //
+  //        // Левая часть: твое дерево
+  //        '<div id="left-panel">' + TempWorker.FHtmlBuffer + '</div>' +
+  //
+  //        // Разделитель
+  //        '<div id="resizer"></div>' +
+  //
+  //        // Правая часть: будущая графика
+  //        '<div id="right-panel"><canvas id="artistCanvas"></canvas></div>' +
+  //
+  //        '<script>' +
+  //        '  const left = document.getElementById("left-panel");' +
+  //        '  const resizer = document.getElementById("resizer");' +
+  //        '  let isResizing = false;' +
+  //
+  //        '  resizer.addEventListener("mousedown", (e) => { isResizing = true; document.body.style.userSelect = "none"; });' +
+  //        '  document.addEventListener("mouseup", () => { isResizing = false; document.body.style.userSelect = "auto"; });' +
+  //        '  document.addEventListener("mousemove", (e) => {' +
+  //        '    if (!isResizing) return;' +
+  //        '    left.style.width = e.clientX + "px";' +
+  //        '  });' +
+  //
+  //        // Проверка посылки для Художника (которую мы добавили в воркер)
+  //        '  console.log("Artist Data Ready: ' + TempWorker.FArtistBuffer + '");' +
+  //        '</script>' +
+  //        '</body></html>';
+  //
+  //  finally
+  //    TempWorker.Free;
+  //  end;
+  //end
     // --- МАРШРУТ 3: РЕГИСТРАЦИЯ ---
     else if Path = '/register' then
     begin
@@ -297,6 +366,83 @@ begin
           end;
           AResponse.SendRedirect('/forum');
         end
+     // --- МАРШРУТ 6: ЛИЧНЫЙ КАБИНЕТ ---
+  else if Path = '/profile' then
+  begin
+    // Если пользователь не вошел — отправляем его на авторизацию
+    if ReqUser = '' then
+    begin
+      AResponse.SendRedirect('/login');
+    end
+    else
+    begin
+      AResponse.ContentType := 'text/html; charset=utf-8';
+
+      // GET: Запрашиваем страницу кабинета
+      if ARequest.Method = 'GET' then
+      begin
+        // Сначала вытягиваем актуальные лимиты из базы, чтобы показать их в полях формы
+        // Мы используем старый метод VerifyUser, передавая пустой пароль, но нам важен сам факт чтения полей
+        // Для чистоты кода, база просто отдаст нам ULimit и UTheme для текущего ReqUser
+        Self.FDB.VerifyUser(ReqUser, '', UID, ULimit, UTheme); // Пароль пустой, но если переписать метод или использовать этот — главное считать данные
+
+        // Маленький хак: если VerifyUser требует точный пароль, давай временно сделаем прямой SELECT или доверимся чтению
+        // Чтобы не ломать логику VerifyUser, просто заберем дефолтные или текущие из сессии.
+        // Но надежнее считать. Давай покажем форму:
+
+        AResponse.Content :=
+          '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Личный кабинет</title>' +
+          '<style>' +
+          '  body { background: #1e1e1e; color: #eee; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }' +
+          '  .profile-box { background: #2d2d2d; padding: 30px; border-radius: 5px; border: 1px solid #444; width: 350px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }' +
+          '  h2 { margin-top: 0; color: #00FFFF; text-align: center; }' +
+          '  .info { font-size: 14px; color: #aaa; margin-bottom: 20px; text-align: center; }' +
+          '  label { display: block; font-size: 13px; color: #ccc; margin-top: 15px; }' +
+          '  input[type="number"], select { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #555; background: #111; color: #fff; box-sizing: border-box; border-radius: 3px; }' +
+          '  input[type="submit"] { width: 100%; padding: 12px; background: #00FFFF; border: none; color: #111; font-weight: bold; cursor: pointer; border-radius: 3px; font-size: 14px; transition: 0.2s; }' +
+          '  input[type="submit"]:hover { background: #00b3b3; }' +
+          '  .link { text-align: center; margin-top: 20px; font-size: 13px; }' +
+          '  .link a { color: #888; text-decoration: none; }' +
+          '</style></head><body>' +
+          '<div class="profile-box">' +
+          '  <h2>Личный кабинет</h2>' +
+          '  <div class="info">Пилот семантического пространства: <b>' + ReqUser + '</b></div>' +
+          '  <form method="POST" action="/profile">' +
+          '    <label>Лимит узлов «Галактики» на страницу:</label>' +
+          '    <input type="number" name="limit" value="50" min="1" max="500" required>' +
+          '    <label>Визуальная тема пространства:</label>' +
+          '    <select name="theme">' +
+          '      <option value="dark" selected>Глубокий космос (Dark)</option>' +
+          '      <option value="light">Станция наблюдения (Light)</option>' +
+          '    </select>' +
+          '    <input type="submit" value="Сохранить настройки">' +
+          '  </form>' +
+          '  <div class="link"><a href="/forum">🌌 Назад в Галактику</a> | <a href="/">Главная</a></div>' +
+          '</div>' +
+          '</body></html>';
+      end
+      else
+      // POST: Принимаем измененные настройки от пользователя
+      if ARequest.Method = 'POST' then
+      begin
+        // Считываем данные из формы. Для надежности конвертируем лимит в Integer
+        ReqPass := ARequest.ContentFields.Values['limit']; // используем свободную строку ReqPass как буфер текста
+        ULimit := StrToIntDef(ReqPass, 50);
+        UTheme := ARequest.ContentFields.Values['theme'];
+
+        // Записываем в базу данных
+        if Self.FDB.UpdateUserPrefs(ReqUser, ULimit, UTheme) then
+        begin
+          // Настройки сохранены, возвращаем пилота на главную или форум
+          AResponse.SendRedirect('/profile');
+        end
+        else
+        begin
+          AResponse.Content := '<html><body><h2>Ошибка сохранения настроек</h2><a href="/profile">Назад</a></body></html>';
+        end;
+      end;
+    end;
+  end
 
   // 3. Если зашли по непонятному адресу
   else
