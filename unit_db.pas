@@ -58,15 +58,22 @@ end;
 
 function TDatabaseModule.GetUserLimit(const AName: string): Integer;
 var
-  LConn: TSQLite3Connection; LTran: TSQLTransaction; LQuery: TSQLQuery;
+  LConn: TSQLite3Connection; // Убедись, что тип совпадает с твоим (например, TSQLite3Connection)
+  LTran: TSQLTransaction;
+  LQuery: TSQLQuery;         // Вот она! Теперь компилятор её точно увидит
 begin
-  Result := 50; // Дефолт для гостей или при ошибке
+  Result := 50; // Стандартный дефолт, если пользователь гость или произошла ошибка
   if AName = '' then Exit;
 
-  LConn := TSQLite3Connection.Create(nil); LTran := TSQLTransaction.Create(LConn); LQuery := TSQLQuery.Create(nil);
+  LConn := TSQLite3Connection.Create(nil);
+  LTran := TSQLTransaction.Create(LConn);
+  LQuery := TSQLQuery.Create(nil);
   try
-    LConn.Transaction := LTran; LQuery.Database := LConn; LQuery.Transaction := LTran;
-    LConn.DatabaseName := FConn.DatabaseName; LConn.Open;
+    LConn.Transaction := LTran;
+    LQuery.Database := LConn;
+    LQuery.Transaction := LTran;
+    LConn.DatabaseName := FConn.DatabaseName;
+    LConn.Open;
 
     LQuery.SQL.Text := 'SELECT pref_nodes_limit FROM users WHERE username = :name;';
     LQuery.ParamByName('name').AsString := AName;
@@ -77,10 +84,14 @@ begin
 
     LQuery.Close;
   except
-    // Тихо возвращаем дефолт при любой коллизии
+    on E: Exception do
+      WriteLn('!!! [ПОТОК БД] Ошибка в GetUserLimit: ', E.Message);
   end;
-  LQuery.Free; LTran.Free; LConn.Free;
+  LQuery.Free;
+  LTran.Free;
+  LConn.Free;
 end;
+
 
 procedure TDatabaseModule.ExecSQL(const ASQL: string);
 begin
@@ -255,7 +266,7 @@ begin
     FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS users (' +
       'id INTEGER PRIMARY KEY AUTOINCREMENT, ' + // Уникальный ID пользователя
       'username TEXT UNIQUE, ' +                 // Уникальный логин
-      'pass_hash TEXT, ' +                       // Хеш пароля для безопасности
+      'password TEXT, ' +                       // пароль для безопасности
       'reg_date DATETIME DEFAULT CURRENT_TIMESTAMP, ' + // Дата регистрации
       'karma INTEGER DEFAULT 100, ' +            // Карма для модератора
       'pref_nodes_limit INTEGER DEFAULT 50, ' +  // Лимит "эстафеты"
@@ -330,11 +341,9 @@ end;
      FQuery.SQL.Clear;
 
      // Задаем чистый INSERT
-     FQuery.SQL.Text := 'INSERT INTO users (username, pass_hash, profile_node_id) ' +
-                        'VALUES (:name, :pass, :pid);';
-
-     FQuery.ParamByName('name').AsString := AName;
-     FQuery.ParamByName('pass').AsString := APassHash;
+     LQuery.SQL.Text := 'INSERT INTO users (username, password, profile_node_id) VALUES (:name, :pass, :pid);';
+     LQuery.ParamByName('name').AsString := AName;
+     LQuery.ParamByName('pass').AsString := APassHash;
      FQuery.ParamByName('pid').AsInteger := AProfileNodeID;
 
      // Выполняем. SQLite сам атомарно запишет строку без конфликта с FTran
@@ -410,7 +419,7 @@ begin
     LConn.Open;
 
     // Ищем пользователя строго по имени и паролю
-    LQuery.SQL.Text := 'SELECT id FROM users WHERE username = :name AND pass_hash = :pass;';
+    LQuery.SQL.Text := 'SELECT id FROM users WHERE username = :name AND password = :pass;';
     LQuery.ParamByName('name').AsString := AName;
     LQuery.ParamByName('pass').AsString := APassHash;
     LQuery.Open;
