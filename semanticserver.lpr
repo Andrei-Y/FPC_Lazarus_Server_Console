@@ -63,20 +63,46 @@ begin
   //  ReqUser := ARequest.CookieFields.Values['auth_user'];
   // // Если куки нет, ReqUser автоматически останется пустой строкой
 
+//
+//  // Очищаем переменную перед проверкой
+//  ReqUser := '';
+//
+//  // Метод CookieFields во Free Pascal идеально парсит входящую строку заголовка Cookie
+//  if ARequest.CookieFields <> nil then
+//    ReqUser := ARequest.CookieFields.Values['auth_user'];
+//
+//  // Добавим лог в консоль, чтобы ты сразу видел, узнал сервер пользователя или нет:
+//  if ReqUser <> '' then
+//    WriteLn('   [СЕРВЕР] Распознан пользователь из сессии: ', ReqUser)
+//  else
+//    WriteLn('   [СЕРВЕР] Запрос от неавторизованного гостя.');
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////\\\\
 
-  // Очищаем переменную перед проверкой
   ReqUser := '';
 
-  // Метод CookieFields во Free Pascal идеально парсит входящую строку заголовка Cookie
-  if ARequest.CookieFields <> nil then
-    ReqUser := ARequest.CookieFields.Values['auth_user'];
+  // ПРАВИЛЬНЫЙ И ШТАТНЫЙ ПУТЬ В FPHTTPSERVER:
+  // Извлекаем сырую куку напрямую из карты CustomHeaders
+  ReqUser := Trim(ARequest.CustomHeaders.Values['Cookie']);
 
-  // Добавим лог в консоль, чтобы ты сразу видел, узнал сервер пользователя или нет:
+  // Если строка содержит "auth_user=", выдергиваем только имя пользователя
+  if Pos('auth_user=', ReqUser) > 0 then
+  begin
+    // Удаляем из строки префикс "auth_user="
+    Delete(ReqUser, 1, Pos('auth_user=', ReqUser) + 9);
+    // Если в строке несколько кук через точку с запятой, обрезаем остаток
+    if Pos(';', ReqUser) > 0 then
+      ReqUser := Copy(ReqUser, 1, Pos(';', ReqUser) - 1);
+
+    ReqUser := Trim(ReqUser);
+  end
+  else
+    ReqUser := ''; // Кука не найдена
+
+  // Лог сессии в консоли
   if ReqUser <> '' then
-    WriteLn('   [СЕРВЕР] Распознан пользователь из сессии: ', ReqUser)
+    WriteLn('   [СЕРВЕР] Распознан пользователь из сессии: "', ReqUser, '"')
   else
     WriteLn('   [СЕРВЕР] Запрос от неавторизованного гостя.');
-  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   Path := ARequest.PathInfo;
 
@@ -133,9 +159,9 @@ begin
         //  Если пилот распознан (ReqUser не пустой) — вытягиваем ЕГО личный лимит из базы
     if ReqUser <> '' then
     begin
-      // Вызываем наш VerifyUser с пустым паролем (он просто считает поля из БД по нику)
-      Self.FDB.VerifyUser(ReqUser, '', UID, ULimit, UTheme);
-      WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен лимит из БД: ', ULimit);
+      // Вместо VerifyUser просто берем лимит по имени из куки
+ULimit := Self.FDB.GetUserLimit(ReqUser);
+WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен лимит: ', ULimit);
     end;
     TempWorker := TServerWorker.Create(Self.FDB, nil, nil, emToViewer, True);
     try
@@ -300,12 +326,13 @@ begin
       end
       else if ARequest.Method = 'POST' then
       begin
-        ReqUser := ARequest.ContentFields.Values['user'];
-        ReqPass := ARequest.ContentFields.Values['pass'];
+        ReqUser := Trim(ARequest.ContentFields.Values['user']); // Исправлен пробел
+        ReqPass := Trim(ARequest.ContentFields.Values['pass']);
+
         if Self.FDB.RegisterUser(ReqUser, ReqPass) then
           AResponse.SendRedirect('/login')
         else
-          AResponse.Content := '<html><body><h2>Ошибка регистрации. Возможно, имя уже занято.</h2><a href="/register">Назад</a></body></html>';
+          AResponse.Content := '<html><body><h2>Ошибка регистрации</h2></body></html>';
       end;
     end
 
@@ -343,25 +370,24 @@ begin
           '</body></html>';
       end
       else if ARequest.Method = 'POST' then
-      begin
-        ReqUser := ARequest.ContentFields.Values['user'];
-        ReqPass := ARequest.ContentFields.Values['pass'];
-        if Self.FDB.VerifyUser(ReqUser, ReqPass, UID, ULimit, UTheme) then
-        begin
-          with AResponse.Cookies.Add do
           begin
-            Name := 'auth_user';
-            Value := ReqUser;
-            Path := '/';
-            HttpOnly := True;
+            ReqUser := Trim(ARequest.ContentFields.Values['user']); // Исправлен пробел
+            ReqPass := Trim(ARequest.ContentFields.Values['pass']);
+
+            if Self.FDB.VerifyUser(ReqUser, ReqPass) then // Без лишних UID, ULimit
+            begin
+              with AResponse.Cookies.Add do
+              begin
+                Name := 'auth_user';
+                Value := ReqUser; // Теперь сюда запишется реальное имя, а не пустота
+                Path := '/';
+                HttpOnly := True;
+              end;
+              AResponse.SendRedirect('/forum');
+            end
+            else
+              AResponse.Content := '<html><body><h2>Неверный логин или пароль</h2><a href="/login">Назад</a></body></html>';
           end;
-          AResponse.SendRedirect('/forum');
-        end
-        else
-        begin
-          AResponse.Content := '<html><body><h2>Ошибка: Неверный логин или пароль</h2><a href="/login">Попробуйте снова</a></body></html>';
-        end;
-      end;
     end
 
         else if Path = '/logout' then
@@ -377,79 +403,75 @@ begin
           AResponse.SendRedirect('/forum');
         end
      // --- МАРШРУТ 6: ЛИЧНЫЙ КАБИНЕТ ---
-  else if Path = '/profile' then
-  begin
-    // Если пользователь не вошел — отправляем его на авторизацию
-    if ReqUser = '' then
-    begin
-      AResponse.SendRedirect('/login');
-    end
-    else
-    begin
-      AResponse.ContentType := 'text/html; charset=utf-8';
+     // --- МАРШРУТ 6: ЛИЧНЫЙ КАБИНЕТ ---
+     else if Path = '/profile' then
+     begin
+       if ReqUser = '' then
+       begin
+         AResponse.SendRedirect('/login');
+       end
+       else
+       begin
+         AResponse.ContentType := 'text/html; charset=utf-8';
 
-      // GET: Запрашиваем страницу кабинета
-      if ARequest.Method = 'GET' then
-      begin
-        // Сначала вытягиваем актуальные лимиты из базы, чтобы показать их в полях формы
-        // Мы используем старый метод VerifyUser, передавая пустой пароль, но нам важен сам факт чтения полей
-        // Для чистоты кода, база просто отдаст нам ULimit и UTheme для текущего ReqUser
-        Self.FDB.VerifyUser(ReqUser, '', UID, ULimit, UTheme); // Пароль пустой, но если переписать метод или использовать этот — главное считать данные
+         // GET: Запрашиваем страницу кабинета (Сюда мы вставляем исправление!)
+         if ARequest.Method = 'GET' then
+         begin
+           // ИСПРАВЛЕНО: Вместо вызова VerifyUser с кучей параметров просто берём лимит из БД
+           ULimit := Self.FDB.GetUserLimit(ReqUser);
 
-        // Маленький хак: если VerifyUser требует точный пароль, давай временно сделаем прямой SELECT или доверимся чтению
-        // Чтобы не ломать логику VerifyUser, просто заберем дефолтные или текущие из сессии.
-        // Но надежнее считать. Давай покажем форму:
+           AResponse.Content :=
+             '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Личный кабинет</title>' +
+             '<style>' +
+             '  body { background: #1e1e1e; color: #eee; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }' +
+             '  .profile-box { background: #2d2d2d; padding: 30px; border-radius: 5px; border: 1px solid #444; width: 350px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }' +
+             '  h2 { margin-top: 0; color: #00FFFF; text-align: center; }' +
+             '  .info { font-size: 14px; color: #aaa; margin-bottom: 20px; text-align: center; }' +
+             '  label { display: block; font-size: 13px; color: #ccc; margin-top: 15px; }' +
+             '  input[type="number"], select { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #555; background: #111; color: #fff; box-sizing: border-box; border-radius: 3px; }' +
+             '  input[type="submit"] { width: 100%; padding: 12px; background: #00FFFF; border: none; color: #111; font-weight: bold; cursor: pointer; border-radius: 3px; font-size: 14px; transition: 0.2s; }' +
+             '  input[type="submit"]:hover { background: #00b3b3; }' +
+             '  .link { text-align: center; margin-top: 20px; font-size: 13px; }' +
+             '  .link a { color: #888; text-decoration: none; }' +
+             '</style></head><body>' +
+             '<div class="profile-box">' +
+             '  <h2>Личный кабинет</h2>' +
+             '  <div class="info">Пилот семантического пространства: <b>' + ReqUser + '</b></div>' +
+             '  <form method="POST" action="/profile">' +
+             '    <label>Лимит узлов «Галактики» на страницу:</label>' +
+             '    <!-- Подставляем реальный ULimit из базы в поле ввода -->' +
+             '    <input type="number" name="limit" value="' + IntToStr(ULimit) + '" min="1" max="500" required>' +
+             '    <label>Визуальная тема пространства:</label>' +
+             '    <select name="theme">' +
+             '      <option value="dark" selected>Глубокий космос (Dark)</option>' +
+             '      <option value="light">Станция наблюдения (Light)</option>' +
+             '    </select>' +
+             '    <input type="submit" value="Сохранить настройки">' +
+             '  </form>' +
+             '  <div class="link"><a href="/forum">🌌 Назад в Галактику</a> | <a href="/">Главная</a></div>' +
+             '</div>' +
+             '</body></html>';
+         end
 
-        AResponse.Content :=
-          '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Личный кабинет</title>' +
-          '<style>' +
-          '  body { background: #1e1e1e; color: #eee; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }' +
-          '  .profile-box { background: #2d2d2d; padding: 30px; border-radius: 5px; border: 1px solid #444; width: 350px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }' +
-          '  h2 { margin-top: 0; color: #00FFFF; text-align: center; }' +
-          '  .info { font-size: 14px; color: #aaa; margin-bottom: 20px; text-align: center; }' +
-          '  label { display: block; font-size: 13px; color: #ccc; margin-top: 15px; }' +
-          '  input[type="number"], select { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #555; background: #111; color: #fff; box-sizing: border-box; border-radius: 3px; }' +
-          '  input[type="submit"] { width: 100%; padding: 12px; background: #00FFFF; border: none; color: #111; font-weight: bold; cursor: pointer; border-radius: 3px; font-size: 14px; transition: 0.2s; }' +
-          '  input[type="submit"]:hover { background: #00b3b3; }' +
-          '  .link { text-align: center; margin-top: 20px; font-size: 13px; }' +
-          '  .link a { color: #888; text-decoration: none; }' +
-          '</style></head><body>' +
-          '<div class="profile-box">' +
-          '  <h2>Личный кабинет</h2>' +
-          '  <div class="info">Пилот семантического пространства: <b>' + ReqUser + '</b></div>' +
-          '  <form method="POST" action="/profile">' +
-          '    <label>Лимит узлов «Галактики» на страницу:</label>' +
-          '    <input type="number" name="limit" value="50" min="1" max="500" required>' +
-          '    <label>Визуальная тема пространства:</label>' +
-          '    <select name="theme">' +
-          '      <option value="dark" selected>Глубокий космос (Dark)</option>' +
-          '      <option value="light">Станция наблюдения (Light)</option>' +
-          '    </select>' +
-          '    <input type="submit" value="Сохранить настройки">' +
-          '  </form>' +
-          '  <div class="link"><a href="/forum">🌌 Назад в Галактику</a> | <a href="/">Главная</a></div>' +
-          '</div>' +
-          '</body></html>';
-      end
-      else if ARequest.Method = 'POST' then
-      begin
-        ReqPass := ARequest.ContentFields.Values['limit'];
-        ULimit := StrToIntDef(ReqPass, 50);
-        UTheme := ARequest.ContentFields.Values['theme'];
+         // POST: Принимаем измененные настройки от пользователя (Твой рабочий код)
+         else if ARequest.Method = 'POST' then
+         begin
+           ReqPass := ARequest.ContentFields.Values['limit'];
+           ULimit := StrToIntDef(ReqPass, 50);
+           UTheme := ARequest.ContentFields.Values['theme'];
 
-        if Self.FDB.UpdateUserPrefs(ReqUser, ULimit, UTheme) then
-        begin
-          // ИСПРАВЛЕНО: отправляем пользователя на форум, сбрасывая POST-контекст
-          AResponse.SendRedirect('/forum');
-        end
-        else
-        begin
-          AResponse.Content := '<html><body><h2>Ошибка сохранения настроек</h2><a href="/profile">Назад</a></body></html>';
-        end;
-      end;
+           if Self.FDB.UpdateUserPrefs(ReqUser, ULimit, UTheme) then
+           begin
+             AResponse.SendRedirect('/forum');
+           end
+           else
+           begin
+             AResponse.Content := '<html><body><h2>Ошибка сохранения настроек</h2><a href="/profile">Назад</a></body></html>';
+           end;
+         end;
+       end;
+     end
 
-    end;
-  end
 
   // 3. Если зашли по непонятному адресу
   else

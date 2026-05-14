@@ -29,10 +29,11 @@ type
       function GetNodeChrono(AID: Integer): string;
       function GetNodeContent(AID: Integer): string;
       function RegisterUser(const AName, APassHash: string; AProfileNodeID: Integer = 0): Boolean;
-      function VerifyUser(const AName, APassHash: string; out AUserID, ANodesLimit: Integer; out ATheme: string): Boolean;
+   function VerifyUser(const AName, APassHash: string): Boolean;//    function VerifyUser(const AName, APassHash: string; out AUserID, ANodesLimit: Integer; out ATheme: string): Boolean;
       procedure ExecSQL(const ASQL: string);
       function CreateHead(AContent: string): Integer;
       function UpdateUserPrefs(const AName: string; ALimit: Integer; const ATheme: string): Boolean;
+      function GetUserLimit(const AName: string): Integer;
   end;
 
 implementation
@@ -55,6 +56,31 @@ begin
   end;
 end;
 
+function TDatabaseModule.GetUserLimit(const AName: string): Integer;
+var
+  LConn: TSQLite3Connection; LTran: TSQLTransaction; LQuery: TSQLQuery;
+begin
+  Result := 50; // Дефолт для гостей или при ошибке
+  if AName = '' then Exit;
+
+  LConn := TSQLite3Connection.Create(nil); LTran := TSQLTransaction.Create(LConn); LQuery := TSQLQuery.Create(nil);
+  try
+    LConn.Transaction := LTran; LQuery.Database := LConn; LQuery.Transaction := LTran;
+    LConn.DatabaseName := FConn.DatabaseName; LConn.Open;
+
+    LQuery.SQL.Text := 'SELECT pref_nodes_limit FROM users WHERE username = :name;';
+    LQuery.ParamByName('name').AsString := AName;
+    LQuery.Open;
+
+    if not LQuery.EOF then
+      Result := LQuery.FieldByName('pref_nodes_limit').AsInteger;
+
+    LQuery.Close;
+  except
+    // Тихо возвращаем дефолт при любой коллизии
+  end;
+  LQuery.Free; LTran.Free; LConn.Free;
+end;
 
 procedure TDatabaseModule.ExecSQL(const ASQL: string);
 begin
@@ -366,17 +392,13 @@ end;
 //  end;
 //end;
 
-function TDatabaseModule.VerifyUser(const AName, APassHash: string; out AUserID, ANodesLimit: Integer; out ATheme: string): Boolean;
+function TDatabaseModule.VerifyUser(const AName, APassHash: string): Boolean;
 var
   LConn: TSQLite3Connection;
   LTran: TSQLTransaction;
   LQuery: TSQLQuery;
 begin
   Result := False;
-  AUserID := 0;
-  ANodesLimit := 50;
-  ATheme := 'dark';
-
   LConn := TSQLite3Connection.Create(nil);
   LTran := TSQLTransaction.Create(LConn);
   LQuery := TSQLQuery.Create(nil);
@@ -387,48 +409,23 @@ begin
     LConn.DatabaseName := FConn.DatabaseName;
     LConn.Open;
 
-    if APassHash = '' then
-    begin
-      // СЦЕНАРИЙ А: Просто читаем настройки по имени (для /forum и /profile)
-      LQuery.SQL.Text := 'SELECT id, pref_nodes_limit, pref_theme FROM users WHERE username = :name;';
-      LQuery.ParamByName('name').AsString := AName;
-      LQuery.Open;
+    // Ищем пользователя строго по имени и паролю
+    LQuery.SQL.Text := 'SELECT id FROM users WHERE username = :name AND pass_hash = :pass;';
+    LQuery.ParamByName('name').AsString := AName;
+    LQuery.ParamByName('pass').AsString := APassHash;
+    LQuery.Open;
 
-      if not LQuery.EOF then
-      begin
-        AUserID := LQuery.FieldByName('id').AsInteger;
-        ANodesLimit := LQuery.FieldByName('pref_nodes_limit').AsInteger;
-        ATheme := LQuery.FieldByName('pref_theme').AsString;
-        Result := True; // Пользователь существует, настройки успешно считаны
-      end;
-    end
-    else
-    begin
-      // СЦЕНАРИЙ Б: Жесткая проверка пароля при входе (/login)
-      LQuery.SQL.Text := 'SELECT id, pref_nodes_limit, pref_theme FROM users WHERE username = :name AND pass_hash = :pass;';
-      LQuery.ParamByName('name').AsString := AName;
-      LQuery.ParamByName('pass').AsString := APassHash;
-      LQuery.Open;
-
-      if not LQuery.EOF then
-      begin
-        AUserID := LQuery.FieldByName('id').AsInteger;
-        ANodesLimit := LQuery.FieldByName('pref_nodes_limit').AsInteger;
-        ATheme := LQuery.FieldByName('pref_theme').AsString;
-        Result := True; // Пароль совпал, вход разрешен!
-      end;
-    end;
+    if not LQuery.EOF then
+      Result := True; // Пользователь найден, пароль верный!
 
     LQuery.Close;
   except
     on E: Exception do
-      WriteLn('!!! [ПОТОК БД] Ошибка в VerifyUser: ', E.Message);
+      WriteLn('!!! [ПОТОК БД] Ошибка авторизации: ', E.Message);
   end;
-
-  LQuery.Free;
-  LTran.Free;
-  LConn.Free;
+  LQuery.Free; LTran.Free; LConn.Free;
 end;
+
 
 
 
