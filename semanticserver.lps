@@ -7,11 +7,10 @@
       <Unit>
         <Filename Value="semanticserver.lpr"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
-        <TopLine Value="367"/>
-        <CursorPos X="9" Y="394"/>
-        <FoldState Value=" TMsK0L T3t00OV"/>
-        <UsageCount Value="61"/>
+        <TopLine Value="313"/>
+        <CursorPos X="76" Y="332"/>
+        <FoldState Value=" TMsP0L T3t50O2"/>
+        <UsageCount Value="62"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -21,21 +20,22 @@
         <TopLine Value="362"/>
         <CursorPos X="198" Y="337"/>
         <FoldState Value=" T3jI2p-"/>
-        <UsageCount Value="29"/>
+        <UsageCount Value="30"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="unit_db.pas"/>
         <UnitName Value="Unit_DB"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="2"/>
-        <TopLine Value="273"/>
-        <CursorPos X="10" Y="298"/>
-        <FoldState Value=" T3d0G3 pj7k00%622 PiLma18"/>
-        <UsageCount Value="29"/>
+        <TopLine Value="319"/>
+        <CursorPos Y="358"/>
+        <FoldState Value=" T3d0G3 pj7k00%622 PiLnM13"/>
+        <UsageCount Value="30"/>
         <Loaded Value="True"/>
       </Unit>
     </Units>
-    <JumpHistory HistoryIndex="29">
+    <JumpHistory HistoryIndex="28">
       <Position>
         <Filename Value="semanticserver.lpr"/>
         <Caret Line="134" Column="5" TopLine="90"/>
@@ -86,10 +86,6 @@
       </Position>
       <Position>
         <Filename Value="semanticserver.lpr"/>
-        <Caret Line="393" Column="13" TopLine="408"/>
-      </Position>
-      <Position>
-        <Filename Value="semanticserver.lpr"/>
         <Caret Line="474" Column="14" TopLine="455"/>
       </Position>
       <Position>
@@ -110,15 +106,7 @@
       </Position>
       <Position>
         <Filename Value="unit_db.pas"/>
-        <Caret Line="35" Column="101" TopLine="268"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_db.pas"/>
         <Caret Line="400" TopLine="362"/>
-      </Position>
-      <Position>
-        <Filename Value="semanticserver.lpr"/>
-        <Caret Line="379" Column="26" TopLine="404"/>
       </Position>
       <Position>
         <Filename Value="unit_db.pas"/>
@@ -156,10 +144,29 @@
         <Filename Value="semanticserver.lpr"/>
         <Caret Line="394" Column="10" TopLine="370"/>
       </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="381" Column="83" TopLine="368"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="332" Column="76" TopLine="315"/>
+      </Position>
     </JumpHistory>
     <RunParams>
       <FormatVersion Value="2"/>
       <Modes ActiveMode=""/>
     </RunParams>
   </ProjectSession>
+  <Debugging>
+    <BreakPoints>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="semanticserver.lpr"/>
+        <Line Value="379"/>
+      </Item>
+    </BreakPoints>
+  </Debugging>
 </CONFIG>

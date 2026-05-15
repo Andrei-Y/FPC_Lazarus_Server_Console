@@ -4,7 +4,7 @@ program semanticserver;
 
 uses
   {$IFDEF UNIX}cthreads,{$ENDIF}
-  SysUtils, Classes, CustApp, fphttpserver, Unit_DB, Unit_Worker;
+  SysUtils, Classes, CustApp, fphttpserver, Unit_DB, Unit_Worker, md5;
 
 type
   TSemanticApp = class(TCustomApplication)
@@ -327,10 +327,14 @@ WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен л
       else if ARequest.Method = 'POST' then
       begin
         ReqUser := Trim(ARequest.ContentFields.Values['user']); // Исправлен пробел
-        ReqPass := Trim(ARequest.ContentFields.Values['pass']);
-
+       // ReqPass := Trim(ARequest.ContentFields.Values['pass']);
+             // ХЭШИРУЕМ ПАРОЛЬ ПЕРЕД ОТПРАВКОЙ В БАЗУ:
+      ReqPass := MD5Print(MD5String(ARequest.ContentFields.Values['pass'])); //поставил точку с запятой, теперь эта строка
         if Self.FDB.RegisterUser(ReqUser, ReqPass) then
-          AResponse.SendRedirect('/login')
+        begin
+          AResponse.SendRedirect('/login');
+          Exit; // Жесткая изоляция от проваливания кода вниз
+        end
         else
           AResponse.Content := '<html><body><h2>Ошибка регистрации</h2></body></html>';
       end;
@@ -372,8 +376,9 @@ WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен л
       else if ARequest.Method = 'POST' then
       begin
         ReqUser := Trim(ARequest.ContentFields.Values['user']);
-        ReqPass := ARequest.ContentFields.Values['pass']; // БЕЗ Trim! В первозданном виде
-
+        //ReqPass := ARequest.ContentFields.Values['pass']; // БЕЗ Trim! В первозданном виде
+        // ХЭШИРУЕМ ПАРОЛЬ ДЛЯ СВЕРКИ С БАЗОЙ:
+            ReqPass := MD5Print(MD5String(ARequest.ContentFields.Values['pass']));
         // Вызываем строго с ДВУМЯ параметрами, как сейчас реализовано в unit_db.pas
         if Self.FDB.VerifyUser(ReqUser, ReqPass) then
         begin

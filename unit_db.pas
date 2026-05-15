@@ -295,37 +295,66 @@ end;
    FQuery.Close;
  end;
 
+ //function TDatabaseModule.RegisterUser(const AName, APassHash: string; AProfileNodeID: Integer = 0): Boolean;
+ // var
+ //LConn: TSQLite3Connection; // Локальное подключение для этого потока
+ // LTran: TSQLTransaction;
+ // LQuery: TSQLQuery;         // Обязательно объявляем LQuery здесь!
+ //begin
+ //  Result := False;
+ //  try
+ //    // Очищаем SQL и параметры от предыдущих запросов сервера
+ //    FQuery.Close;
+ //    FQuery.SQL.Clear;
+ //
+ //    // Задаем чистый INSERT
+ //    LQuery.SQL.Text := 'INSERT INTO users (username, password, profile_node_id) VALUES (:name, :pass, :pid);';
+ //    LQuery.ParamByName('name').AsString := AName;
+ //    LQuery.ParamByName('pass').AsString := APassHash;
+ //    FQuery.ParamByName('pid').AsInteger := AProfileNodeID;
+ //
+ //    // Выполняем. SQLite сам атомарно запишет строку без конфликта с FTran
+ //    FQuery.ExecSQL;
+ //
+ //    Result := True;
+ //    WriteLn('   [БАЗА] Успешно создан аккаунт для: ', AName);
+ //  except
+ //    on E: Exception do
+ //    begin
+ //      WriteLn('!!! [БАЗА] Сбой при регистрации пользователя: ', E.Message);
+ //    end;
+ //  end;
+ //end;
+
  function TDatabaseModule.RegisterUser(const AName, APassHash: string; AProfileNodeID: Integer = 0): Boolean;
-  var
- LConn: TSQLite3Connection; // Локальное подключение для этого потока
-  LTran: TSQLTransaction;
-  LQuery: TSQLQuery;         // Обязательно объявляем LQuery здесь!
- begin
-   Result := False;
-   try
-     // Очищаем SQL и параметры от предыдущих запросов сервера
-     FQuery.Close;
-     FQuery.SQL.Clear;
+begin
+  Result := False;
+  try
+    // РАБОТАЕМ СТРОГО ЧЕРЕЗ ГЛОБАЛЬНЫЙ FQuery (Как до внедрения лимитов!)
+    FQuery.Close;
+    FQuery.SQL.Clear;
 
-     // Задаем чистый INSERT
-     LQuery.SQL.Text := 'INSERT INTO users (username, password, profile_node_id) VALUES (:name, :pass, :pid);';
-     LQuery.ParamByName('name').AsString := AName;
-     LQuery.ParamByName('pass').AsString := APassHash;
-     FQuery.ParamByName('pid').AsInteger := AProfileNodeID;
+    FQuery.SQL.Text := 'INSERT INTO users (username, password, profile_node_id) VALUES (:name, :pass, :pid);';
+    FQuery.ParamByName('name').AsString := AName;
+    FQuery.ParamByName('pass').AsString := APassHash;
+    FQuery.ParamByName('pid').AsInteger := AProfileNodeID;
 
-     // Выполняем. SQLite сам атомарно запишет строку без конфликта с FTran
-     FQuery.ExecSQL;
+    // Выполняем атомарную запись
+    FQuery.ExecSQL;
 
-     Result := True;
-     WriteLn('   [БАЗА] Успешно создан аккаунт для: ', AName);
-   except
-     on E: Exception do
-     begin
-       WriteLn('!!! [БАЗА] Сбой при регистрации пользователя: ', E.Message);
-     end;
-   end;
- end;
+    // Обязательно фиксируем транзакцию, чтобы данные физически легли на диск
+    FTran.CommitRetaining;
 
+    Result := True;
+    WriteLn('   [БАЗА] Успешно создан аккаунт для: ', AName);
+  except
+    on E: Exception do
+    begin
+      FTran.RollbackRetaining;
+      WriteLn('!!! [БАЗА] Сбой при регистрации пользователя: ', E.Message);
+    end;
+  end;
+end;
 
 
 // function TDatabaseModule.VerifyUser(const AName, APassHash: string; out AUserID, ANodesLimit: Integer; out ATheme: string): Boolean;
