@@ -7,10 +7,11 @@
       <Unit>
         <Filename Value="semanticserver.lpr"/>
         <IsPartOfProject Value="True"/>
-        <TopLine Value="313"/>
-        <CursorPos X="76" Y="332"/>
-        <FoldState Value=" TMsP0L T3t50O2"/>
-        <UsageCount Value="62"/>
+        <IsVisibleTab Value="True"/>
+        <TopLine Value="47"/>
+        <CursorPos X="32" Y="65"/>
+        <FoldState Value=" TMre0L T3sK0Ot"/>
+        <UsageCount Value="63"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -26,7 +27,6 @@
       <Unit>
         <Filename Value="unit_db.pas"/>
         <UnitName Value="Unit_DB"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="2"/>
         <TopLine Value="319"/>
         <CursorPos Y="358"/>
@@ -35,7 +35,7 @@
         <Loaded Value="True"/>
       </Unit>
     </Units>
-    <JumpHistory HistoryIndex="28">
+    <JumpHistory HistoryIndex="29">
       <Position>
         <Filename Value="semanticserver.lpr"/>
         <Caret Line="134" Column="5" TopLine="90"/>
@@ -152,6 +152,10 @@
         <Filename Value="semanticserver.lpr"/>
         <Caret Line="332" Column="76" TopLine="315"/>
       </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="122" TopLine="84"/>
+      </Position>
     </JumpHistory>
     <RunParams>
       <FormatVersion Value="2"/>
@@ -165,7 +169,7 @@
         <WatchScope Value="wpsLocal"/>
         <WatchKind Value="wpkWrite"/>
         <Source Value="semanticserver.lpr"/>
-        <Line Value="379"/>
+        <Line Value="351"/>
       </Item>
     </BreakPoints>
   </Debugging>

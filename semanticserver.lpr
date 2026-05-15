@@ -59,50 +59,22 @@ var
   UserBlock: string;
   ForumHeader: string;
 begin
-  //// НАДЁЖНЫЙ И КАНАНИЧЕСКИЙ ПУТЬ FPC: достаем значение "auth_user" из полей кук запроса
-  //  ReqUser := ARequest.CookieFields.Values['auth_user'];
-  // // Если куки нет, ReqUser автоматически останется пустой строкой
-
-//
-//  // Очищаем переменную перед проверкой
-//  ReqUser := '';
-//
-//  // Метод CookieFields во Free Pascal идеально парсит входящую строку заголовка Cookie
-//  if ARequest.CookieFields <> nil then
-//    ReqUser := ARequest.CookieFields.Values['auth_user'];
-//
-//  // Добавим лог в консоль, чтобы ты сразу видел, узнал сервер пользователя или нет:
-//  if ReqUser <> '' then
-//    WriteLn('   [СЕРВЕР] Распознан пользователь из сессии: ', ReqUser)
-//  else
-//    WriteLn('   [СЕРВЕР] Запрос от неавторизованного гостя.');
-  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////\\\\
-
+ /////////////////////////////////////////////////////////
   ReqUser := '';
 
-  // ПРАВИЛЬНЫЙ И ШТАТНЫЙ ПУТЬ В FPHTTPSERVER:
-  // Извлекаем сырую куку напрямую из карты CustomHeaders
-  ReqUser := Trim(ARequest.CustomHeaders.Values['Cookie']);
+  // ВЫВОДИМ В КОНСОЛЬ ВСЕ ВХОДЯЩИЕ КУКИ ДЛЯ ПРОВЕРКИ
+  WriteLn('   [ОТЛАДКА] Сырая строка CookieFields: "', ARequest.CookieFields.Text, '"');
+  WriteLn('   [ОТЛАДКА] Сырой заголовок Cookie: "', ARequest.CustomHeaders.Values['Cookie'], '"');
 
-  // Если строка содержит "auth_user=", выдергиваем только имя пользователя
-  if Pos('auth_user=', ReqUser) > 0 then
-  begin
-    // Удаляем из строки префикс "auth_user="
-    Delete(ReqUser, 1, Pos('auth_user=', ReqUser) + 9);
-    // Если в строке несколько кук через точку с запятой, обрезаем остаток
-    if Pos(';', ReqUser) > 0 then
-      ReqUser := Copy(ReqUser, 1, Pos(';', ReqUser) - 1);
+  // Пытаемся прочитать
+  if ARequest.CookieFields <> nil then
+    ReqUser := Trim(ARequest.CookieFields.Values['auth_user']);
 
-    ReqUser := Trim(ReqUser);
-  end
-  else
-    ReqUser := ''; // Кука не найдена
-
-  // Лог сессии в консоли
   if ReqUser <> '' then
     WriteLn('   [СЕРВЕР] Распознан пользователь из сессии: "', ReqUser, '"')
   else
     WriteLn('   [СЕРВЕР] Запрос от неавторизованного гостя.');
+
 
   Path := ARequest.PathInfo;
 
