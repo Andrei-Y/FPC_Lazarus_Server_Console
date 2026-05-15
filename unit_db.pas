@@ -32,7 +32,8 @@ type
    function VerifyUser(const AName, APassHash: string): Boolean;//    function VerifyUser(const AName, APassHash: string; out AUserID, ANodesLimit: Integer; out ATheme: string): Boolean;
       procedure ExecSQL(const ASQL: string);
       function CreateHead(AContent: string): Integer;
-      function UpdateUserPrefs(const AName: string; ALimit: Integer; const ATheme: string): Boolean;
+      function GetUserLimit(const AName: string): Integer;
+  function UpdateUserPrefs(const AName: string; ALimit: Integer): Boolean;
   end;
 
 implementation
@@ -69,16 +70,6 @@ begin
   end;
 end;
 
-//function TDatabaseModule.GetNodeChrono(AID: Integer): string;
-//begin
-//  Result := '';
-//  FQuery.Close;
-//  FQuery.SQL.Text := 'SELECT chronology FROM nodes WHERE id = :id';
-//  FQuery.ParamByName('id').AsInteger := AID;
-//  FQuery.Open;
-//  if not FQuery.EOF then Result := FQuery.Fields[0].AsString;
-//  FQuery.Close;
-//end;
 
 function TDatabaseModule.GetNodeChrono(AID: Integer): string;
 begin
@@ -295,36 +286,6 @@ end;
    FQuery.Close;
  end;
 
- //function TDatabaseModule.RegisterUser(const AName, APassHash: string; AProfileNodeID: Integer = 0): Boolean;
- // var
- //LConn: TSQLite3Connection; // Локальное подключение для этого потока
- // LTran: TSQLTransaction;
- // LQuery: TSQLQuery;         // Обязательно объявляем LQuery здесь!
- //begin
- //  Result := False;
- //  try
- //    // Очищаем SQL и параметры от предыдущих запросов сервера
- //    FQuery.Close;
- //    FQuery.SQL.Clear;
- //
- //    // Задаем чистый INSERT
- //    LQuery.SQL.Text := 'INSERT INTO users (username, password, profile_node_id) VALUES (:name, :pass, :pid);';
- //    LQuery.ParamByName('name').AsString := AName;
- //    LQuery.ParamByName('pass').AsString := APassHash;
- //    FQuery.ParamByName('pid').AsInteger := AProfileNodeID;
- //
- //    // Выполняем. SQLite сам атомарно запишет строку без конфликта с FTran
- //    FQuery.ExecSQL;
- //
- //    Result := True;
- //    WriteLn('   [БАЗА] Успешно создан аккаунт для: ', AName);
- //  except
- //    on E: Exception do
- //    begin
- //      WriteLn('!!! [БАЗА] Сбой при регистрации пользователя: ', E.Message);
- //    end;
- //  end;
- //end;
 
  function TDatabaseModule.RegisterUser(const AName, APassHash: string; AProfileNodeID: Integer = 0): Boolean;
 begin
@@ -357,45 +318,6 @@ begin
 end;
 
 
-// function TDatabaseModule.VerifyUser(const AName, APassHash: string; out AUserID, ANodesLimit: Integer; out ATheme: string): Boolean;
-//begin
-//  Result := False;
-//  AUserID := 0;
-//  ANodesLimit := 50;
-//  ATheme := 'dark';
-//
-//  try
-//    FQuery.Close;
-//    FQuery.SQL.Clear;
-//
-//    // Если мы проверяем для ЛК (пароль пустой), ищем только по имени
-//    if APassHash = '' then
-//    begin
-//      FQuery.SQL.Text := 'SELECT id, pref_nodes_limit, pref_theme FROM users WHERE username = :name;';
-//      FQuery.ParamByName('name').AsString := AName;
-//    end
-//    else
-//    begin
-//      FQuery.SQL.Text := 'SELECT id, pref_nodes_limit, pref_theme FROM users WHERE username = :name AND pass_hash = :pass;';
-//      FQuery.ParamByName('name').AsString := AName;
-//      FQuery.ParamByName('pass').AsString := APassHash;
-//    end;
-//
-//    FQuery.Open;
-//
-//    if not FQuery.EOF then
-//    begin
-//      AUserID := FQuery.FieldByName('id').AsInteger;
-//      ANodesLimit := FQuery.FieldByName('pref_nodes_limit').AsInteger;
-//      ATheme := FQuery.FieldByName('pref_theme').AsString;
-//      Result := True;
-//    end;
-//    FQuery.Close;
-//  except
-//    on E: Exception do
-//      WriteLn('!!! [БАЗА] Ошибка авторизации: ', E.Message);
-//  end;
-//end;
 
 function TDatabaseModule.VerifyUser(const AName, APassHash: string): Boolean;
 var
@@ -446,26 +368,73 @@ end;
    FQuery.Close;
  end;
 
- function TDatabaseModule.UpdateUserPrefs(const AName: string; ALimit: Integer; const ATheme: string): Boolean;
+// function TDatabaseModule.UpdateUserPrefs(const AName: string; ALimit: Integer; const ATheme: string): Boolean;
+//begin
+//  Result := False;
+//  try
+//    FQuery.Close;
+//    FQuery.SQL.Clear;
+//
+//    FQuery.SQL.Text := 'UPDATE users SET pref_nodes_limit = :limit, pref_theme = :theme WHERE username = :name;';
+//    FQuery.ParamByName('limit').AsInteger := ALimit;
+//    FQuery.ParamByName('theme').AsString := ATheme;
+//    FQuery.ParamByName('name').AsString := AName;
+//    FQuery.ExecSQL;
+//
+//    Result := True;
+//    WriteLn('   [БАЗА] Обновлены настройки для пользователя: ', AName);
+//  except
+//    on E: Exception do
+//    begin
+//      WriteLn('!!! [БАЗА] Ошибка обновления настроек: ', E.Message);
+//    end;
+//  end;
+//end;
+
+function TDatabaseModule.GetUserLimit(const AName: string): Integer;
+var
+  LConn: TSQLite3Connection; LTran: TSQLTransaction; LQuery: TSQLQuery;
 begin
-  Result := False;
+  Result := 50; // Жесткий дефолт-предохранитель от мусора в памяти
+  if AName = '' then Exit;
   try
-    FQuery.Close;
-    FQuery.SQL.Clear;
+    LConn := TSQLite3Connection.Create(nil); LTran := TSQLTransaction.Create(LConn); LQuery := TSQLQuery.Create(nil);
+    LConn.Transaction := LTran; LQuery.Database := LConn; LQuery.Transaction := LTran;
+    LConn.DatabaseName := FConn.DatabaseName; LConn.Open;
 
-    FQuery.SQL.Text := 'UPDATE users SET pref_nodes_limit = :limit, pref_theme = :theme WHERE username = :name;';
-    FQuery.ParamByName('limit').AsInteger := ALimit;
-    FQuery.ParamByName('theme').AsString := ATheme;
-    FQuery.ParamByName('name').AsString := AName;
-    FQuery.ExecSQL;
+    LQuery.SQL.Text := 'SELECT pref_nodes_limit FROM users WHERE username = :name;';
+    LQuery.ParamByName('name').AsString := AName; LQuery.Open;
 
-    Result := True;
-    WriteLn('   [БАЗА] Обновлены настройки для пользователя: ', AName);
+    if not LQuery.EOF then
+      Result := LQuery.FieldByName('pref_nodes_limit').AsInteger;
+
+    LQuery.Close;
+    LQuery.Free; LTran.Free; LConn.Free;
   except
-    on E: Exception do
-    begin
-      WriteLn('!!! [БАЗА] Ошибка обновления настроек: ', E.Message);
-    end;
+    on E: Exception do WriteLn('!!! [ПОТОК БД] Ошибка в GetUserLimit: ', E.Message);
+  end;
+end;
+
+function TDatabaseModule.UpdateUserPrefs(const AName: string; ALimit: Integer): Boolean;
+var
+  LConn: TSQLite3Connection; LTran: TSQLTransaction; LQuery: TSQLQuery;
+begin
+  Result := False; if AName = '' then Exit;
+  try
+    LConn := TSQLite3Connection.Create(nil); LTran := TSQLTransaction.Create(LConn); LQuery := TSQLQuery.Create(nil);
+    LConn.Transaction := LTran; LQuery.Database := LConn; LQuery.Transaction := LTran;
+    LConn.DatabaseName := FConn.DatabaseName; LConn.Open;
+
+    LQuery.SQL.Text := 'UPDATE users SET pref_nodes_limit = :limit WHERE username = :name;';
+    LQuery.ParamByName('limit').AsInteger := ALimit;
+    LQuery.ParamByName('name').AsString := AName; LQuery.ExecSQL;
+
+    LTran.Commit; Result := True;
+    WriteLn('   [ПОТОК БД] Лимит обновлен в базе для пилота: ', AName);
+
+    LQuery.Free; LTran.Free; LConn.Free;
+  except
+    on E: Exception do WriteLn('!!! [ПОТОК БД] Ошибка в UpdateUserPrefs: ', E.Message);
   end;
 end;
 

@@ -387,75 +387,152 @@ WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен л
         end
      // --- МАРШРУТ 6: ЛИЧНЫЙ КАБИНЕТ ---
      // --- МАРШРУТ 6: ЛИЧНЫЙ КАБИНЕТ ---
-     else if Path = '/profile' then
-     begin
-       if ReqUser = '' then
-       begin
-         AResponse.SendRedirect('/login');
-       end
-       else
-       begin
-         AResponse.ContentType := 'text/html; charset=utf-8';
+//     else if Path = '/profile' then
+//     begin
+//       if ReqUser = '' then
+//       begin
+//         AResponse.SendRedirect('/login');
+//       end
+//       else
+//       begin
+//         AResponse.ContentType := 'text/html; charset=utf-8';
+//
+//         // GET: Запрашиваем страницу кабинета (Сюда мы вставляем исправление!)
+//         if ARequest.Method = 'GET' then
+//         begin
+//           // ИСПРАВЛЕНО: Вместо вызова VerifyUser с кучей параметров просто берём лимит из БД
+////           ULimit := Self.FDB.GetUserLimit(ReqUser);
+//
+//           AResponse.Content :=
+//             '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Личный кабинет</title>' +
+//             '<style>' +
+//             '  body { background: #1e1e1e; color: #eee; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }' +
+//             '  .profile-box { background: #2d2d2d; padding: 30px; border-radius: 5px; border: 1px solid #444; width: 350px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }' +
+//             '  h2 { margin-top: 0; color: #00FFFF; text-align: center; }' +
+//             '  .info { font-size: 14px; color: #aaa; margin-bottom: 20px; text-align: center; }' +
+//             '  label { display: block; font-size: 13px; color: #ccc; margin-top: 15px; }' +
+//             '  input[type="number"], select { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #555; background: #111; color: #fff; box-sizing: border-box; border-radius: 3px; }' +
+//             '  input[type="submit"] { width: 100%; padding: 12px; background: #00FFFF; border: none; color: #111; font-weight: bold; cursor: pointer; border-radius: 3px; font-size: 14px; transition: 0.2s; }' +
+//             '  input[type="submit"]:hover { background: #00b3b3; }' +
+//             '  .link { text-align: center; margin-top: 20px; font-size: 13px; }' +
+//             '  .link a { color: #888; text-decoration: none; }' +
+//             '</style></head><body>' +
+//             '<div class="profile-box">' +
+//             '  <h2>Личный кабинет</h2>' +
+//             '  <div class="info">Пилот семантического пространства: <b>' + ReqUser + '</b></div>' +
+//             '  <form method="POST" action="/profile">' +
+//             '    <label>Лимит узлов «Галактики» на страницу:</label>' +
+//             '    <!-- Подставляем реальный ULimit из базы в поле ввода -->' +
+//             '    <input type="number" name="limit" value="' + IntToStr(ULimit) + '" min="1" max="500" required>' +
+//             '    <label>Визуальная тема пространства:</label>' +
+//             '    <select name="theme">' +
+//             '      <option value="dark" selected>Глубокий космос (Dark)</option>' +
+//             '      <option value="light">Станция наблюдения (Light)</option>' +
+//             '    </select>' +
+//             '    <input type="submit" value="Сохранить настройки">' +
+//             '  </form>' +
+//             '  <div class="link"><a href="/forum">🌌 Назад в Галактику</a> | <a href="/">Главная</a></div>' +
+//             '</div>' +
+//             '</body></html>';
+//         end
+//
+//         // POST: Принимаем измененные настройки от пользователя (Твой рабочий код)
+//         else if ARequest.Method = 'POST' then
+//         begin
+//           ReqPass := ARequest.ContentFields.Values['limit'];
+//           ULimit := StrToIntDef(ReqPass, 50);
+//           //UTheme := ARequest.ContentFields.Values['theme'];
+//
+//            if Self.FDB.UpdateUserPrefs(ReqUser, ULimit) then
+//           begin
+//             AResponse.SendRedirect('/forum');
+//             Exit; // Защита от проваливания кода вниз
+//           end
+//           else
+//           begin
+//             AResponse.Content := '<html><body><h2>Ошибка сохранения настроек</h2><a href="/profile">Назад</a></body></html>';
+//           end;
+//         end;
+//       end;
+//     end
 
-         // GET: Запрашиваем страницу кабинета (Сюда мы вставляем исправление!)
-         if ARequest.Method = 'GET' then
-         begin
-           // ИСПРАВЛЕНО: Вместо вызова VerifyUser с кучей параметров просто берём лимит из БД
-//           ULimit := Self.FDB.GetUserLimit(ReqUser);
+   else if Path = '/profile' then
+  begin
+    // Дублируем чтение куки прямо внутри маршрута для максимальной надежности
+    if ARequest.CookieFields <> nil then
+      ReqUser := Trim(ARequest.CookieFields.Values['auth_user']);
 
-           AResponse.Content :=
-             '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Личный кабинет</title>' +
-             '<style>' +
-             '  body { background: #1e1e1e; color: #eee; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }' +
-             '  .profile-box { background: #2d2d2d; padding: 30px; border-radius: 5px; border: 1px solid #444; width: 350px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }' +
-             '  h2 { margin-top: 0; color: #00FFFF; text-align: center; }' +
-             '  .info { font-size: 14px; color: #aaa; margin-bottom: 20px; text-align: center; }' +
-             '  label { display: block; font-size: 13px; color: #ccc; margin-top: 15px; }' +
-             '  input[type="number"], select { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #555; background: #111; color: #fff; box-sizing: border-box; border-radius: 3px; }' +
-             '  input[type="submit"] { width: 100%; padding: 12px; background: #00FFFF; border: none; color: #111; font-weight: bold; cursor: pointer; border-radius: 3px; font-size: 14px; transition: 0.2s; }' +
-             '  input[type="submit"]:hover { background: #00b3b3; }' +
-             '  .link { text-align: center; margin-top: 20px; font-size: 13px; }' +
-             '  .link a { color: #888; text-decoration: none; }' +
-             '</style></head><body>' +
-             '<div class="profile-box">' +
-             '  <h2>Личный кабинет</h2>' +
-             '  <div class="info">Пилот семантического пространства: <b>' + ReqUser + '</b></div>' +
-             '  <form method="POST" action="/profile">' +
-             '    <label>Лимит узлов «Галактики» на страницу:</label>' +
-             '    <!-- Подставляем реальный ULimit из базы в поле ввода -->' +
-             '    <input type="number" name="limit" value="' + IntToStr(ULimit) + '" min="1" max="500" required>' +
-             '    <label>Визуальная тема пространства:</label>' +
-             '    <select name="theme">' +
-             '      <option value="dark" selected>Глубокий космос (Dark)</option>' +
-             '      <option value="light">Станция наблюдения (Light)</option>' +
-             '    </select>' +
-             '    <input type="submit" value="Сохранить настройки">' +
-             '  </form>' +
-             '  <div class="link"><a href="/forum">🌌 Назад в Галактику</a> | <a href="/">Главная</a></div>' +
-             '</div>' +
-             '</body></html>';
-         end
+    if ReqUser = '' then
+    begin
+      WriteLn('   [СЕРВЕР] Попытка несанкционированного входа в ЛК. Перенаправление на /login');
+      AResponse.SendRedirect('/login');
+      Exit; // Жестко прерываем поток выполнения запроса!
+    end
+    else
+    begin
+      AResponse.ContentType := 'text/html; charset=utf-8';
 
-         // POST: Принимаем измененные настройки от пользователя (Твой рабочий код)
-         else if ARequest.Method = 'POST' then
-         begin
-           ReqPass := ARequest.ContentFields.Values['limit'];
-           ULimit := StrToIntDef(ReqPass, 50);
-           UTheme := ARequest.ContentFields.Values['theme'];
+      // GET: Запрашиваем страницу кабинета
+      if ARequest.Method = 'GET' then
+      begin
+        // ПРИНУДИТЕЛЬНО ОБНУЛЯЕМ МУСОР В ПАМЯТИ ПЕРЕД ВЫЗОВОМ БАЗЫ!
+        ULimit := 0;
 
-           if Self.FDB.UpdateUserPrefs(ReqUser, ULimit, UTheme) then
-           begin
-             AResponse.SendRedirect('/forum');
-           end
-           else
-           begin
-             AResponse.Content := '<html><body><h2>Ошибка сохранения настроек</h2><a href="/profile">Назад</a></body></html>';
-           end;
-         end;
-       end;
-     end
+        // Запрашиваем лимит у базы данных
+        ULimit := Self.FDB.GetUserLimit(ReqUser);
 
+        // Страховочный предохранитель: если база почему-то вернула 0, ставим жесткие 50
+        if ULimit <= 0 then ULimit := 50;
 
+        WriteLn('   [СЕРВЕР] ЛК отображается для пилота: "', ReqUser, '". Выводимый лимит: ', ULimit);
+
+        AResponse.Content :=
+          '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Личный кабинет</title>' +
+          '<style>' +
+          '  body { background: #1e1e1e; color: #eee; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }' +
+          '  .profile-box { background: #2d2d2d; padding: 30px; border-radius: 5px; border: 1px solid #444; width: 350px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }' +
+          '  h2 { margin-top: 0; color: #00FFFF; text-align: center; }' +
+          '  .info { font-size: 14px; color: #aaa; margin-bottom: 20px; text-align: center; }' +
+          '  label { display: block; font-size: 13px; color: #ccc; margin-top: 15px; }' +
+          '  input[type="number"], select { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #555; background: #111; color: #fff; box-sizing: border-box; border-radius: 3px; }' +
+          '  input[type="submit"] { width: 100%; padding: 12px; background: #00FFFF; border: none; color: #111; font-weight: bold; cursor: pointer; border-radius: 3px; font-size: 14px; transition: 0.2s; }' +
+          '  input[type="submit"]:hover { background: #00b3b3; }' +
+          '  .link { text-align: center; margin-top: 20px; font-size: 13px; }' +
+          '  .link a { color: #888; text-decoration: none; }' +
+          '</style></head><body>' +
+          '<div class="profile-box">' +
+          '  <h2>Личный кабинет</h2>' +
+          '  <div class="info">Пилот семантического пространства: <b>' + ReqUser + '</b></div>' +
+          '  <form method="POST" action="/profile">' +
+          '    <label>Лимит узлов «Галактики» на страницу:</label>' +
+          '    <input type="number" name="limit" value="' + IntToStr(ULimit) + '" min="1" max="500" required>' +
+          '    <input type="submit" value="Сохранить настройки">' +
+          '  </form>' +
+          '  <div class="link"><a href="/forum">🌌 Назад в Галактику</a> | <a href="/">Главная</a></div>' +
+          '</div>' +
+          '</body></html>';
+      end
+
+      // POST: Принимаем измененные настройки от пользователя
+      else if ARequest.Method = 'POST' then
+      begin
+        ReqPass := ARequest.ContentFields.Values['limit'];
+        ULimit := StrToIntDef(ReqPass, 50);
+
+        WriteLn('   [СЕРВЕР] Получен POST-запрос на смену лимита для "', ReqUser, '": ', ULimit);
+
+        if Self.FDB.UpdateUserPrefs(ReqUser, ULimit) then
+        begin
+          AResponse.SendRedirect('/forum');
+          Exit;
+        end
+        else
+        begin
+          AResponse.Content := '<html><body><h2>Ошибка сохранения настроек</h2><a href="/profile">Назад</a></body></html>';
+        end;
+      end;
+    end;
+  end
   // 3. Если зашли по непонятному адресу
   else
   begin
