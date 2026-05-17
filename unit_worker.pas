@@ -224,6 +224,7 @@ var
   LastLevel: Integer;
   HTML_Acc: TStringBuilder; // Переименовали тип, сохранили имя
   NodeCount: Integer; // <--- ДОБАВЬ ЭТУ СТРОКУ
+  IsParentNode: Boolean; // ◄=== НАШ ЗЕЛЁНЫЙ ФЛАГ КЭША СОСТОЯНИЯ
 begin
     NodeCount := 0;
     if FMaxNodes <= 0 then FMaxNodes := 50; // Страховка
@@ -272,18 +273,16 @@ emToArtist:
 
       // --- ШАГ 2: ОПРЕДЕЛЯЕМ ВИЗУАЛЬНЫЙ УРОВЕНЬ ---
       // Если узел в стеке — значит это РОДИТЕЛЬ, из которого мы вынырнули.
-      // Чтобы дети были ПРАВЕЕ него, его уровень должен быть меньше.
-      if (Length(TailStack) > 0) and (TailStack[High(TailStack)] = CurrentID) then
+      // Чтобы дети были ПРАВЕЕ него, его уровень должен быть меньше.////////////////////////////////////////////////////////////////////////////
+      IsParentNode := (Length(TailStack) > 0) and (TailStack[High(TailStack)] = CurrentID);
+      if IsParentNode then
      VisualLevel := Length(TailStack) - 1
-      else VisualLevel := Length(TailStack);
+      else
+        VisualLevel := Length(TailStack);
       // Защита от отрицательного уровня
-
       if VisualLevel < 0 then VisualLevel := 0;
-
       // --- ШАГ 3: ФИКСАЦИЯ И ОТРИСОВКА ---
-
     DoLog('ВЫДЕРНУТ УЗЕЛ: ' + IntToStr(CurrentID));
-
     // Вычисляем уровень вложенности
     if (CurrentID <> AStartID) and (VisualLevel = 0) then VisualLevel := 1;
     //   LastLevel := i; // возможно понадобится где-то ещё
@@ -322,8 +321,8 @@ emToArtist:
           end;
 
     {$ENDREGION}
-      // --- ШАГ 4: ВСПЛЫТИЕ ---
-      if (Length(TailStack) > 0) and (TailStack[High(TailStack)] = CurrentID) then
+    // --- ШАГ 4: ВСПЛЫТИЕ ---
+      if IsParentNode then ////////////////////////////////////////////////////////////////////////
       begin
          SetLength(TailStack, Length(TailStack) - 1);
          DoLog('<<< ВСПЛЫТИЕ ИЗ ВЕТКИ (возврат в ' + IntToStr(CurrentID) + ')');
