@@ -217,33 +217,39 @@ end;
 
 procedure TServerWorker.ExposeSystem(AStartID: Integer);
 var
-  CurrentID, NodeB, NodeT, i, VisualLevel: Integer;
+  CurrentID, NodeB, NodeT, VisualLevel: Integer;
   Chrono: string;
   StrList: TStringList;
-   TailStack: array of Integer; // Теперь это массив чисел, а не строк
-    LastLevel: Integer;
-       HTML_Acc: TStringBuilder; // Переименовали тип, сохранили имя
-       NodeCount: Integer; // <--- ДОБАВЬ ЭТУ СТРОКУ
+  TailStack: array of Integer; // Теперь это массив чисел, а не строк
+  LastLevel: Integer;
+  HTML_Acc: TStringBuilder; // Переименовали тип, сохранили имя
+  NodeCount: Integer; // <--- ДОБАВЬ ЭТУ СТРОКУ
 begin
     NodeCount := 0;
-  if FMaxNodes <= 0 then FMaxNodes := 50; // Страховка
-  LastLevel := 0;
-  TailStack := nil; // Явно говорим компилятору: "Массив пуст, я это знаю"
-   HTML_Acc := TStringBuilder.Create;
-  // Темная тема: фон #1e1e1e, текст #d4d4d4
-  HTML_Acc.Append('<html><body style="font-family:sans-serif; background:#1e1e1e; color:#d4d4d4; padding:15px;">');
-
-  DoLog('--- СТАРТ ФОРМИРОВАНИЯ СТРУКТУРЫ ---');
-    WriteLn('   [DEBUG] Создаю списки...');
-  CurrentID := AStartID;
-  StrList := TStringList.Create;
-  SetLength(TailStack, 0);
-   // МАЯК Б: После создания
-  WriteLn('   [DEBUG] Списки созданы. ID старта: ', AStartID);
+    if FMaxNodes <= 0 then FMaxNodes := 50; // Страховка
+    LastLevel := 0;
+    TailStack := nil; // Явно говорим компилятору: "Массив пуст, я это знаю"
+    CurrentID := AStartID;
+    StrList := TStringList.Create;
+    SetLength(TailStack, 0);
+          DoLog('--- СТАРТ ФОРМИРОВАНИЯ СТРУКТУРЫ ---');
+         {$REGION'ПОДГОТОВКА ПАКЕТА В ДОСТАВКУ'}
+    case FMode of
+emToViewer:
+        begin
+    HTML_Acc := TStringBuilder.Create;
+    HTML_Acc.Append('<html><body style="font-family:sans-serif; background:#1e1e1e; color:#d4d4d4; padding:15px;">');
+        end;
+emToArtist:
+        begin
+        // ПОКА ПУСТО
+        end;
+        end;
+    {$ENDREGION} // КОНЕЦ ПОДГОТОВКИ ПАКЕТА В ДОСТАВКУ
   try
     StrList.Delimiter := '.';
     StrList.StrictDelimiter := True;
-
+    {$REGION 'ЦИКЛ ФОРМИРОВАНИЯ ПАКЕТА СООБЩЕНИЙ'}
     while (CurrentID <> 0) do
     begin
       // --- Вот этот "датчик" ---
@@ -251,13 +257,11 @@ begin
       Chrono := FDB.GetNodeChrono(CurrentID);
       StrList.DelimitedText := Chrono;
       if StrList.Count < 3 then Break;
-
       NodeB := StrToIntDef(StrList[1], 0);
       NodeT := StrToIntDef(StrList[2], 0);
-
       // --- ШАГ 1: НЫРОК ---
       if (NodeT <> 0) and
-         ((Length(TailStack) = 0) or (TailStack[High(TailStack)] <> CurrentID)) then
+         ((Length(TailStack) = 0) or (TailStack[High(TailStack)] <> CurrentID)) then  // ЕСЛИ ЭТО КОРЕНЬ, ИЛИ ЭТО УЗЕЛ В ХВОСТ КОТОРОГО МЫ НЕ НЫРЯЛИ, ТО НЫРЯЕМ
       begin
         DoLog('>>> НЫРОК В ВЕТКУ (из ' + IntToStr(CurrentID) + ')');
         SetLength(TailStack, Length(TailStack) + 1);
@@ -270,10 +274,8 @@ begin
       // Если узел в стеке — значит это РОДИТЕЛЬ, из которого мы вынырнули.
       // Чтобы дети были ПРАВЕЕ него, его уровень должен быть меньше.
       if (Length(TailStack) > 0) and (TailStack[High(TailStack)] = CurrentID) then
-        VisualLevel := Length(TailStack) - 1
-      else
-        VisualLevel := Length(TailStack);
-
+     VisualLevel := Length(TailStack) - 1
+      else VisualLevel := Length(TailStack);
       // Защита от отрицательного уровня
 
       if VisualLevel < 0 then VisualLevel := 0;
@@ -283,14 +285,11 @@ begin
     DoLog('ВЫДЕРНУТ УЗЕЛ: ' + IntToStr(CurrentID));
 
     // Вычисляем уровень вложенности
-      if (Length(TailStack) > 0) and (TailStack[High(TailStack)] = CurrentID) then
-        i := Length(TailStack) - 1
-      else
-        i := Length(TailStack);
-
-    if (CurrentID <> AStartID) and (i = 0) then i := 1;
+    if (CurrentID <> AStartID) and (VisualLevel = 0) then VisualLevel := 1;
     //   LastLevel := i; // возможно понадобится где-то ещё
     // 1. Формируем префикс (только линии и уровень)
+
+    {$REGION 'ЗАПЕКАНИЕ СООБЩЕНИЯ'}
 
      case FMode of //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -298,30 +297,31 @@ begin
         begin
         // Вызываем генерацию HTML function TServerWorker.RenderNodeHTML(AID, ALevel, ALastLevel: Integer; const AContent: string): string;
          // и сразу кладем в список
-        HTML_Acc.Append(RenderNodeHTML(CurrentID, i, LastLevel, FDB.GetNodeContent(CurrentID), TailStack));
-        LastLevel := i;
-                  // ВОТ СЮДА МЫ ВПЕРВЫЕ ВНЕДРЯЕМ BREAK:
+        HTML_Acc.Append(RenderNodeHTML(CurrentID, VisualLevel, LastLevel, FDB.GetNodeContent(CurrentID), TailStack));
+        LastLevel := VisualLevel;
+        end;
+
+      emToArtist:
+        begin
+        // Пока пусто
+        end;
+
+      emToNetwork:
+        begin
+          // Пока пусто
+        end;
+
+    end; // Конец case
+
+                     // ВОТ СЮДА МЫ ПЕРЕМЕЩАЕМ ОБРЫВАНИЕ ЦИКЛА:
           Inc(NodeCount);
           if NodeCount >= FMaxNodes then
           begin
             WriteLn('   [ВОРКЕР] Достигнут лимит пилота в ', FMaxNodes, ' узлов. Эстафета прервана на ID: ', CurrentID);
             Break; // Мгновенно выходим из цикла while, завершая генерацию страницы
           end;
-        end;
 
-      emToArtist:
-        begin
-          DoLog('ПОСЫЛКА ХУДОЖНИКУ: ID ' + IntToStr(CurrentID) + ' L:' + IntToStr(VisualLevel));
-                    // Просто передаем управление диспетчеру
-          ArtistDispatcher(CurrentID, i, Chrono);
-        end;
-
-      emToNetwork:
-        begin
-          // Пока пусто, здесь будет сборка для веб-клиента
-        end;
-
-    end; // Конец case
+    {$ENDREGION}
       // --- ШАГ 4: ВСПЛЫТИЕ ---
       if (Length(TailStack) > 0) and (TailStack[High(TailStack)] = CurrentID) then
       begin
@@ -332,21 +332,30 @@ begin
            if (CurrentID = AStartID) and (Length(TailStack) = 0) then Break;
       CurrentID := NodeB;
     end;
+    {$ENDREGION} // КОНЕЦ ЦИКЛА ФОРМИРОВАНИЯ ПАКЕТА
 
+    {$REGION'ПЕРЕДАЧА ПАКЕТА В ДОСТАВКУ'}
+    case FMode of
+emToViewer:
+        begin
     HTML_Acc.Append('</body></html>');
     HTML_Acc.Append('<div style="text-align:center; margin:20px;"><a href="/forum?start=' + IntToStr(FNextStartID) + '&stack=' + FSavedStack + '" style="...">👉 Загрузить еще сообщения</a></div>');
     FHtmlBuffer := HTML_Acc.ToString;
-  finally
-    HTML_Acc.Free;
-    StrList.Free;
-  end;
+        end;
+emToArtist:
+        begin
+        // ПОКА ПУСТО
+        end;
+        end;
+    {$ENDREGION} // КОНЕЦ ПЕРЕДАЧИ ПАКЕТА В ДОСТАВКУ
+    finally
+      // ЮВЕЛИРНАЯ И БЕЗОПАСНАЯ ОЧИСТКА:
+      if Assigned(HTML_Acc) then HTML_Acc.Free;
+      if Assigned(StrList) then StrList.Free;
+    end;
+
   DoLog('--- СТРУКТУРА ЗАВЕРШЕНА ---');
 end;
-
-
-
-
-
 
 
 
