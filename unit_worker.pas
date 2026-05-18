@@ -122,7 +122,7 @@ begin
     if j < ALevel then
       // 1. Промежуточные синие палочки-ссылки
       S_Prefix := S_Prefix + '<a href="#node_' + IntToStr(TargetParentID) +
-                  '" style="color:#4A90E2; text-decoration:none; font-weight:bold;">┃</a>&nbsp;&nbsp;'
+                  '" style="color:#4A90E2; text-decoration:none; font-weight:bold;">┊</a>&nbsp;&nbsp;'
     else
       begin
         // 2. Последняя палочка: вычисляем её цвет по твоей изначальной логике
@@ -133,7 +133,7 @@ begin
         // но при этом ВСЁ остается кликабельной ссылкой
         S_Prefix := S_Prefix + '<a href="#node_' + IntToStr(TargetParentID) +
                     '" style="color:' + LineColor + '; text-decoration:none; font-weight:bold;">' +
-                    '┃(' + IntToStr(TargetParentID) + ')━&nbsp;</a>';
+                    '┊(' + IntToStr(TargetParentID) + ')━&nbsp;</a>';
       end;
   end;
 
@@ -316,7 +316,7 @@ emToArtist:
           Inc(NodeCount);
           if NodeCount >= FMaxNodes then
           begin
-            WriteLn('   [ВОРКЕР] Достигнут лимит пилота в ', FMaxNodes, ' узлов. Эстафета прервана на ID: ', CurrentID);
+            WriteLn('   [ВОРКЕР] Достигнут лимит среза в ', FMaxNodes, ' узлов. Эстафета прервана на ID: ', CurrentID);
             Break; // Мгновенно выходим из цикла while, завершая генерацию страницы
           end;
 

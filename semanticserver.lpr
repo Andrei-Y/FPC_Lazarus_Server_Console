@@ -17,35 +17,6 @@ type
     procedure DoRun; override;
   end;
 
-//procedure TSemanticApp.HandleRequest(Sender: TObject; var ARequest: TFPHTTPConnectionRequest;
-//                                    var AResponse: TFPHTTPConnectionResponse);
-//var
-//  TempWorker: TServerWorker;
-//
-//begin
-//  WriteLn(FormatDateTime('hh:nn:ss', Now) + ' [СЕТЬ] Запрос: ' + ARequest.PathInfo);
-//
-//  if ARequest.PathInfo = '/forum' then
-//  begin
-//    WriteLn('   [СИСТЕМА] Запуск эстафеты для ID=1...');
-//
-//    // Создаем воркер. Вместо логов формы передаем nil (будем писать в консоль напрямую)
-//    TempWorker := TServerWorker.Create(Self.FDB, nil, nil, emToViewer, True);
-//    try
-//      TempWorker.ExposeSystem(1); // Твоя оригинальная процедура обхода
-//
-//      AResponse.Content := TempWorker.FHtmlBuffer;
-//      AResponse.ContentType := 'text/html; charset=utf-8';
-//    finally
-//      TempWorker.Free;
-//    end;
-//  end
-//  else
-//  begin
-//    AResponse.Content := '<html><body><h1>Semantic Server</h1><p><a href="/forum">Перейти к форуму</a></p></body></html>';
-//    AResponse.ContentType := 'text/html; charset=utf-8';
-//  end;
-//end;
 
 
 procedure TSemanticApp.HandleRequest(Sender: TObject; var ARequest: TFPHTTPConnectionRequest;
@@ -110,9 +81,9 @@ begin
        '  <!-- Блок авторизации / профиля -->' +
        '  <div class="user-bar">' + UserBlock + '</div>' +
 
-       '  <!-- Наша "Галактика" -->' +
+       '  <!-- Семантический Срез" -->' +
        '  <p style="color: #aaa; font-size: 14px; margin-bottom: 30px;">Ультракомпактный движок направленных графов смыслов без использования рекурсии.</p>' +
-       '  <a href="/forum" class="btn-galaxy">🌌 Галактика</a>' +
+       '  <a href="/forum" class="btn-galaxy">🌌 Срез</a>' +
 
        '  <div class="footer">FPC Релиз • Архитектура Green Computing</div>' +
        '</div>' +
@@ -148,7 +119,7 @@ WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен л
           // Формируем сквозную шапку, которая встанет НАД обоими окнами
           if ReqUser <> '' then
             ForumHeader := '<div id="top-bar">' +
-                           '  <div class="logo">🌌 Галактика Смыслов</div>' +
+                           '  <div class="logo">🌌 Семантический срез</div>' +
                            '  <div class="user-info">' +
                            '    Пилот: <b>' + ReqUser + '</b> | ' +
                            '    <a href="/profile" class="nav-btn">[ Личный кабинет ]</a> | ' +
@@ -158,7 +129,7 @@ WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен л
                            '</div>'
           else
             ForumHeader := '<div id="top-bar">' +
-                           '  <div class="logo">🌌 Галактика Смыслов</div>' +
+                           '  <div class="logo">🌌 Семантический срез</div>' +
                            '  <div class="user-info">' +
                            '    Вы зашли как гость | ' +
                            '    <a href="/login" class="nav-btn">[ Авторизация ]</a> | ' +
@@ -207,62 +178,6 @@ WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен л
       TempWorker.Free;
     end;
   end // <--- Конец блока /forum (обрати внимание, тут нет точки с запятой, если сразу дальше идет else if)
-
-
-  //  else if Path = '/forum' then
-  //begin
-  //  WriteLn('   [СИСТЕМА] Запуск обхода дерева для браузера...');
-  //  TempWorker := TServerWorker.Create(Self.FDB, nil, nil, emToViewer, True);
-  //  try
-  //    TempWorker.ExposeSystem(1);
-  //
-  //    AResponse.ContentType := 'text/html; charset=utf-8';
-  //
-  //    if TempWorker.FHtmlBuffer = '' then
-  //      AResponse.Content := '<html><body><h1>Ошибка: Буфер пуст</h1></body></html>'
-  //    else
-  //      // Формируем "умную" оболочку вокруг буфера
-  //      AResponse.Content :=
-  //        '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Semantic Artist</title>' +
-  //        '<style>' +
-  //        '  body { margin: 0; padding: 0; overflow: hidden; display: flex; height: 100vh; background: #1e1e1e; color: #d4d4d4; font-family: sans-serif; }' +
-  //        '  #left-panel { width: 50%; min-width: 150px; overflow-y: auto; padding: 10px; box-sizing: border-box; }' +
-  //        '  #resizer { width: 6px; cursor: col-resize; background: #333; transition: 0.2s; }' +
-  //        '  #resizer:hover { background: #4A90E2; }' +
-  //        '  #right-panel { flex-grow: 1; background: #111; position: relative; overflow: hidden; }' +
-  //        '  canvas { display: block; width: 100%; height: 100%; }' +
-  //        '</style></head><body>' +
-  //
-  //        // Левая часть: твое дерево
-  //        '<div id="left-panel">' + TempWorker.FHtmlBuffer + '</div>' +
-  //
-  //        // Разделитель
-  //        '<div id="resizer"></div>' +
-  //
-  //        // Правая часть: будущая графика
-  //        '<div id="right-panel"><canvas id="artistCanvas"></canvas></div>' +
-  //
-  //        '<script>' +
-  //        '  const left = document.getElementById("left-panel");' +
-  //        '  const resizer = document.getElementById("resizer");' +
-  //        '  let isResizing = false;' +
-  //
-  //        '  resizer.addEventListener("mousedown", (e) => { isResizing = true; document.body.style.userSelect = "none"; });' +
-  //        '  document.addEventListener("mouseup", () => { isResizing = false; document.body.style.userSelect = "auto"; });' +
-  //        '  document.addEventListener("mousemove", (e) => {' +
-  //        '    if (!isResizing) return;' +
-  //        '    left.style.width = e.clientX + "px";' +
-  //        '  });' +
-  //
-  //        // Проверка посылки для Художника (которую мы добавили в воркер)
-  //        '  console.log("Artist Data Ready: ' + TempWorker.FArtistBuffer + '");' +
-  //        '</script>' +
-  //        '</body></html>';
-  //
-  //  finally
-  //    TempWorker.Free;
-  //  end;
-  //end
     // --- МАРШРУТ 3: РЕГИСТРАЦИЯ ---
     else if Path = '/register' then
     begin
@@ -386,76 +301,6 @@ WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен л
           AResponse.SendRedirect('/forum');
         end
      // --- МАРШРУТ 6: ЛИЧНЫЙ КАБИНЕТ ---
-     // --- МАРШРУТ 6: ЛИЧНЫЙ КАБИНЕТ ---
-//     else if Path = '/profile' then
-//     begin
-//       if ReqUser = '' then
-//       begin
-//         AResponse.SendRedirect('/login');
-//       end
-//       else
-//       begin
-//         AResponse.ContentType := 'text/html; charset=utf-8';
-//
-//         // GET: Запрашиваем страницу кабинета (Сюда мы вставляем исправление!)
-//         if ARequest.Method = 'GET' then
-//         begin
-//           // ИСПРАВЛЕНО: Вместо вызова VerifyUser с кучей параметров просто берём лимит из БД
-////           ULimit := Self.FDB.GetUserLimit(ReqUser);
-//
-//           AResponse.Content :=
-//             '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Личный кабинет</title>' +
-//             '<style>' +
-//             '  body { background: #1e1e1e; color: #eee; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }' +
-//             '  .profile-box { background: #2d2d2d; padding: 30px; border-radius: 5px; border: 1px solid #444; width: 350px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }' +
-//             '  h2 { margin-top: 0; color: #00FFFF; text-align: center; }' +
-//             '  .info { font-size: 14px; color: #aaa; margin-bottom: 20px; text-align: center; }' +
-//             '  label { display: block; font-size: 13px; color: #ccc; margin-top: 15px; }' +
-//             '  input[type="number"], select { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #555; background: #111; color: #fff; box-sizing: border-box; border-radius: 3px; }' +
-//             '  input[type="submit"] { width: 100%; padding: 12px; background: #00FFFF; border: none; color: #111; font-weight: bold; cursor: pointer; border-radius: 3px; font-size: 14px; transition: 0.2s; }' +
-//             '  input[type="submit"]:hover { background: #00b3b3; }' +
-//             '  .link { text-align: center; margin-top: 20px; font-size: 13px; }' +
-//             '  .link a { color: #888; text-decoration: none; }' +
-//             '</style></head><body>' +
-//             '<div class="profile-box">' +
-//             '  <h2>Личный кабинет</h2>' +
-//             '  <div class="info">Пилот семантического пространства: <b>' + ReqUser + '</b></div>' +
-//             '  <form method="POST" action="/profile">' +
-//             '    <label>Лимит узлов «Галактики» на страницу:</label>' +
-//             '    <!-- Подставляем реальный ULimit из базы в поле ввода -->' +
-//             '    <input type="number" name="limit" value="' + IntToStr(ULimit) + '" min="1" max="500" required>' +
-//             '    <label>Визуальная тема пространства:</label>' +
-//             '    <select name="theme">' +
-//             '      <option value="dark" selected>Глубокий космос (Dark)</option>' +
-//             '      <option value="light">Станция наблюдения (Light)</option>' +
-//             '    </select>' +
-//             '    <input type="submit" value="Сохранить настройки">' +
-//             '  </form>' +
-//             '  <div class="link"><a href="/forum">🌌 Назад в Галактику</a> | <a href="/">Главная</a></div>' +
-//             '</div>' +
-//             '</body></html>';
-//         end
-//
-//         // POST: Принимаем измененные настройки от пользователя (Твой рабочий код)
-//         else if ARequest.Method = 'POST' then
-//         begin
-//           ReqPass := ARequest.ContentFields.Values['limit'];
-//           ULimit := StrToIntDef(ReqPass, 50);
-//           //UTheme := ARequest.ContentFields.Values['theme'];
-//
-//            if Self.FDB.UpdateUserPrefs(ReqUser, ULimit) then
-//           begin
-//             AResponse.SendRedirect('/forum');
-//             Exit; // Защита от проваливания кода вниз
-//           end
-//           else
-//           begin
-//             AResponse.Content := '<html><body><h2>Ошибка сохранения настроек</h2><a href="/profile">Назад</a></body></html>';
-//           end;
-//         end;
-//       end;
-//     end
-
    else if Path = '/profile' then
   begin
     // Дублируем чтение куки прямо внутри маршрута для максимальной надежности
@@ -504,11 +349,11 @@ WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен л
           '  <h2>Личный кабинет</h2>' +
           '  <div class="info">Пилот семантического пространства: <b>' + ReqUser + '</b></div>' +
           '  <form method="POST" action="/profile">' +
-          '    <label>Лимит узлов «Галактики» на страницу:</label>' +
+          '    <label>Лимит узлов среза на страницу:</label>' +
           '    <input type="number" name="limit" value="' + IntToStr(ULimit) + '" min="1" max="500" required>' +
           '    <input type="submit" value="Сохранить настройки">' +
           '  </form>' +
-          '  <div class="link"><a href="/forum">🌌 Назад в Галактику</a> | <a href="/">Главная</a></div>' +
+          '  <div class="link"><a href="/forum">🌌 Назад к срезу</a> | <a href="/">Главная</a></div>' +
           '</div>' +
           '</body></html>';
       end
