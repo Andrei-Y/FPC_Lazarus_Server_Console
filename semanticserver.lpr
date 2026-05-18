@@ -29,6 +29,8 @@ var
   UTheme: string;
   UserBlock: string;
   ForumHeader: string;
+    TargetParent: string; // ◄=== ДОПИШИ ЭТИ ДВЕ СТРОКИ СЮДА!
+  GateStackDNA: string;
 begin
  /////////////////////////////////////////////////////////
   ReqUser := '';
@@ -178,6 +180,31 @@ WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен л
       TempWorker.Free;
     end;
   end // <--- Конец блока /forum (обрати внимание, тут нет точки с запятой, если сразу дальше идет else if)
+  else if (Path = '/edit') or (Path = '/reply') then
+  begin
+    // Извлекаем прилетевшие из кнопки параметры
+     TargetParent := ARequest.QueryFields.Values['pid'];
+    if TargetParent = '' then TargetParent := ARequest.QueryFields.Values['parent']; // Страховка имён
+
+     GateStackDNA := ARequest.QueryFields.Values['gate_stack'];
+
+    WriteLn('   [СЕКЬЮРИТИ] Перехвачен импульс ответа! Родословная считана из ОЗУ кнопки.');
+
+    // Формируем легкий отладочный HTML-экран для пилота
+    AResponse.ContentType := 'text/html; charset=utf-8';
+    AResponse.Content :=
+      '<html><body style="font-family:sans-serif; background:#1e1e1e; color:#d4d4d4; padding:30px;">' +
+      '  <h2 style="color:#00FFFF;">🧬 Семантический шлюз: Родословная узла зафиксирована</h2>' +
+      '  <hr style="border-color:#444;">' +
+      '  <p style="font-size:16px;">Вы отправляете ответ на сообщение ID: <b style="color:#fff;">' + TargetParent + '</b></p>' +
+      '  <div style="background:#252526; border:1px dashed #555; padding:15px; border-radius:4px; margin-top:20px;">' +
+      '    <span style="color:#888; font-family:monospace;">[ПРИЛЕТЕВШИЙ ГЕНОКОД СЛOЯ (gate_stack)]</span><br>' +
+      '    <strong style="font-size:20px; color:#00FFFF; font-family:monospace; display:block; margin-top:10px;">' + GateStackDNA + '</strong>' +
+      '  </div>' +
+      '  <br><br>' +
+      '  <a href="/forum" style="color:#888; text-decoration:none;">◀ Вернуться к срезу потока</a>' +
+      '</body></html>';
+  end
     // --- МАРШРУТ 3: РЕГИСТРАЦИЯ ---
     else if Path = '/register' then
     begin

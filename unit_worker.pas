@@ -22,7 +22,7 @@ type
     FOnHtml: THTMLEvent; // Ссылка на вывод HTML
     function RenderNodeHTML(AID, ALevel, ALastLevel: Integer;
                             const AContent: string;
-                            const AStack: array of Integer): string;
+                            const AStack: array of Integer; AIsParent: Boolean): string;
 
     procedure DoLog(const AMsg: string);
     procedure SyncLog;  // Метод для синхронизации ..................................................................................................................
@@ -50,6 +50,26 @@ type
   end;
 
 implementation
+
+function StackToString(const AStack: array of Integer): string;
+var
+  j: Integer;
+  SB: TStringBuilder;
+begin
+  Result := '';
+  if Length(AStack) = 0 then Exit;
+  SB := TStringBuilder.Create;
+  try
+    for j := 0 to High(AStack) do
+    begin
+      SB.Append(IntToStr(AStack[j]));
+      if j < High(AStack) then SB.Append(',');
+    end;
+    Result := SB.ToString;
+  finally
+    SB.Free;
+  end;
+end;
 
 function TServerWorker.RenderNodeArtist(AID, ALevel: Integer; const AChrono: string): string;
 begin
@@ -104,11 +124,12 @@ end;
 
   function TServerWorker.RenderNodeHTML(AID, ALevel, ALastLevel: Integer;
                                        const AContent: string;
-                                       const AStack: array of Integer): string;
+                                       const AStack: array of Integer; AIsParent: Boolean): string;
 var
   S_Prefix, LineColor: string;
   j: Integer;
   TargetParentID: Integer;
+  ButtonGateStack: string;
 begin
   S_Prefix := '';
 
@@ -148,11 +169,17 @@ begin
       '<tr><td>' +
         '<div style="color: #FFFFFF; line-height: 1.4; margin-bottom: 10px;">' + AContent + '</div>' +
         '<div style="border-top: 1px dotted #555; padding-top: 5px; font-size: 11px; display: flex; justify-content: space-between;">' +
-          '<a href="/edit?pid='+IntToStr(AID)+'" style="color:#4A90E2; text-decoration:none; font-weight:bold;">[ ДЕЙСТВИЕ ]</a>' +
+          '<a href="/edit?pid='+ IntToStr(AID) + '&gate_stack=' + ButtonGateStack + '" ' +
+                     '    style="color: #00FFFF; text-decoration: none; font-size: 12px; font-weight: bold; ' +
+                     '           margin-left: 8px; border-bottom: 1px dashed #00FFFF;">' +
+                     '    ↩ Ответить' +
+                     ' </a>' + //////////////////////////////////////
           '<a href="/report?id='+IntToStr(AID)+'" style="color:#888; text-decoration:none;">[ Позвать бота ]</a>' +
         '</div>' +
       '</td></tr></table>' +
     '</td></tr></table><br></div>';
+  ///////////////////////////////////////////////////////////
+
 end;
 
 
@@ -296,7 +323,7 @@ emToArtist:
         begin
         // Вызываем генерацию HTML function TServerWorker.RenderNodeHTML(AID, ALevel, ALastLevel: Integer; const AContent: string): string;
          // и сразу кладем в список
-        HTML_Acc.Append(RenderNodeHTML(CurrentID, VisualLevel, LastLevel, FDB.GetNodeContent(CurrentID), TailStack));
+        HTML_Acc.Append(RenderNodeHTML(CurrentID, VisualLevel, LastLevel, FDB.GetNodeContent(CurrentID), TailStack, IsParentNode));
         LastLevel := VisualLevel;
         end;
 
