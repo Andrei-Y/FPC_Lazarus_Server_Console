@@ -108,7 +108,16 @@ begin
 //ULimit := Self.FDB.GetUserLimit(ReqUser);
 WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен лимит: ', ULimit);
     end;
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        if ReqUser <> '' then
+    begin
+      // Вызываем твой рабочий метод модуля базы данных, который ты настроил:
+      ULimit := FDB.GetUserLimit(ReqUser);
+    end;
     TempWorker := TServerWorker.Create(Self.FDB, nil, nil, emToViewer, True);
+ // (Вставь имя переменной, в которой у тебя хранится лимит из базы)/////////////////////////////////////////////////////////////////////////
+     // ⚡ ВОТ ОН, НАШ ЖЕСТКИЙ МОСТ: Прошиваем лимит ЛК внутрь публичного поля воркера!
+    TempWorker.FMaxNodes := ULimit;
     try
        TempWorker.FMaxNodes := ULimit;
       TempWorker.ExposeSystem(1);

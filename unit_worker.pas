@@ -261,7 +261,7 @@ var
   IsParentNode: Boolean; // ◄=== НАШ ЗЕЛЁНЫЙ ФЛАГ КЭША СОСТОЯНИЯ
 begin
     NodeCount := 0;
-    if FMaxNodes <= 0 then FMaxNodes := 50; // Страховка
+    //if FMaxNodes <= 0 then FMaxNodes := 50; // Страховка
     LastLevel := 0;
     TailStack := nil; // Явно говорим компилятору: "Массив пуст, я это знаю"
     CurrentID := AStartID;
