@@ -7,21 +7,21 @@
       <Unit>
         <Filename Value="semanticserver.lpr"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
-        <TopLine Value="168"/>
+        <TopLine Value="173"/>
         <CursorPos X="108" Y="182"/>
         <FoldState Value=" TMqV0L T3rB0Ox"/>
-        <UsageCount Value="94"/>
+        <UsageCount Value="96"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="unit_worker.pas"/>
         <UnitName Value="Unit_Worker"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="144"/>
-        <CursorPos X="20" Y="165"/>
-        <FoldState Value=" T3ia0B025 pl0o706 TMj70T TJpI5DC"/>
-        <UsageCount Value="45"/>
+        <TopLine Value="310"/>
+        <CursorPos X="14" Y="330"/>
+        <FoldState Value=" T3ib0B02411 PdoD0 TMj80T TJpP5DJ"/>
+        <UsageCount Value="46"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -31,7 +31,7 @@
         <TopLine Value="451"/>
         <CursorPos Y="440"/>
         <FoldState Value=" T3e0G3 pj7jX0%612 PiWlS1y"/>
-        <UsageCount Value="45"/>
+        <UsageCount Value="46"/>
         <Loaded Value="True"/>
       </Unit>
     </Units>

@@ -12,6 +12,7 @@ type
   TExtractMode = (emToViewer, emToArtist, emToNetwork);
   TWorkerTask = (wtIdle, wtModeration, wtForecast, wtVacuum);
   TArtistGoal = (agWebSync, agDeepAnalysis);
+   TIntStack = array of Integer;
 
   TServerWorker = class(TThread)
   private
@@ -22,7 +23,7 @@ type
     FOnHtml: THTMLEvent; // Ссылка на вывод HTML
     function RenderNodeHTML(AID, ALevel, ALastLevel: Integer;
                             const AContent: string;
-                            const AStack: array of Integer; AIsParent: Boolean): string;
+                            const AStack: TIntStack; AIsParent: Boolean): string;
 
     procedure DoLog(const AMsg: string);
     procedure SyncLog;  // Метод для синхронизации ..................................................................................................................
@@ -51,7 +52,7 @@ type
 
 implementation
 
-function StackToString(const AStack: array of Integer): string;
+function StackToString(const AStack: TIntStack): string;
 var
   j: Integer;
   SB: TStringBuilder;
@@ -124,13 +125,19 @@ end;
 
   function TServerWorker.RenderNodeHTML(AID, ALevel, ALastLevel: Integer;
                                        const AContent: string;
-                                       const AStack: array of Integer; AIsParent: Boolean): string;
+                                       const AStack: TIntStack; AIsParent: Boolean): string;
 var
   S_Prefix, LineColor: string;
   j: Integer;
   TargetParentID: Integer;
   ButtonGateStack: string;
 begin
+    if AIsParent then
+    ButtonGateStack := StackToString(AStack)
+  else
+    ButtonGateStack := StackToString(AStack) + ',' + IntToStr(AID);
+    //////////////////////////////////////////////
+
   S_Prefix := '';
 
   for j := 1 to ALevel do
