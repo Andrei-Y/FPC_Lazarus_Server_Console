@@ -7,21 +7,21 @@
       <Unit>
         <Filename Value="semanticserver.lpr"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
-        <TopLine Value="96"/>
-        <CursorPos X="37" Y="120"/>
+        <TopLine Value="395"/>
+        <CursorPos X="16" Y="412"/>
         <FoldState Value=" TMqe0L T3rK0Oi"/>
-        <UsageCount Value="97"/>
+        <UsageCount Value="100"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="unit_worker.pas"/>
         <UnitName Value="Unit_Worker"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="199"/>
-        <CursorPos X="7" Y="264"/>
-        <FoldState Value=" T3ib0B02411 PdoD0 TMj80T TJpP5DJ"/>
-        <UsageCount Value="46"/>
+        <TopLine Value="339"/>
+        <CursorPos X="15" Y="371"/>
+        <FoldState Value=" T3j90B02411 PdoJ0 TMjN0Tv"/>
+        <UsageCount Value="47"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -31,35 +31,11 @@
         <TopLine Value="4"/>
         <CursorPos X="28" Y="35"/>
         <FoldState Value=" T3e0G3 pj7jX0%612 PiWlS1y"/>
-        <UsageCount Value="46"/>
+        <UsageCount Value="47"/>
         <Loaded Value="True"/>
       </Unit>
     </Units>
     <JumpHistory HistoryIndex="29">
-      <Position>
-        <Filename Value="unit_db.pas"/>
-        <Caret Line="440" TopLine="389"/>
-      </Position>
-      <Position>
-        <Filename Value="semanticserver.lpr"/>
-        <Caret Line="471" Column="13" TopLine="439"/>
-      </Position>
-      <Position>
-        <Filename Value="semanticserver.lpr"/>
-        <Caret Line="472" Column="9" TopLine="443"/>
-      </Position>
-      <Position>
-        <Filename Value="semanticserver.lpr"/>
-        <Caret Line="471" Column="13" TopLine="444"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_worker.pas"/>
-        <Caret Line="296" Column="13" TopLine="292"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_worker.pas"/>
-        <Caret Line="103" Column="44" TopLine="70"/>
-      </Position>
       <Position>
         <Filename Value="unit_worker.pas"/>
         <Caret Line="260" Column="28" TopLine="222"/>
@@ -141,10 +117,6 @@
         <Caret Line="112" Column="231" TopLine="89"/>
       </Position>
       <Position>
-        <Filename Value="semanticserver.lpr"/>
-        <Caret Line="114" Column="16" TopLine="329"/>
-      </Position>
-      <Position>
         <Filename Value="unit_worker.pas"/>
         <Caret Line="330" Column="14"/>
       </Position>
@@ -156,10 +128,49 @@
         <Filename Value="unit_db.pas"/>
         <Caret Line="440"/>
       </Position>
+      <Position>
+        <Filename Value="unit_worker.pas"/>
+        <Caret Line="264" Column="7" TopLine="264"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_worker.pas"/>
+        <Caret Line="260" Column="12" TopLine="288"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_worker.pas"/>
+        <Caret Line="263" Column="14" TopLine="233"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="134" Column="65" TopLine="99"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="188" Column="108" TopLine="156"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="35" Column="27" TopLine="7"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_worker.pas"/>
+        <Caret Line="392" Column="73" TopLine="374"/>
+      </Position>
     </JumpHistory>
     <RunParams>
       <FormatVersion Value="2"/>
       <Modes ActiveMode=""/>
     </RunParams>
   </ProjectSession>
+  <Debugging>
+    <BreakPoints>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="semanticserver.lpr"/>
+        <Line Value="117"/>
+      </Item>
+    </BreakPoints>
+  </Debugging>
 </CONFIG>

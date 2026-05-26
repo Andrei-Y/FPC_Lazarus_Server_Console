@@ -52,6 +52,21 @@ type
 
 implementation
 
+function RenderAjaxButton(ANextID: Integer; const ASavedStack: string): string;
+begin
+  Result :=
+    '<div id="ajax-gate-container" style="text-align:center; margin:20px 0; clear:both; display:block;">' +
+    '  <button onclick="fetch(''/forum_chunk?start=' + IntToStr(ANextID) + '&stack=' + ASavedStack + ''')' +
+    '    .then(r => r.text()).then(html => {' +
+    '       document.getElementById(''ajax-gate-container'').insertAdjacentHTML(''beforebegin'', html);' +
+    '       document.getElementById(''ajax-gate-container'').remove();' +
+    '    });" ' +
+    '    style="color:#00FFFF; background:#252526; border:1px dashed #555; padding:8px 16px; border-radius:4px; font-weight:bold; cursor:pointer;">' +
+    '     👉 Загрузить еще сообщения' +
+    '  </button>' +
+    '</div>';
+end;
+
 function StackToString(const AStack: TIntStack): string;
 var
   j: Integer;
@@ -350,8 +365,9 @@ emToArtist:
           Inc(NodeCount);
           if NodeCount >= FMaxNodes then
           begin
-            WriteLn('   [ВОРКЕР] Достигнут лимит среза в ', FMaxNodes, ' узлов. Эстафета прервана на ID: ', CurrentID);
-            Break; // Мгновенно выходим из цикла while, завершая генерацию страницы
+            FNextStartID := CurrentID;
+            FSavedStack := StackToString(TailStack);
+            Break;
           end;
 
     {$ENDREGION}
@@ -371,6 +387,11 @@ emToArtist:
     case FMode of
 emToViewer:
         begin
+    // Если мы прервали цикл по лимиту (FNextStartID > 0),
+          // одной строчкой вызываем нашу автономную утилиту кнопки!
+          if FNextStartID > 0 then
+            HTML_Acc.Append(RenderAjaxButton(FNextStartID, FSavedStack));
+
     HTML_Acc.Append('</body></html>');
     HTML_Acc.Append('<div style="text-align:center; margin:20px;"><a href="/forum?start=' + IntToStr(FNextStartID) + '&stack=' + FSavedStack + '" style="...">👉 Загрузить еще сообщения</a></div>');
     FHtmlBuffer := HTML_Acc.ToString;
