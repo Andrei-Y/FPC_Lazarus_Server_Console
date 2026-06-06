@@ -421,9 +421,10 @@ emToArtist:
           Inc(NodeCount);
           if NodeCount >= FMaxNodes then
           begin
-            FNextStartID := CurrentID;
+            //FNextStartID := CurrentID;
             FSavedStack := StackToString(TailStack);
-            Break;
+            FNextStartID := NodeB; // (Проверь, как у тебя называется маркер следующего ID в строке: 'Next=' или 'Chrono=')
+            Break; // Очищаем ОЗУ и мгновенно выходим
           end;
 
     {$ENDREGION}
