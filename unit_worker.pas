@@ -21,6 +21,7 @@ type
     FMsgForLog: string;
     FMode: TExtractMode; // Скрытое поле режима
     FOnHtml: THTMLEvent; // Ссылка на вывод HTML
+    FChunk: Boolean; // ⚡ ВОЗВРАЩАЕМ НАШЕ ЛОГИЧЕСКОЕ ПОЛЕ СЮДА
     function RenderNodeHTML(AID, ALevel, ALastLevel: Integer;
                             const AContent: string;
                             const AStack: TIntStack; AIsParent: Boolean): string;
@@ -39,10 +40,14 @@ type
     FMaxNodes: Integer;
         FNextStartID: Integer;
     FSavedStack: string;
+        // ⚡ ДЕЛАЕМ МАССИВ ГЛОБАЛЬНЫМ ПОЛЕМ КЛАССА В ОЗУ:
+    TailStack: TIntStack;
     ArtistGoal: TArtistGoal; // Кто нас вызвал?
     constructor Create(ADB: TDatabaseModule; ALogEv: TLogEvent; AHtmlEv: THTMLEvent; AMode: TExtractMode; CreateSuspended: boolean);
     procedure AddMessageTask(AParentID: Integer; AContent: string);
     procedure ExposeSystem(AStartID: Integer);
+        function StackToString(const AStack: TIntStack): string;
+    procedure StringToStack(const AStr: string);
   end;
 
   type
@@ -51,6 +56,55 @@ type
   end;
 
 implementation
+
+// 1. МЕТОД УПАКОВКИ: Твой быстрый StringBuilder (Green Computing)
+function TServerWorker.StackToString(const AStack: TIntStack): string;
+var
+  j: Integer;
+  SB: TStringBuilder;
+begin
+  Result := '';
+  if Length(AStack) = 0 then Exit;
+  SB := TStringBuilder.Create;
+  try
+    for j := 0 to High(AStack) do
+    begin
+      SB.Append(IntToStr(AStack[j]));
+      if j < High(AStack) then SB.Append(',');
+    end;
+    Result := SB.ToString;
+  finally
+    SB.Free;
+  end;
+end;
+
+// 2. МЕТОД РАСПАКОВКИ: Разворачивает прилетевшие запятые '1,5,12' обратно в ОЗУ
+procedure TServerWorker.StringToStack(const AStr: string);
+var
+  List: TStringList;
+  j: Integer;
+begin
+  // Напрямую чистим и заполняем поле текущего объекта класса
+  SetLength(TailStack, 0);
+  if AStr = '' then Exit;
+
+  List := TStringList.Create;
+  try
+    List.Delimiter := ',';
+    List.StrictDelimiter := True;
+    List.DelimitedText := AStr;
+
+    SetLength(TailStack, List.Count);
+    for j := 0 to List.Count - 1 do
+    begin
+      TailStack[j] := StrToIntDef(List[j], 0);
+    end;
+  finally
+    List.Free;
+  end;
+end;
+
+
 
 function RenderAjaxButton(ANextID: Integer; const ASavedStack: string): string;
 begin
@@ -214,6 +268,8 @@ begin
   FOnHtml := AHtmlEv;
   FMode := AMode; // Запоминаем режим при создании
   FreeOnTerminate := True;
+  // ⚡ ФИКСИРУЕМ ФЛАГ: Если сервер создал воркер в режиме чанка, поле FChunk станет True!
+  FChunk := FChunk;
 end;
 
 
@@ -269,7 +325,7 @@ var
   CurrentID, NodeB, NodeT, VisualLevel: Integer;
   Chrono: string;
   StrList: TStringList;
-  TailStack: array of Integer; // Теперь это массив чисел, а не строк
+//  TailStack: array of Integer; // Теперь это массив чисел, а не строк
   LastLevel: Integer;
   HTML_Acc: TStringBuilder; // Переименовали тип, сохранили имя
   NodeCount: Integer; // <--- ДОБАВЬ ЭТУ СТРОКУ
@@ -386,16 +442,38 @@ emToArtist:
     {$REGION'ПЕРЕДАЧА ПАКЕТА В ДОСТАВКУ'}
     case FMode of
 emToViewer:
+    //    begin
+    //// Если мы прервали цикл по лимиту (FNextStartID > 0),
+    //      // одной строчкой вызываем нашу автономную утилиту кнопки!
+    //      if FNextStartID > 0 then
+    //        HTML_Acc.Append(RenderAjaxButton(FNextStartID, FSavedStack));
+    //
+    //HTML_Acc.Append('</body></html>');
+    //HTML_Acc.Append('<div style="text-align:center; margin:20px;"><a href="/forum?start=' + IntToStr(FNextStartID) + '&stack=' + FSavedStack + '" style="...">👉 Загрузить еще сообщения</a></div>');
+    //FHtmlBuffer := HTML_Acc.ToString;
+    //    end;
+  begin
+        // ⚡ 1. ЕСЛИ ЦИКЛ ПРЕРВАН ПО ЛИМИТУ — СРАЗУ ГЕНЕРИРУЕМ КНОПКУ:
+        if FNextStartID > 0 then
         begin
-    // Если мы прервали цикл по лимиту (FNextStartID > 0),
-          // одной строчкой вызываем нашу автономную утилиту кнопки!
-          if FNextStartID > 0 then
-            HTML_Acc.Append(RenderAjaxButton(FNextStartID, FSavedStack));
+          // ТвойStringBuilder упаковывает бинарный канат в строку '1,5,12'
+          FSavedStack := StackToString(TailStack);
 
-    HTML_Acc.Append('</body></html>');
-    HTML_Acc.Append('<div style="text-align:center; margin:20px;"><a href="/forum?start=' + IntToStr(FNextStartID) + '&stack=' + FSavedStack + '" style="...">👉 Загрузить еще сообщения</a></div>');
-    FHtmlBuffer := HTML_Acc.ToString;
+          // Вызываем твою автономную утилиту кнопки!
+          HTML_Acc.Append(RenderAjaxButton(FNextStartID, FSavedStack));
         end;
+
+        // ⚡ 2. ЗАКРЫВАЕМ СТРАНИЦУ СТРОГО ДЛЯ ГЛАВНОГО ОКНА (ЕСЛИ ЭТО НЕ ЧАНК):
+        // Используем твое реальное поле из репозитория — FChunk!
+        if not FChunk then
+        begin
+          HTML_Acc.Append('</body></html>');
+        end;
+
+        // Старый мусор и дубликаты полностью стёрты!
+        FHtmlBuffer := HTML_Acc.ToString;
+      end;
+
 emToArtist:
         begin
         // ПОКА ПУСТО
