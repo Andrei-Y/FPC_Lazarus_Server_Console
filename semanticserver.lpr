@@ -98,6 +98,8 @@ begin
      // НАЙДИ ЭТО МЕСТО И ЗАМЕНИ НА КОД НИЖЕ:
   else if Path = '/forum' then
   begin
+         TempWorker.TailStack := nil;
+        SetLength(TempWorker.TailStack, 0);
     WriteLn('   [СИСТЕМА] Запуск обхода дерева для браузера...');
     ULimit := 50;
     UTheme := 'dark';

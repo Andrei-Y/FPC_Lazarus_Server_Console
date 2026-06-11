@@ -343,10 +343,10 @@ begin
     NodeCount := 0;
     //if FMaxNodes <= 0 then FMaxNodes := 50; // Страховка
     LastLevel := 0;
-    TailStack := nil; // Явно говорим компилятору: "Массив пуст, я это знаю"
+//    TailStack := nil;
     CurrentID := AStartID;
     StrList := TStringList.Create;
-    SetLength(TailStack, 0);
+//    SetLength(TailStack, 0);
           DoLog('--- СТАРТ ФОРМИРОВАНИЯ СТРУКТУРЫ ---');
          {$REGION'ПОДГОТОВКА ПАКЕТА В ДОСТАВКУ'}
     case FMode of

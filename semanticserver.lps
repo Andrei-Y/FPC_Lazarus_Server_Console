@@ -7,21 +7,21 @@
       <Unit>
         <Filename Value="semanticserver.lpr"/>
         <IsPartOfProject Value="True"/>
-        <TopLine Value="4"/>
-        <CursorPos X="17" Y="198"/>
-        <FoldState Value=" T0iC2c052315111 PlZoJ2l"/>
-        <UsageCount Value="120"/>
+        <IsVisibleTab Value="True"/>
+        <TopLine Value="56"/>
+        <CursorPos X="30" Y="102"/>
+        <FoldState Value=" T0iC2c052315111 PlZoL2F"/>
+        <UsageCount Value="124"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="unit_worker.pas"/>
         <UnitName Value="Unit_Worker"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="62"/>
-        <CursorPos X="9" Y="113"/>
+        <TopLine Value="7"/>
+        <CursorPos X="3" Y="349"/>
         <FoldState Value=" T3iI0I01513 Pk8mc0 TMl00T%"/>
-        <UsageCount Value="59"/>
+        <UsageCount Value="60"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -31,19 +31,11 @@
         <TopLine Value="4"/>
         <CursorPos X="28" Y="35"/>
         <FoldState Value=" T3e0G3 pj7jX0%612 PiWlS1y"/>
-        <UsageCount Value="59"/>
+        <UsageCount Value="60"/>
         <Loaded Value="True"/>
       </Unit>
     </Units>
     <JumpHistory HistoryIndex="29">
-      <Position>
-        <Filename Value="unit_worker.pas"/>
-        <Caret Line="475" TopLine="437"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_worker.pas"/>
-        <Caret Line="447" Column="15" TopLine="433"/>
-      </Position>
       <Position>
         <Filename Value="unit_worker.pas"/>
         <Caret Line="468" Column="11" TopLine="441"/>
@@ -154,6 +146,14 @@
       <Position>
         <Filename Value="unit_worker.pas"/>
         <Caret Line="37" Column="100"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_worker.pas"/>
+        <Caret Line="346" Column="5"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="102" Column="20" TopLine="41"/>
       </Position>
     </JumpHistory>
     <RunParams>
