@@ -55,6 +55,9 @@
       <Item>
         <Name Value="EFOpenError"/>
       </Item>
+      <Item>
+        <Name Value="EHTTP"/>
+      </Item>
     </Exceptions>
   </Debugging>
 </CONFIG>

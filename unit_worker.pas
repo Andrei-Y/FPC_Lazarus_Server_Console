@@ -21,7 +21,7 @@ type
     FMsgForLog: string;
     FMode: TExtractMode; // Скрытое поле режима
     FOnHtml: THTMLEvent; // Ссылка на вывод HTML
-    FChunk: Boolean; // ⚡ ВОЗВРАЩАЕМ НАШЕ ЛОГИЧЕСКОЕ ПОЛЕ СЮДА
+
     function RenderNodeHTML(AID, ALevel, ALastLevel: Integer;
                             const AContent: string;
                             const AStack: TIntStack; AIsParent: Boolean): string;
@@ -34,6 +34,7 @@ type
   protected
     procedure Execute; override;
   public
+       FChunk: Boolean; // ⚡ ВОЗВРАЩАЕМ НАШЕ ЛОГИЧЕСКОЕ ПОЛЕ СЮДА
     FHtmlBuffer: string; // Временный буфер
     FArtistBuffer: string;
         // ВОТ ОНО! Добавь это поле для хранения лимита:
@@ -99,9 +100,17 @@ begin
     begin
       TailStack[j] := StrToIntDef(List[j], 0);
     end;
+       WriteLn('Извлекаем'+StackToString(TailStack));
   finally
     List.Free;
   end;
+   if (Length(TailStack) > 0) and (TailStack[High(TailStack)] = FNextStartID) then
+    begin
+      WriteLn(' [ОЗУ ПРЕДОХРАНИТЕЛЬ] Поймано равенство на узле ', FNextStartID, '. Выталкиваем из стека!');
+
+      // Нативно сжимаем массив на единицу, стирая дублирующий корень
+      SetLength(TailStack, Length(TailStack) - 1);
+    end;
 end;
 
 
@@ -269,7 +278,7 @@ begin
   FMode := AMode; // Запоминаем режим при создании
   FreeOnTerminate := True;
   // ⚡ ФИКСИРУЕМ ФЛАГ: Если сервер создал воркер в режиме чанка, поле FChunk станет True!
-  FChunk := FChunk;
+  FChunk := False;
 end;
 
 
@@ -418,14 +427,7 @@ emToArtist:
     end; // Конец case
 
                      // ВОТ СЮДА МЫ ПЕРЕМЕЩАЕМ ОБРЫВАНИЕ ЦИКЛА:
-          Inc(NodeCount);
-          if NodeCount >= FMaxNodes then
-          begin
-            //FNextStartID := CurrentID;
-            FSavedStack := StackToString(TailStack);
-            FNextStartID := NodeB; // (Проверь, как у тебя называется маркер следующего ID в строке: 'Next=' или 'Chrono=')
-            Break; // Очищаем ОЗУ и мгновенно выходим
-          end;
+
 
     {$ENDREGION}
     // --- ШАГ 4: ВСПЛЫТИЕ ---
@@ -437,6 +439,15 @@ emToArtist:
 
            if (CurrentID = AStartID) and (Length(TailStack) = 0) then Break;
       CurrentID := NodeB;
+                Inc(NodeCount);
+          if NodeCount >= FMaxNodes then
+          begin
+            //FNextStartID := CurrentID;
+            FSavedStack := StackToString(TailStack);
+            FNextStartID := NodeB; // (Проверь, как у тебя называется маркер следующего ID в строке: 'Next=' или 'Chrono=')
+            WriteLn('Запекаем'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(NodeB));
+            Break; // Очищаем ОЗУ и мгновенно выходим
+          end;
     end;
     {$ENDREGION} // КОНЕЦ ЦИКЛА ФОРМИРОВАНИЯ ПАКЕТА
 
@@ -458,10 +469,12 @@ emToViewer:
         if FNextStartID > 0 then
         begin
           // ТвойStringBuilder упаковывает бинарный канат в строку '1,5,12'
-          FSavedStack := StackToString(TailStack);
+//          FSavedStack := StackToString(TailStack);
 
           // Вызываем твою автономную утилиту кнопки!
           HTML_Acc.Append(RenderAjaxButton(FNextStartID, FSavedStack));
+
+
         end;
 
         // ⚡ 2. ЗАКРЫВАЕМ СТРАНИЦУ СТРОГО ДЛЯ ГЛАВНОГО ОКНА (ЕСЛИ ЭТО НЕ ЧАНК):

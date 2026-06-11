@@ -118,6 +118,7 @@ WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен л
  // (Вставь имя переменной, в которой у тебя хранится лимит из базы)/////////////////////////////////////////////////////////////////////////
      // ⚡ ВОТ ОН, НАШ ЖЕСТКИЙ МОСТ: Прошиваем лимит ЛК внутрь публичного поля воркера!
     TempWorker.FMaxNodes := ULimit;
+    TempWorker.FChunk := True;
     try
        TempWorker.FMaxNodes := ULimit;
       TempWorker.ExposeSystem(1);
@@ -194,7 +195,7 @@ WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен л
   else if (Path = '/forum_chunk') or (Path = '/forum_chunk/') then
   begin
     // Считываем лимит пилота из СУБД (ReqUser у тебя вычислен сервером выше по коду)
-    ULimit := 3; // Базовый предохранитель
+    ULimit := 50; // Базовый предохранитель
     if ReqUser <> '' then ULimit := FDB.GetUserLimit(ReqUser);
 
     // Создаем изолированный воркер в ОЗУ.
