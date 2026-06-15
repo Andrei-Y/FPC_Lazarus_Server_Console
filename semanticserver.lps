@@ -7,10 +7,10 @@
       <Unit>
         <Filename Value="semanticserver.lpr"/>
         <IsPartOfProject Value="True"/>
-        <TopLine Value="187"/>
+        <TopLine Value="470"/>
         <CursorPos X="50" Y="122"/>
         <FoldState Value=" T0iC2c052315111 PlZoL2F"/>
-        <UsageCount Value="126"/>
+        <UsageCount Value="131"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -18,10 +18,10 @@
         <UnitName Value="Unit_Worker"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="342"/>
-        <CursorPos X="95" Y="373"/>
-        <FoldState Value=" T3iI0I01513 Pk8mc0 TMl00T%"/>
-        <UsageCount Value="62"/>
+        <TopLine Value="61"/>
+        <CursorPos X="88" Y="109"/>
+        <FoldState Value=" T3iI0I01513 Pk8mZ0 TMke0Tm"/>
+        <UsageCount Value="65"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -31,7 +31,7 @@
         <TopLine Value="4"/>
         <CursorPos X="28" Y="35"/>
         <FoldState Value=" T3e0G3 pj7jX0%612 PiWlS1y"/>
-        <UsageCount Value="62"/>
+        <UsageCount Value="65"/>
         <Loaded Value="True"/>
       </Unit>
     </Units>
@@ -161,4 +161,15 @@
       <Modes ActiveMode=""/>
     </RunParams>
   </ProjectSession>
+  <Debugging>
+    <BreakPoints>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="unit_worker.pas"/>
+        <Line Value="345"/>
+      </Item>
+    </BreakPoints>
+  </Debugging>
 </CONFIG>

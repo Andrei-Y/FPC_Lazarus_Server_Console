@@ -106,10 +106,7 @@ begin
   end;
    if (Length(TailStack) > 0) and (TailStack[High(TailStack)] = FNextStartID) then
     begin
-      WriteLn(' [ОЗУ ПРЕДОХРАНИТЕЛЬ] Поймано равенство на узле ', FNextStartID, '. Выталкиваем из стека!');
-
-      // Нативно сжимаем массив на единицу, стирая дублирующий корень
-      SetLength(TailStack, Length(TailStack) - 1);
+      WriteLn(' [ОЗУ ПРЕДОХРАНИТЕЛЬ] Поймано равенство на узле ', FNextStartID, '.  Не Выталкиваем из стека!');
     end;
 end;
 
@@ -344,9 +341,12 @@ begin
     //if FMaxNodes <= 0 then FMaxNodes := 50; // Страховка
     LastLevel := 0;
     ////////////////////////////////////////////////////////////////////////
+          DoLog('>>> Обходим в ' + IntToStr(AStartID) + ')');
     if FChunk and (Length(TailStack) > 0) and (TailStack[High(TailStack)] = AStartID) then
   begin
-    // 1. Честно выводим головной узел в буфер, используя правильное локальное имя билдера!
+    //WriteLn('Условие проверки выполнено');
+    DoLog('>>> Условие проверки выполнено' );
+    // 1. Выводим головной узел в буфер, используя правильное локальное имя билдера!
     HTML_Acc.Append(RenderNodeHTML(
       AStartID,
       High(TailStack),
@@ -359,13 +359,15 @@ begin
     // 2. Извлекаем строку хронологии, чтобы узнать ID предшественника (NodeB)
     StrList := TStringList.Create;
     try
-      StrList.Delimiter := '|';
+      StrList.Delimiter := '.';
       StrList.StrictDelimiter := False;
       StrList.DelimitedText := FDB.GetNodeChrono(AStartID);
 
       // Сдвигаем стартовую координату цикла на предшественника (NodeB), пролетая мимо хвоста!
       if StrList.Count >= 2 then
         AStartID := StrToIntDef(StrList[1], 0);
+      //WriteLn('Обходим в '+IntToStr(AStartID));
+      DoLog('>>> Обходим в ' + IntToStr(AStartID) + ')');
     finally
       StrList.Free;
     end;
