@@ -87,6 +87,7 @@ var
 begin
   // Напрямую чистим и заполняем поле текущего объекта класса
   SetLength(TailStack, 0);
+  WriteLn(AStr);
   if AStr = '' then Exit;
 
   List := TStringList.Create;
@@ -365,7 +366,8 @@ begin
 
       // Сдвигаем стартовую координату цикла на предшественника (NodeB), пролетая мимо хвоста!
       if StrList.Count >= 2 then
-        AStartID := StrToIntDef(StrList[1], 0);
+        FNextStartID := StrToIntDef(StrList[1], 0);
+      AStartID := FNextStartID;
       //WriteLn('Обходим в '+IntToStr(AStartID));
       DoLog('>>> Обходим в ' + IntToStr(AStartID) + ')');
     finally

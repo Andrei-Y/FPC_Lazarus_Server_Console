@@ -7,10 +7,10 @@
       <Unit>
         <Filename Value="semanticserver.lpr"/>
         <IsPartOfProject Value="True"/>
-        <TopLine Value="187"/>
+        <TopLine Value="225"/>
         <CursorPos Y="209"/>
         <FoldState Value=" T0iC2c052315111 PlZoL2F"/>
-        <UsageCount Value="135"/>
+        <UsageCount Value="138"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -18,10 +18,10 @@
         <UnitName Value="Unit_Worker"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="340"/>
-        <CursorPos X="58" Y="374"/>
-        <FoldState Value=" T3jS0D223 PglP0 TMke0TW"/>
-        <UsageCount Value="66"/>
+        <TopLine Value="78"/>
+        <CursorPos X="15" Y="90"/>
+        <FoldState Value=" T3kL04213 PjGkX0 TMkf0T;"/>
+        <UsageCount Value="68"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -31,22 +31,11 @@
         <TopLine Value="4"/>
         <CursorPos X="28" Y="35"/>
         <FoldState Value=" T3e0G3 pj7jX0%612 PiWlS1y"/>
-        <UsageCount Value="66"/>
+        <UsageCount Value="68"/>
         <Loaded Value="True"/>
       </Unit>
     </Units>
-    <JumpHistory HistoryIndex="29">
-      <Position>
-        <Filename Value="unit_worker.pas"/>
-        <Caret Line="82" Column="38"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_worker.pas"/>
-        <Caret Line="272" Column="130" TopLine="101"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_worker.pas"/>
-      </Position>
+    <JumpHistory HistoryIndex="28">
       <Position>
         <Filename Value="unit_worker.pas"/>
         <Caret Line="24" Column="11"/>
@@ -154,6 +143,14 @@
       <Position>
         <Filename Value="unit_worker.pas"/>
         <Caret Line="213" Column="37" TopLine="168"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_worker.pas"/>
+        <Caret Line="115" Column="34" TopLine="99"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_worker.pas"/>
+        <Caret Line="119" Column="72" TopLine="99"/>
       </Position>
     </JumpHistory>
     <RunParams>
