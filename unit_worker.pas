@@ -343,6 +343,34 @@ begin
     NodeCount := 0;
     //if FMaxNodes <= 0 then FMaxNodes := 50; // Страховка
     LastLevel := 0;
+    ////////////////////////////////////////////////////////////////////////
+    if FChunk and (Length(TailStack) > 0) and (TailStack[High(TailStack)] = AStartID) then
+  begin
+    // 1. Честно выводим головной узел в буфер, используя правильное локальное имя билдера!
+    HTML_Acc.Append(RenderNodeHTML(
+      AStartID,
+      High(TailStack),
+      High(TailStack),
+      FDB.GetNodeContent(AStartID),
+      TailStack,
+      True
+    ));
+
+    // 2. Извлекаем строку хронологии, чтобы узнать ID предшественника (NodeB)
+    StrList := TStringList.Create;
+    try
+      StrList.Delimiter := '|';
+      StrList.StrictDelimiter := False;
+      StrList.DelimitedText := FDB.GetNodeChrono(AStartID);
+
+      // Сдвигаем стартовую координату цикла на предшественника (NodeB), пролетая мимо хвоста!
+      if StrList.Count >= 2 then
+        AStartID := StrToIntDef(StrList[1], 0);
+    finally
+      StrList.Free;
+    end;
+  end;
+//////////////////////////////////////////////////////////////////////////////////////////////
 //    TailStack := nil;
     CurrentID := AStartID;
     StrList := TStringList.Create;
@@ -365,6 +393,7 @@ emToArtist:
     StrList.Delimiter := '.';
     StrList.StrictDelimiter := True;
     {$REGION 'ЦИКЛ ФОРМИРОВАНИЯ ПАКЕТА СООБЩЕНИЙ'}
+
     while (CurrentID <> 0) do
     begin
       // --- Вот этот "датчик" ---
