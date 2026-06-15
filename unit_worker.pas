@@ -127,25 +127,25 @@ begin
     '</div>';
 end;
 
-function StackToString(const AStack: TIntStack): string;
-var
-  j: Integer;
-  SB: TStringBuilder;
-begin
-  Result := '';
-  if Length(AStack) = 0 then Exit;
-  SB := TStringBuilder.Create;
-  try
-    for j := 0 to High(AStack) do
-    begin
-      SB.Append(IntToStr(AStack[j]));
-      if j < High(AStack) then SB.Append(',');
-    end;
-    Result := SB.ToString;
-  finally
-    SB.Free;
-  end;
-end;
+//function StackToString(const AStack: TIntStack): string;
+//var
+//  j: Integer;
+//  SB: TStringBuilder;
+//begin
+//  Result := '';
+//  if Length(AStack) = 0 then Exit;
+//  SB := TStringBuilder.Create;
+//  try
+//    for j := 0 to High(AStack) do
+//    begin
+//      SB.Append(IntToStr(AStack[j]));
+//      if j < High(AStack) then SB.Append(',');
+//    end;
+//    Result := SB.ToString;
+//  finally
+//    SB.Free;
+//  end;
+//end;
 
 function TServerWorker.RenderNodeArtist(AID, ALevel: Integer; const AChrono: string): string;
 begin
@@ -371,6 +371,7 @@ begin
     finally
       StrList.Free;
     end;
+             SetLength(TailStack, Length(TailStack) - 1);
   end;
 //////////////////////////////////////////////////////////////////////////////////////////////
 //    TailStack := nil;
