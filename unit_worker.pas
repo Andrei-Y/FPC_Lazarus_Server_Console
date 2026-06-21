@@ -46,7 +46,7 @@ type
     ArtistGoal: TArtistGoal; // Кто нас вызвал?
     constructor Create(ADB: TDatabaseModule; ALogEv: TLogEvent; AHtmlEv: THTMLEvent; AMode: TExtractMode; CreateSuspended: boolean);
     procedure AddMessageTask(AParentID: Integer; AContent: string);
-    procedure ExposeSystem(AStartID: Integer);
+    procedure ExposeSystem(AStartID: Integer; AStrStack: string);
         function StackToString(const AStack: TIntStack): string;
     procedure StringToStack(const AStr: string);
   end;
@@ -113,7 +113,7 @@ end;
 
 
 
-function RenderAjaxButton(ANextID: Integer; const ASavedStack: string): string;
+function RenderAjaxButton(ANextID: Integer; ASavedStack: string): string;
 begin
   Result :=
     '<div id="ajax-gate-container" style="text-align:center; margin:20px 0; clear:both; display:block;">' +
@@ -276,7 +276,7 @@ begin
   FMode := AMode; // Запоминаем режим при создании
   FreeOnTerminate := True;
   // ⚡ ФИКСИРУЕМ ФЛАГ: Если сервер создал воркер в режиме чанка, поле FChunk станет True!
-  FChunk := False;
+  //FChunk := False;
 end;
 
 
@@ -327,7 +327,7 @@ end;
 
 
 
-procedure TServerWorker.ExposeSystem(AStartID: Integer);
+procedure TServerWorker.ExposeSystem(AStartID: Integer; AStrStack: string);
 var
   CurrentID, NodeB, NodeT, VisualLevel: Integer;
   Chrono: string;
@@ -343,7 +343,10 @@ begin
     LastLevel := 0;
     ////////////////////////////////////////////////////////////////////////
           DoLog('>>> Обходим в ' + IntToStr(AStartID) + ')');
-    if FChunk and (Length(TailStack) > 0) and (TailStack[High(TailStack)] = AStartID) then
+  if FChunk then
+  begin
+    StringToStack(AStrStack); // Массив TailStack гарантированно заполняется в ОЗУ в этот же миг!
+    if (Length(TailStack) > 0) and (TailStack[High(TailStack)] = AStartID) then
   begin
     //WriteLn('Условие проверки выполнено');
     DoLog('>>> Условие проверки выполнено' );
@@ -374,7 +377,11 @@ begin
       StrList.Free;
     end;
              SetLength(TailStack, Length(TailStack) - 1);
+                             Inc(NodeCount);
   end;
+
+  end;
+
 //////////////////////////////////////////////////////////////////////////////////////////////
 //    TailStack := nil;
     CurrentID := AStartID;
@@ -471,15 +478,20 @@ emToArtist:
          DoLog('<<< ВСПЛЫТИЕ ИЗ ВЕТКИ (возврат в ' + IntToStr(CurrentID) + ')');
       end;
 
-           if (CurrentID = AStartID) and (Length(TailStack) = 0) then Break;
+           if (CurrentID = AStartID) and (Length(TailStack) = 0) then begin
+             FSavedStack := StackToString(TailStack);
+            FNextStartID := CurrentID; // (Проверь, как у тебя называется маркер следующего ID в строке: 'Next=' или 'Chrono=')
+            WriteLn('Запекаем'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
+             Break;
+           end;
       CurrentID := NodeB;
                 Inc(NodeCount);
           if NodeCount >= FMaxNodes then
           begin
             //FNextStartID := CurrentID;
             FSavedStack := StackToString(TailStack);
-            FNextStartID := NodeB; // (Проверь, как у тебя называется маркер следующего ID в строке: 'Next=' или 'Chrono=')
-            WriteLn('Запекаем'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(NodeB));
+            FNextStartID := CurrentID; // (Проверь, как у тебя называется маркер следующего ID в строке: 'Next=' или 'Chrono=')
+            WriteLn('Запекаем'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
             Break; // Очищаем ОЗУ и мгновенно выходим
           end;
     end;

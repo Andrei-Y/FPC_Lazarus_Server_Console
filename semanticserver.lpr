@@ -123,7 +123,7 @@ WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен л
     TempWorker.FChunk := True;
     try
        TempWorker.FMaxNodes := ULimit;
-      TempWorker.ExposeSystem(1);
+      TempWorker.ExposeSystem(1,'');
       AResponse.ContentType := 'text/html; charset=utf-8';
 
       if TempWorker.FHtmlBuffer = '' then
@@ -204,18 +204,18 @@ WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен л
     // Последний параметр — это твой родной AChunk. Передаем True, так как это ЧАНК!
     TempWorker := TServerWorker.Create(Self.FDB, nil, nil, emToViewer, True);
     TempWorker.FMaxNodes := ULimit;
-
+    TempWorker.FChunk := True;
     // Присваиваем прилетевшую координату старта напрямую в LongInt-поле класса воркера
     TempWorker.FNextStartID := StrToIntDef(ARequest.QueryFields.Values['start'], 0);
 
     // ВОССТАНАВЛИВАЕМ ГЕОМЕТРИЮ ЛАЗЕРНЫХ КАНАТОВ:
     // Извлекаем прилетевшую из браузера строку '1,5,12' и разворачиваем её в массив TailStack!
-    TempWorker.StringToStack(ARequest.QueryFields.Values['stack']);
+    //TempWorker.StringToStack(ARequest.QueryFields.Values['stack']);
 
     try
       // Запускаем эстафету. Теперь воркер с первой же микросекунды "помнит" всех
       // своих родителей, и палочки вложений ┆ плавно продолжат рисовать фрактал!
-      TempWorker.ExposeSystem(TempWorker.FNextStartID);
+      TempWorker.ExposeSystem(TempWorker.FNextStartID,ARequest.QueryFields.Values['stack']);
 
       // Отдаем чистые карточки сообщений без тяжелой шапки и подвала сайта
       AResponse.ContentType := 'text/html; charset=utf-8';
