@@ -363,8 +363,8 @@ begin
     // 2. Извлекаем строку хронологии, чтобы узнать ID предшественника (NodeB)
     StrList := TStringList.Create;
     try
-      StrList.Delimiter := '.';
-      StrList.StrictDelimiter := False;
+      StrList.Delimiter := ',';
+      StrList.StrictDelimiter := True;
       StrList.DelimitedText := FDB.GetNodeChrono(AStartID);
 
       // Сдвигаем стартовую координату цикла на предшественника (NodeB), пролетая мимо хвоста!

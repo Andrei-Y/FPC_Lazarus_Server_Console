@@ -199,19 +199,11 @@ WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен л
     // Считываем лимит пилота из СУБД (ReqUser у тебя вычислен сервером выше по коду)
     ULimit := 50; // Базовый предохранитель
     if ReqUser <> '' then ULimit := FDB.GetUserLimit(ReqUser);
-
-    // Создаем изолированный воркер в ОЗУ.
-    // Последний параметр — это твой родной AChunk. Передаем True, так как это ЧАНК!
     TempWorker := TServerWorker.Create(Self.FDB, nil, nil, emToViewer, True);
     TempWorker.FMaxNodes := ULimit;
     TempWorker.FChunk := True;
     // Присваиваем прилетевшую координату старта напрямую в LongInt-поле класса воркера
     TempWorker.FNextStartID := StrToIntDef(ARequest.QueryFields.Values['start'], 0);
-
-    // ВОССТАНАВЛИВАЕМ ГЕОМЕТРИЮ ЛАЗЕРНЫХ КАНАТОВ:
-    // Извлекаем прилетевшую из браузера строку '1,5,12' и разворачиваем её в массив TailStack!
-    //TempWorker.StringToStack(ARequest.QueryFields.Values['stack']);
-
     try
       // Запускаем эстафету. Теперь воркер с первой же микросекунды "помнит" всех
       // своих родителей, и палочки вложений ┆ плавно продолжат рисовать фрактал!
