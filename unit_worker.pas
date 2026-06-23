@@ -274,7 +274,7 @@ begin
   FOnLog := ALogEv;
   FOnHtml := AHtmlEv;
   FMode := AMode; // Запоминаем режим при создании
-  FreeOnTerminate := True;
+ // FreeOnTerminate := True;
   // ⚡ ФИКСИРУЕМ ФЛАГ: Если сервер создал воркер в режиме чанка, поле FChunk станет True!
   //FChunk := False;
 end;

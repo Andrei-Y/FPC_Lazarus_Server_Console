@@ -7,67 +7,35 @@
       <Unit>
         <Filename Value="semanticserver.lpr"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
-        <TopLine Value="195"/>
-        <CursorPos X="63" Y="201"/>
-        <FoldState Value=" T0iC2c0A15111 PkBoD2A"/>
-        <UsageCount Value="155"/>
+        <TopLine Value="181"/>
+        <CursorPos X="19" Y="219"/>
+        <FoldState Value=" T0iC2c0A15111 PkBoE2i"/>
+        <UsageCount Value="157"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="unit_worker.pas"/>
         <UnitName Value="Unit_Worker"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="496"/>
-        <CursorPos Y="521"/>
+        <TopLine Value="45"/>
+        <CursorPos X="26" Y="45"/>
         <FoldState Value=" T3kL04123 PckX0J"/>
-        <UsageCount Value="76"/>
+        <UsageCount Value="77"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="unit_db.pas"/>
         <UnitName Value="Unit_DB"/>
         <EditorIndex Value="2"/>
-        <TopLine Value="240"/>
+        <TopLine Value="451"/>
         <CursorPos Y="90"/>
         <FoldState Value=" T3e0G112 pk9lR045]BPiSjY1h"/>
-        <UsageCount Value="76"/>
+        <UsageCount Value="77"/>
         <Loaded Value="True"/>
       </Unit>
     </Units>
     <JumpHistory HistoryIndex="29">
-      <Position>
-        <Filename Value="unit_worker.pas"/>
-        <Caret Line="346" TopLine="339"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_worker.pas"/>
-        <Caret Line="349" TopLine="339"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_db.pas"/>
-        <Caret Line="90" TopLine="59"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_worker.pas"/>
-        <Caret Line="353" Column="45" TopLine="339"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_worker.pas"/>
-        <Caret Line="349" TopLine="339"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_worker.pas"/>
-        <Caret Line="346" TopLine="339"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_worker.pas"/>
-        <Caret Line="500" Column="130" TopLine="476"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_worker.pas"/>
-        <Caret Line="489" TopLine="471"/>
-      </Position>
       <Position>
         <Filename Value="unit_worker.pas"/>
         <Caret Line="487" TopLine="471"/>
@@ -156,6 +124,38 @@
         <Filename Value="semanticserver.lpr"/>
         <Caret Line="216" TopLine="195"/>
       </Position>
+      <Position>
+        <Filename Value="unit_worker.pas"/>
+        <Caret Line="521"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="242" Column="9" TopLine="207"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="126" Column="34" TopLine="101"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_worker.pas"/>
+        <Caret Line="53" TopLine="34"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="244" Column="12" TopLine="215"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="239" Column="31" TopLine="220"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="240" TopLine="226"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="239" Column="31" TopLine="221"/>
+      </Position>
     </JumpHistory>
     <RunParams>
       <FormatVersion Value="2"/>
@@ -205,27 +205,6 @@
         <WatchKind Value="wpkWrite"/>
         <Source Value="unit_worker.pas"/>
         <Line Value="521"/>
-      </Item>
-      <Item>
-        <Kind Value="bpkSource"/>
-        <WatchScope Value="wpsLocal"/>
-        <WatchKind Value="wpkWrite"/>
-        <Source Value="semanticserver.lpr"/>
-        <Line Value="210"/>
-      </Item>
-      <Item>
-        <Kind Value="bpkSource"/>
-        <WatchScope Value="wpsLocal"/>
-        <WatchKind Value="wpkWrite"/>
-        <Source Value="semanticserver.lpr"/>
-        <Line Value="213"/>
-      </Item>
-      <Item>
-        <Kind Value="bpkSource"/>
-        <WatchScope Value="wpsLocal"/>
-        <WatchKind Value="wpkWrite"/>
-        <Source Value="semanticserver.lpr"/>
-        <Line Value="214"/>
       </Item>
     </BreakPoints>
   </Debugging>
