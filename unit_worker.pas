@@ -46,7 +46,7 @@ type
     ArtistGoal: TArtistGoal; // Кто нас вызвал?
     constructor Create(ADB: TDatabaseModule; ALogEv: TLogEvent; AHtmlEv: THTMLEvent; AMode: TExtractMode; CreateSuspended: boolean);
     procedure AddMessageTask(AParentID: Integer; AContent: string);
-    procedure ExposeSystem(AStartID: Integer; AStrStack: string);
+    procedure ExposeSystem( AStrRaw: string);
         function StackToString(const AStack: TIntStack): string;
     procedure StringToStack(const AStr: string);
   end;
@@ -167,37 +167,6 @@ begin
   end;
 end;
 
-
-//function TServerWorker.RenderNodeHTML(AID, ALevel, ALastLevel: Integer; const AContent: string): string;
-//var
-//  S_Prefix, LineColor: string;
-//  j: Integer;
-//begin
-//  S_Prefix := '';
-//  for j := 1 to ALevel do
-//  begin
-//    LineColor := '#4A90E2';
-//    if (j = ALevel) then
-//    begin
-//      if ALevel < ALastLevel then LineColor := '#FF0000'; // Всплытие
-//      if ALevel > ALastLevel then LineColor := '#00FFFF'; // Нырок
-//    end;
-//
-//    if j < ALevel then
-//      S_Prefix := S_Prefix + '<font color="#4A90E2">┃&nbsp;&nbsp;</font>'
-//    else
-//      S_Prefix := S_Prefix + '<font color="' + LineColor + '">┃(' + IntToStr(ALevel) + ')━&nbsp;</font>';
-//  end;
-//
-//  Result :=
-//    '<table border="0" cellpadding="0" cellspacing="0" width="100%"><tr>' +
-//    '<td valign="top" style="white-space:nowrap;">' + S_Prefix + '</td>' +
-//    '<td width="100%">' +
-//    '<div style="color: #6a9955; font-size: 14px; font-weight: bold; margin-bottom: 4px;">ID: ' + IntToStr(AID) + '</div>' +
-//    '<table border="1" bordercolor="#2d5a27" cellpadding="10" cellspacing="0" width="100%" bgcolor="#3d3d3d" style="border-collapse: collapse;">' +
-//    '<tr><td><font color="#FFFFFF">' + AContent + '</font></td></tr></table>' +
-//    '</td></tr></table><br>';
-//end;
 
   function TServerWorker.RenderNodeHTML(AID, ALevel, ALastLevel: Integer;
                                        const AContent: string;
@@ -327,64 +296,123 @@ end;
 
 
 
-procedure TServerWorker.ExposeSystem(AStartID: Integer; AStrStack: string);
+procedure TServerWorker.ExposeSystem(AStrRaw: string);
 var
   CurrentID, NodeB, NodeT, VisualLevel: Integer;
   Chrono: string;
-  StrList: TStringList;
-//  TailStack: array of Integer; // Теперь это массив чисел, а не строк
+  StrList, NetParser: TStringList;
   LastLevel: Integer;
-  HTML_Acc: TStringBuilder; // Переименовали тип, сохранили имя
-  NodeCount: Integer; // <--- ДОБАВЬ ЭТУ СТРОКУ
-  IsParentNode: Boolean; // ◄=== НАШ ЗЕЛЁНЫЙ ФЛАГ КЭША СОСТОЯНИЯ
+  HTML_Acc: TStringBuilder;
+  NodeCount: Integer;
+  IsParentNode: Boolean;
 begin
     NodeCount := 0;
-    //if FMaxNodes <= 0 then FMaxNodes := 50; // Страховка
+    NetParser := TStringList.Create;
     LastLevel := 0;
     ////////////////////////////////////////////////////////////////////////
-          DoLog('>>> Обходим в ' + IntToStr(AStartID) + ')');
-  if FChunk then
+    try
+    NetParser.Delimiter := '&'; // Разделитель параметров в HTTP-строке (start=11&stack=1,4,7,9)
+    NetParser.StrictDelimiter := True;
+    NetParser.DelimitedText := AStrRaw;
+
+    // Записываем данные СТРОГО в твоё родное поле класса из репозитория!
+    FNextStartID := StrToIntDef(NetParser.Values['start'], 0);
+    FSavedStack := NetParser.Values['stack'];
+
+    // 🎯 ЗАЩИТА ГЛАВНОЙ СТРАНИЦЫ: Если строка пуста (первый заход), принудительно стартуем с корня 1
+    if FNextStartID = 0 then
+    begin
+      FNextStartID := 1;
+    end;
+  finally
+    NetParser.Free;
+  end;
+
+          DoLog('>>> Обходим в ' + IntToStr(FNextStartID) + ')');
+  //if FChunk then //////////////////////////////////////////////////////////////
+  //begin
+  //  StringToStack(AStrStack);
+  //  if (Length(TailStack) > 0) and (TailStack[High(TailStack)] = AStartID) then
+  //begin
+  //  //WriteLn('Условие проверки выполнено');
+  //  DoLog('>>> Условие проверки выполнено' );
+  //  // 1. Выводим головной узел в буфер, используя правильное локальное имя билдера!
+  //  HTML_Acc.Append(RenderNodeHTML(
+  //    AStartID,
+  //    High(TailStack),
+  //    High(TailStack),
+  //    FDB.GetNodeContent(AStartID),
+  //    TailStack,
+  //    True
+  //  ));
+  //
+  //  // 2. Извлекаем строку хронологии, чтобы узнать ID предшественника (NodeB)
+  //  StrList := TStringList.Create;
+  //  try
+  //    StrList.Delimiter := ',';
+  //    StrList.StrictDelimiter := True;
+  //    StrList.DelimitedText := FDB.GetNodeChrono(AStartID);
+  //
+  //    // Сдвигаем стартовую координату цикла на предшественника (NodeB), пролетая мимо хвоста!
+  //    if StrList.Count >= 2 then
+  //      FNextStartID := StrToIntDef(StrList[1], 0);
+  //    AStartID := FNextStartID;
+  //    //WriteLn('Обходим в '+IntToStr(AStartID));
+  //    DoLog('>>> Обходим в ' + IntToStr(AStartID) + ')');
+  //  finally
+  //    StrList.Free;
+  //  end;
+  //           SetLength(TailStack, Length(TailStack) - 1);
+  //                           Inc(NodeCount);
+  //end;
+  //
+  //end;
+    if FChunk then
   begin
-    StringToStack(AStrStack); // Массив TailStack гарантированно заполняется в ОЗУ в этот же миг!
-    if (Length(TailStack) > 0) and (TailStack[High(TailStack)] = AStartID) then
+    StringToStack(FSavedStack); // Наш массив TailStack мгновенно заполняется в ОЗУ
+  end;
+
+  // 3. ⚡ ЗРЯЧИЙ СДВИГ ПОРШНЯ (СКЛЕЙКА СЛОЕВ НА СТЫКЕ ЧАНКОВ):
+  // Работаем строго с твоим полем класса FNextStartID
+  if FChunk and (Length(TailStack) > 0) and (TailStack[High(TailStack)] = FNextStartID) then
   begin
-    //WriteLn('Условие проверки выполнено');
-    DoLog('>>> Условие проверки выполнено' );
-    // 1. Выводим головной узел в буфер, используя правильное локальное имя билдера!
+    DoLog('>>> Условие проверки выполнено на узелке ' + IntToStr(FNextStartID));
+
+    // Выводим головную карточку стыка
     HTML_Acc.Append(RenderNodeHTML(
-      AStartID,
+      FNextStartID,
       High(TailStack),
       High(TailStack),
-      FDB.GetNodeContent(AStartID),
+      FDB.GetNodeContent(FNextStartID),
       TailStack,
       True
     ));
 
-    // 2. Извлекаем строку хронологии, чтобы узнать ID предшественника (NodeB)
+    // Извлекаем строку хронологии предшественников
     StrList := TStringList.Create;
     try
-      StrList.Delimiter := ',';
+      StrList.Delimiter := ','; // Наша родная запятая из базы данных SQLite
       StrList.StrictDelimiter := True;
-      StrList.DelimitedText := FDB.GetNodeChrono(AStartID);
+      StrList.DelimitedText := FDB.GetNodeChrono(FNextStartID);
 
-      // Сдвигаем стартовую координату цикла на предшественника (NodeB), пролетая мимо хвоста!
+      // Сдвигаем поршень старта на предшественника NodeB (индекс 1) через Strings
       if StrList.Count >= 2 then
-        FNextStartID := StrToIntDef(StrList[1], 0);
-      AStartID := FNextStartID;
-      //WriteLn('Обходим в '+IntToStr(AStartID));
-      DoLog('>>> Обходим в ' + IntToStr(AStartID) + ')');
+      begin
+        FNextStartID := StrToIntDef(StrList.Strings[1], 0); // Твой Strings-индекс
+        DoLog('>>> Обход зряче сдвинут на предшественника: ' + IntToStr(FNextStartID) + ')');
+      end;
     finally
       StrList.Free;
     end;
-             SetLength(TailStack, Length(TailStack) - 1);
-                             Inc(NodeCount);
-  end;
 
+    // Почистили край массива, учли выведенный узел и погасили детонатор чанка
+    SetLength(TailStack, Length(TailStack) - 1);
+    Inc(NodeCount);
+    FChunk := False;
   end;
-
 //////////////////////////////////////////////////////////////////////////////////////////////
 //    TailStack := nil;
-    CurrentID := AStartID;
+    CurrentID := FNextStartID;
     StrList := TStringList.Create;
 //    SetLength(TailStack, 0);
           DoLog('--- СТАРТ ФОРМИРОВАНИЯ СТРУКТУРЫ ---');
@@ -437,9 +465,9 @@ emToArtist:
       // Защита от отрицательного уровня
       if VisualLevel < 0 then VisualLevel := 0;
       // --- ШАГ 3: ФИКСАЦИЯ И ОТРИСОВКА ---
-    DoLog('ВЫДЕРНУТ УЗЕЛ: ' + IntToStr(CurrentID));
+    //DoLog('ВЫДЕРНУТ УЗЕЛ: ' + IntToStr(CurrentID));
     // Вычисляем уровень вложенности
-    if (CurrentID <> AStartID) and (VisualLevel = 0) then VisualLevel := 1;
+    if (CurrentID <> FNextStartID) and (VisualLevel = 0) then VisualLevel := 1;
     //   LastLevel := i; // возможно понадобится где-то ещё
     // 1. Формируем префикс (только линии и уровень)
 
@@ -478,19 +506,18 @@ emToArtist:
          DoLog('<<< ВСПЛЫТИЕ ИЗ ВЕТКИ (возврат в ' + IntToStr(CurrentID) + ')');
       end;
 
-           if (CurrentID = AStartID) and (Length(TailStack) = 0) then begin
+           if (CurrentID = FNextStartID) and (Length(TailStack) = 0) then begin
              FSavedStack := StackToString(TailStack);
-            FNextStartID := CurrentID; // (Проверь, как у тебя называется маркер следующего ID в строке: 'Next=' или 'Chrono=')
-            WriteLn('Запекаем'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
+            FNextStartID := CurrentID;
+            //WriteLn('Запекаем'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
              Break;
            end;
       CurrentID := NodeB;
                 Inc(NodeCount);
           if NodeCount >= FMaxNodes then
           begin
-            //FNextStartID := CurrentID;
             FSavedStack := StackToString(TailStack);
-            FNextStartID := CurrentID; // (Проверь, как у тебя называется маркер следующего ID в строке: 'Next=' или 'Chrono=')
+            FNextStartID := CurrentID;
             WriteLn('Запекаем'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
             Break; // Очищаем ОЗУ и мгновенно выходим
           end;
@@ -500,24 +527,16 @@ emToArtist:
     {$REGION'ПЕРЕДАЧА ПАКЕТА В ДОСТАВКУ'}
     case FMode of
 emToViewer:
-    //    begin
-    //// Если мы прервали цикл по лимиту (FNextStartID > 0),
-    //      // одной строчкой вызываем нашу автономную утилиту кнопки!
-    //      if FNextStartID > 0 then
-    //        HTML_Acc.Append(RenderAjaxButton(FNextStartID, FSavedStack));
-    //
-    //HTML_Acc.Append('</body></html>');
-    //HTML_Acc.Append('<div style="text-align:center; margin:20px;"><a href="/forum?start=' + IntToStr(FNextStartID) + '&stack=' + FSavedStack + '" style="...">👉 Загрузить еще сообщения</a></div>');
-    //FHtmlBuffer := HTML_Acc.ToString;
-    //    end;
+
   begin
         // ⚡ 1. ЕСЛИ ЦИКЛ ПРЕРВАН ПО ЛИМИТУ — СРАЗУ ГЕНЕРИРУЕМ КНОПКУ:
-        if FNextStartID > 0 then
+        if NodeCount >= FMaxNodes then
         begin
           // ТвойStringBuilder упаковывает бинарный канат в строку '1,5,12'
 //          FSavedStack := StackToString(TailStack);
 
           // Вызываем твою автономную утилиту кнопки!
+                      WriteLn('Запекаем'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
           HTML_Acc.Append(RenderAjaxButton(FNextStartID, FSavedStack));
 
 
