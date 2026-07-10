@@ -120,7 +120,7 @@ WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен л
  // (Вставь имя переменной, в которой у тебя хранится лимит из базы)/////////////////////////////////////////////////////////////////////////
      // ⚡ ВОТ ОН, НАШ ЖЕСТКИЙ МОСТ: Прошиваем лимит ЛК внутрь публичного поля воркера!
     TempWorker.FMaxNodes := ULimit;
-    TempWorker.FChunk := True;
+    //TempWorker.FChunk := True;
     try
        TempWorker.FMaxNodes := ULimit;
       TempWorker.ExposeSystem('');

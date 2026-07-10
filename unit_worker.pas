@@ -305,6 +305,7 @@ var
   HTML_Acc: TStringBuilder;
   NodeCount: Integer;
   IsParentNode: Boolean;
+  AStartID: Integer;
 begin
     NodeCount := 0;
     NetParser := TStringList.Create;
@@ -314,15 +315,17 @@ begin
     NetParser.Delimiter := '&'; // Разделитель параметров в HTTP-строке (start=11&stack=1,4,7,9)
     NetParser.StrictDelimiter := True;
     NetParser.DelimitedText := AStrRaw;
-
+    DoLog('AStrRaw = ??? ' + AStrRaw);
     // Записываем данные СТРОГО в твоё родное поле класса из репозитория!
-    FNextStartID := StrToIntDef(NetParser.Values['start'], 0);
+    AStartID := StrToIntDef(NetParser.Values['start']);
+    DoLog(' AStartID = ' + IntToStr(AStartID));
     FSavedStack := NetParser.Values['stack'];
+    DoLog('>>> Обходим в ' + FSavedStack + ')');
 
     // 🎯 ЗАЩИТА ГЛАВНОЙ СТРАНИЦЫ: Если строка пуста (первый заход), принудительно стартуем с корня 1
-    if FNextStartID = 0 then
+    if AStartID = 0 then
     begin
-      FNextStartID := 1;
+      AStartID := 1;
     end;
   finally
     NetParser.Free;
@@ -369,7 +372,8 @@ begin
   //end;
     if FChunk then
   begin
-    StringToStack(FSavedStack); // Наш массив TailStack мгновенно заполняется в ОЗУ
+    StringToStack(FSavedStack);
+        DoLog('>>> Обходим в ' + FSavedStack + ')');
   end;
 
   // 3. ⚡ ЗРЯЧИЙ СДВИГ ПОРШНЯ (СКЛЕЙКА СЛОЕВ НА СТЫКЕ ЧАНКОВ):
@@ -380,10 +384,10 @@ begin
 
     // Выводим головную карточку стыка
     HTML_Acc.Append(RenderNodeHTML(
-      FNextStartID,
+      AStartID,
       High(TailStack),
       High(TailStack),
-      FDB.GetNodeContent(FNextStartID),
+      FDB.GetNodeContent(AStartID),
       TailStack,
       True
     ));
@@ -393,13 +397,13 @@ begin
     try
       StrList.Delimiter := ','; // Наша родная запятая из базы данных SQLite
       StrList.StrictDelimiter := True;
-      StrList.DelimitedText := FDB.GetNodeChrono(FNextStartID);
+      StrList.DelimitedText := FDB.GetNodeChrono(AStartID);
 
       // Сдвигаем поршень старта на предшественника NodeB (индекс 1) через Strings
       if StrList.Count >= 2 then
       begin
         FNextStartID := StrToIntDef(StrList.Strings[1], 0); // Твой Strings-индекс
-        DoLog('>>> Обход зряче сдвинут на предшественника: ' + IntToStr(FNextStartID) + ')');
+        DoLog('>>> Обход сдвинут на предшественника: ' + IntToStr(FNextStartID) + ')');
       end;
     finally
       StrList.Free;
@@ -412,7 +416,7 @@ begin
   end;
 //////////////////////////////////////////////////////////////////////////////////////////////
 //    TailStack := nil;
-    CurrentID := FNextStartID;
+    CurrentID := AStartID;
     StrList := TStringList.Create;
 //    SetLength(TailStack, 0);
           DoLog('--- СТАРТ ФОРМИРОВАНИЯ СТРУКТУРЫ ---');
@@ -509,7 +513,7 @@ emToArtist:
            if (CurrentID = FNextStartID) and (Length(TailStack) = 0) then begin
              FSavedStack := StackToString(TailStack);
             FNextStartID := CurrentID;
-            //WriteLn('Запекаем'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
+            WriteLn('Запекаем'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
              Break;
            end;
       CurrentID := NodeB;
