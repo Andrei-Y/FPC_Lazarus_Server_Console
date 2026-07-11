@@ -7,8 +7,8 @@
       <Unit>
         <Filename Value="semanticserver.lpr"/>
         <IsPartOfProject Value="True"/>
-        <TopLine Value="204"/>
-        <CursorPos X="7" Y="123"/>
+        <TopLine Value="196"/>
+        <CursorPos X="92" Y="228"/>
         <FoldState Value=" T0iC2c0A15111 PkBoU2:"/>
         <UsageCount Value="175"/>
         <Loaded Value="True"/>
@@ -18,10 +18,10 @@
         <UnitName Value="Unit_Worker"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="301"/>
-        <CursorPos X="54" Y="320"/>
+        <TopLine Value="109"/>
+        <CursorPos X="78" Y="120"/>
         <FoldState Value=" T3kL04123 Pck20}"/>
-        <UsageCount Value="87"/>
+        <UsageCount Value="88"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -31,11 +31,11 @@
         <TopLine Value="451"/>
         <CursorPos Y="90"/>
         <FoldState Value=" T3e0G112 pk9lR045]BPiSjY1h"/>
-        <UsageCount Value="87"/>
+        <UsageCount Value="88"/>
         <Loaded Value="True"/>
       </Unit>
     </Units>
-    <JumpHistory HistoryIndex="26">
+    <JumpHistory HistoryIndex="27">
       <Position>
         <Filename Value="unit_worker.pas"/>
         <Caret Line="503" TopLine="487"/>
@@ -144,6 +144,10 @@
         <Filename Value="unit_worker.pas"/>
         <Caret Line="374" Column="60" TopLine="360"/>
       </Position>
+      <Position>
+        <Filename Value="unit_worker.pas"/>
+        <Caret Line="320" Column="54" TopLine="301"/>
+      </Position>
     </JumpHistory>
     <RunParams>
       <FormatVersion Value="2"/>
@@ -157,7 +161,7 @@
         <WatchScope Value="wpsLocal"/>
         <WatchKind Value="wpkWrite"/>
         <Source Value="unit_worker.pas"/>
-        <Line Value="332"/>
+        <Line Value="333"/>
       </Item>
       <Item>
         <Kind Value="bpkSource"/>

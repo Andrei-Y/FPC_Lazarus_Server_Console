@@ -313,11 +313,12 @@ begin
     ////////////////////////////////////////////////////////////////////////
     try
     NetParser.Delimiter := '&'; // Разделитель параметров в HTTP-строке (start=11&stack=1,4,7,9)
-    NetParser.StrictDelimiter := True;
-    NetParser.DelimitedText := AStrRaw;
+    //NetParser.StrictDelimiter := True;
+    //NetParser.DelimitedText := AStrRaw;
+    NetParser.Text := AStrRaw;
     DoLog('AStrRaw = ??? ' + AStrRaw);
     // Записываем данные СТРОГО в твоё родное поле класса из репозитория!
-    AStartID := StrToIntDef(NetParser.Values['start']);
+    AStartID := StrToIntDef(NetParser.Values['start'], 0);
     DoLog(' AStartID = ' + IntToStr(AStartID));
     FSavedStack := NetParser.Values['stack'];
     DoLog('>>> Обходим в ' + FSavedStack + ')');
