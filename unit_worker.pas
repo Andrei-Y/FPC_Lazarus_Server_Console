@@ -375,7 +375,7 @@ begin
   begin
     StringToStack(FSavedStack);
         DoLog('>>> Обходим в ' + FSavedStack + ')');
-  end;
+
 
   // 3. ⚡ ЗРЯЧИЙ СДВИГ ПОРШНЯ (СКЛЕЙКА СЛОЕВ НА СТЫКЕ ЧАНКОВ):
   // Работаем строго с твоим полем класса FNextStartID
@@ -413,9 +413,10 @@ begin
     // Почистили край массива, учли выведенный узел и погасили детонатор чанка
     SetLength(TailStack, Length(TailStack) - 1);
     Inc(NodeCount);
-    FChunk := False;
   end;
-//////////////////////////////////////////////////////////////////////////////////////////////
+  FChunk := False;
+    end;
+  //////////////////////////////////////////////////////////////////////////////////////////////
 //    TailStack := nil;
     CurrentID := AStartID;
     StrList := TStringList.Create;
@@ -554,7 +555,6 @@ emToViewer:
           HTML_Acc.Append('</body></html>');
         end;
 
-        // Старый мусор и дубликаты полностью стёрты!
         FHtmlBuffer := HTML_Acc.ToString;
       end;
 
