@@ -120,10 +120,10 @@ WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен л
  // (Вставь имя переменной, в которой у тебя хранится лимит из базы)/////////////////////////////////////////////////////////////////////////
      // ⚡ ВОТ ОН, НАШ ЖЕСТКИЙ МОСТ: Прошиваем лимит ЛК внутрь публичного поля воркера!
     TempWorker.FMaxNodes := ULimit;
-    TempWorker.FChunk := True;
+    //TempWorker.FChunk := True;
     try
        TempWorker.FMaxNodes := ULimit;
-      TempWorker.ExposeSystem(1,'');
+      TempWorker.ExposeSystem('');
       AResponse.ContentType := 'text/html; charset=utf-8';
 
       if TempWorker.FHtmlBuffer = '' then
@@ -199,23 +199,39 @@ WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен л
     // Считываем лимит пилота из СУБД (ReqUser у тебя вычислен сервером выше по коду)
     ULimit := 50; // Базовый предохранитель
     if ReqUser <> '' then ULimit := FDB.GetUserLimit(ReqUser);
-    TempWorker := TServerWorker.Create(Self.FDB, nil, nil, emToViewer, True);
+    //TempWorker := TServerWorker.Create(Self.FDB, nil, nil, emToViewer, True);
+    //TempWorker.FMaxNodes := ULimit;
+    //TempWorker.FChunk := True;
+    //// Присваиваем прилетевшую координату старта напрямую в LongInt-поле класса воркера
+    //TempWorker.FNextStartID := StrToIntDef(ARequest.QueryFields.Values['start'], 0);
+    //
+    //try
+    //  // Запускаем эстафету. Теперь воркер с первой же микросекунды "помнит" всех
+    //  // своих родителей, и палочки вложений ┆ плавно продолжат рисовать фрактал!
+    //  TempWorker.ExposeSystem(TempWorker.FNextStartID,ARequest.QueryFields.Values['stack']);
+    //
+    //  // Отдаем чистые карточки сообщений без тяжелой шапки и подвала сайта
+    //  AResponse.ContentType := 'text/html; charset=utf-8';
+    //  AResponse.Content := TempWorker.FHtmlBuffer;
+    //  AResponse.SendContent;
+    //finally
+    //  TempWorker.Free; // Чистим ОЗУ сервера (Green Computing)
+    //end;
+        // Создаем экземпляр воркера (False на конце — поток не заморожен)
+    TempWorker := TServerWorker.Create(Self.FDB, nil, nil, emToViewer, False);
     TempWorker.FMaxNodes := ULimit;
-    TempWorker.FChunk := True;
-    // Присваиваем прилетевшую координату старта напрямую в LongInt-поле класса воркера
-    TempWorker.FNextStartID := StrToIntDef(ARequest.QueryFields.Values['start'], 0);
+    TempWorker.FChunk := True; // Включаем режим чанка
 
     try
-      // Запускаем эстафету. Теперь воркер с первой же микросекунды "помнит" всех
-      // своих родителей, и палочки вложений ┆ плавно продолжат рисовать фрактал!
-      TempWorker.ExposeSystem(TempWorker.FNextStartID,ARequest.QueryFields.Values['stack']);
+      // 🎯 ТВОЙ КЛАССИЧЕСКИЙ ВЫЗОВ С ЕДИНЫМ СТРОКОВЫМ ПАРАМЕТРОМ:
+      // Склеиваем параметры URL и тела POST, воркер внутри сам во всём зряче разберётся!
+      TempWorker.ExposeSystem(ARequest.QueryFields.Text + '&' + ARequest.ContentFields.Text);
 
-      // Отдаем чистые карточки сообщений без тяжелой шапки и подвала сайта
       AResponse.ContentType := 'text/html; charset=utf-8';
       AResponse.Content := TempWorker.FHtmlBuffer;
       AResponse.SendContent;
     finally
-      TempWorker.Free; // Чистим ОЗУ сервера (Green Computing)
+      TempWorker.Free;
     end;
   end
 
