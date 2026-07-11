@@ -120,7 +120,7 @@ begin
     '  <button onclick="fetch(''/forum_chunk?start=' + IntToStr(ANextID) + '&stack=' + ASavedStack + ''')' +
     '    .then(r => r.text()).then(html => {' +
     '       document.getElementById(''ajax-gate-container'').insertAdjacentHTML(''beforebegin'', html);' +
-    '       document.getElementById(''ajax-gate-container'').remove();' +
+//    '       document.getElementById(''ajax-gate-container'').remove();' +
     '    });" ' +
     '    style="color:#00FFFF; background:#252526; border:1px dashed #555; padding:8px 16px; border-radius:4px; font-weight:bold; cursor:pointer;">' +
     '     👉 Загрузить еще сообщения' +
@@ -515,7 +515,7 @@ emToArtist:
            if (CurrentID = FNextStartID) and (Length(TailStack) = 0) then begin
              FSavedStack := StackToString(TailStack);
             FNextStartID := CurrentID;
-            WriteLn('Запекаем'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
+            WriteLn('Запекаем CurrentID = FNextStartID'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
              Break;
            end;
       CurrentID := NodeB;
@@ -524,7 +524,7 @@ emToArtist:
           begin
             FSavedStack := StackToString(TailStack);
             FNextStartID := CurrentID;
-            WriteLn('Запекаем'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
+            WriteLn('Запекаем >'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
             Break; // Очищаем ОЗУ и мгновенно выходим
           end;
     end;
@@ -542,7 +542,7 @@ emToViewer:
 //          FSavedStack := StackToString(TailStack);
 
           // Вызываем твою автономную утилиту кнопки!
-                      WriteLn('Запекаем'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
+                      WriteLn('Запекаем в кнопку'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
           HTML_Acc.Append(RenderAjaxButton(FNextStartID, FSavedStack));
 
 
