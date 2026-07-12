@@ -120,13 +120,16 @@ begin
     '  <button onclick="fetch(''/forum_chunk?start=' + IntToStr(ANextID) + '&stack=' + ASavedStack + ''')' +
     '    .then(r => r.text()).then(html => {' +
     '       document.getElementById(''ajax-gate-container'').insertAdjacentHTML(''beforebegin'', html);' +
-//    '       document.getElementById(''ajax-gate-container'').remove();' +
+    '       btnContainer.insertAdjacentHTML(''beforebegin'', html);' +
+    '       btnContainer.remove();' +
+////    '       document.getElementById(''ajax-gate-container'').remove();' +
     '    });" ' +
     '    style="color:#00FFFF; background:#252526; border:1px dashed #555; padding:8px 16px; border-radius:4px; font-weight:bold; cursor:pointer;">' +
     '     👉 Загрузить еще сообщения' +
     '  </button>' +
     '</div>';
 end;
+
 
 //function StackToString(const AStack: TIntStack): string;
 //var
@@ -379,7 +382,7 @@ begin
 
   // 3. ⚡ ЗРЯЧИЙ СДВИГ ПОРШНЯ (СКЛЕЙКА СЛОЕВ НА СТЫКЕ ЧАНКОВ):
   // Работаем строго с твоим полем класса FNextStartID
-  if FChunk and (Length(TailStack) > 0) and (TailStack[High(TailStack)] = FNextStartID) then
+  if  (Length(TailStack) > 0) and (TailStack[High(TailStack)] = FNextStartID) then
   begin
     DoLog('>>> Условие проверки выполнено на узелке ' + IntToStr(FNextStartID));
 
