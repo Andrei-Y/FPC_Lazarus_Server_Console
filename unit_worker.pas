@@ -131,25 +131,6 @@ begin
 end;
 
 
-//function StackToString(const AStack: TIntStack): string;
-//var
-//  j: Integer;
-//  SB: TStringBuilder;
-//begin
-//  Result := '';
-//  if Length(AStack) = 0 then Exit;
-//  SB := TStringBuilder.Create;
-//  try
-//    for j := 0 to High(AStack) do
-//    begin
-//      SB.Append(IntToStr(AStack[j]));
-//      if j < High(AStack) then SB.Append(',');
-//    end;
-//    Result := SB.ToString;
-//  finally
-//    SB.Free;
-//  end;
-//end;
 
 function TServerWorker.RenderNodeArtist(AID, ALevel: Integer; const AChrono: string): string;
 begin
@@ -336,44 +317,7 @@ begin
   end;
 
           DoLog('>>> Обходим в ' + IntToStr(FNextStartID) + ')');
-  //if FChunk then //////////////////////////////////////////////////////////////
-  //begin
-  //  StringToStack(AStrStack);
-  //  if (Length(TailStack) > 0) and (TailStack[High(TailStack)] = AStartID) then
-  //begin
-  //  //WriteLn('Условие проверки выполнено');
-  //  DoLog('>>> Условие проверки выполнено' );
-  //  // 1. Выводим головной узел в буфер, используя правильное локальное имя билдера!
-  //  HTML_Acc.Append(RenderNodeHTML(
-  //    AStartID,
-  //    High(TailStack),
-  //    High(TailStack),
-  //    FDB.GetNodeContent(AStartID),
-  //    TailStack,
-  //    True
-  //  ));
-  //
-  //  // 2. Извлекаем строку хронологии, чтобы узнать ID предшественника (NodeB)
-  //  StrList := TStringList.Create;
-  //  try
-  //    StrList.Delimiter := ',';
-  //    StrList.StrictDelimiter := True;
-  //    StrList.DelimitedText := FDB.GetNodeChrono(AStartID);
-  //
-  //    // Сдвигаем стартовую координату цикла на предшественника (NodeB), пролетая мимо хвоста!
-  //    if StrList.Count >= 2 then
-  //      FNextStartID := StrToIntDef(StrList[1], 0);
-  //    AStartID := FNextStartID;
-  //    //WriteLn('Обходим в '+IntToStr(AStartID));
-  //    DoLog('>>> Обходим в ' + IntToStr(AStartID) + ')');
-  //  finally
-  //    StrList.Free;
-  //  end;
-  //           SetLength(TailStack, Length(TailStack) - 1);
-  //                           Inc(NodeCount);
-  //end;
-  //
-  //end;
+
     if FChunk then
   begin
     StringToStack(FSavedStack);
