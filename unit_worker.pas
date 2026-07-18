@@ -113,21 +113,40 @@ end;
 
 
 
+//function RenderAjaxButton(ANextID: Integer; ASavedStack: string): string;
+//begin
+//  Result :=
+//    '<div id="ajax-gate-container" style="text-align:center; margin:20px 0; clear:both; display:block;">' +
+//    '  <button onclick="fetch(''/forum_chunk?start=' + IntToStr(ANextID) + '&stack=' + ASavedStack + ''')' +
+//    '    .then(r => r.text()).then(html => {' +
+//    '       document.getElementById(''ajax-gate-container'').insertAdjacentHTML(''beforebegin'', html);' +
+//    '       btnContainer.insertAdjacentHTML(''beforebegin'', html);' +
+//////    '       document.getElementById(''ajax-gate-container'').remove();' +
+//    '    });" ' +
+//    '    style="color:#00FFFF; background:#252526; border:1px dashed #555; padding:8px 16px; border-radius:4px; font-weight:bold; cursor:pointer;">' +
+//    '     👉 Загрузить еще сообщения' +
+//    '  </button>' +
+//    '</div>';
+//end;
 function RenderAjaxButton(ANextID: Integer; ASavedStack: string): string;
 begin
-  Result :=
-    '<div id="ajax-gate-container" style="text-align:center; margin:20px 0; clear:both; display:block;">' +
-    '  <button onclick="fetch(''/forum_chunk?start=' + IntToStr(ANextID) + '&stack=' + ASavedStack + ''')' +
-    '    .then(r => r.text()).then(html => {' +
-    '       document.getElementById(''ajax-gate-container'').insertAdjacentHTML(''beforebegin'', html);' +
-    '       btnContainer.insertAdjacentHTML(''beforebegin'', html);' +
-    '       btnContainer.remove();' +
-////    '       document.getElementById(''ajax-gate-container'').remove();' +
-    '    });" ' +
-    '    style="color:#00FFFF; background:#252526; border:1px dashed #555; padding:8px 16px; border-radius:4px; font-weight:bold; cursor:pointer;">' +
-    '     👉 Загрузить еще сообщения' +
-    '  </button>' +
-    '</div>';
+Result :=
+   '<div id="ajax-gate-container" style="text-align:center; margin:20px 0; clear:both; display:block;">' +
+   '  <button onclick="' +
+   '    var oldGate = document.getElementById(''ajax-gate-container'');' +
+   '    if (oldGate) oldGate.id = ''old-gate'';' + // Обезопасили старый ID
+   '    fetch(''/forum_chunk?start=' + IntToStr(ANextID) + '&stack=' + ASavedStack + ''')' +
+   '    .then(r => r.text()).then(html => {' +
+   '       var target = document.getElementById(''old-gate'');' +
+   '       if (target) {' +
+   '         target.insertAdjacentHTML(''beforebegin'', html);' + // Вклеили чанк строго на своё место
+   '         target.remove();' + // Намертво стёрли старую нижнюю кнопку из ОЗУ!
+   '       }' +
+   '    });" ' +
+   '    style="color:#00FFFF; background:#252526; border:1px dashed #555; padding:8px 16px; border-radius:4px; font-weight:bold; cursor:pointer;">' +
+   '     👉 Загрузить еще сообщения' +
+   '  </button>' +
+   '</div>';
 end;
 
 
