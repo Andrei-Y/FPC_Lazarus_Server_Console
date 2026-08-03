@@ -111,6 +111,43 @@ begin
     end;
 end;
 
+/////////////////////////////////////////////////////////////////////
+
+function RenderFloatingHub: string;
+begin
+  Result :=
+    '<!-- Семантический навигатор с поддержкой Drag & Drop -->' +
+    '<div id="floating-hub" style="position:fixed; top:70%; left:75%; width:350px; background:#1e1e1e; border:1px dashed #00FFFF; z-index:9999; border-radius:8px; padding:12px; display:block; font-family:sans-serif; color:#fff; box-shadow:0 0 15px rgba(0,255,255,0.3);">' +
+    '  <div id="floating-hub-header" style="padding:4px; cursor:move; background:#252526; border-radius:4px; font-weight:bold; color:#00FFFF; margin-bottom:10px; font-size:13px; text-align:center; user-select:none;">' +
+    '    ⋮⋮ 🛰️ Семантический Диспетчер' +
+    '  </div>' +
+    '  <div style="font-size:12px; color:#aaa; text-align:center; padding:5px;">Удерживайте заголовок для перемещения.</div>' +
+    '</div>' +
+
+    '<script>' +
+    '  (function() {' +
+    '    var el = document.getElementById("floating-hub");' +
+    '    var header = document.getElementById("floating-hub-header");' +
+    '    var posX = 0, posY = 0, mouseX = 0, mouseY = 0;' +
+    '    if (header) { header.onmousedown = dragMouseDown; }' +
+    '    function dragMouseDown(e) {' +
+    '      e = e || window.event; e.preventDefault();' +
+    '      mouseX = e.clientX; mouseY = e.clientY;' +
+    '      document.onmouseup = closeDragElement; document.onmousemove = elementDrag;' +
+    '    }' +
+    '    function elementDrag(e) {' +
+    '      e = e || window.event; e.preventDefault();' +
+    '      posX = mouseX - e.clientX; posY = mouseY - e.clientY;' +
+    '      mouseX = e.clientX; mouseY = e.clientY;' +
+    '      el.style.top = (el.offsetTop - posY) + "px";' +
+    '      el.style.left = (el.offsetLeft - posX) + "px";' +
+    '    }' +
+    '    function closeDragElement() {' +
+    '      document.onmouseup = null; document.onmousemove = null;' +
+    '    }' +
+    '  })();' +
+    '</script>';
+end;
 
 function RenderAjaxButton(ANextID: Integer; ASavedStack: string): string;
 begin
@@ -387,7 +424,7 @@ begin
     SetLength(TailStack, Length(TailStack) - 1);
     Inc(NodeCount);
   end;
-  FChunk := False;
+  //FChunk := False;
     end;
   //////////////////////////////////////////////////////////////////////////////////////////////
 //    TailStack := nil;
@@ -511,13 +548,14 @@ emToViewer:
         // ⚡ 1. ЕСЛИ ЦИКЛ ПРЕРВАН ПО ЛИМИТУ — СРАЗУ ГЕНЕРИРУЕМ КНОПКУ:
         if NodeCount >= FMaxNodes then
         begin
-          // ТвойStringBuilder упаковывает бинарный канат в строку '1,5,12'
-//          FSavedStack := StackToString(TailStack);
 
-          // Вызываем твою автономную утилиту кнопки!
+          // Вызываем  утилиту кнопки по условию!
+                if (FNextStartID <> 0) and (CurrentID <> 0) then
+        begin
+ //        HTML_Acc.Append(RenderAjaxButton(FNextStartID, ButtonGateStack));
                       WriteLn('Запекаем в кнопку'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
           HTML_Acc.Append(RenderAjaxButton(FNextStartID, FSavedStack));
-
+         end;
 
         end;
 
@@ -525,8 +563,13 @@ emToViewer:
         // Используем твое реальное поле из репозитория — FChunk!
         if not FChunk then
         begin
+        HTML_Acc.Append(RenderFloatingHub);
+
+          // Твой родной финальный тег закрытия страницы
           HTML_Acc.Append('</body></html>');
-        end;
+          //--------------------
+
+        end else FChunk := False;
 
         FHtmlBuffer := HTML_Acc.ToString;
       end;
@@ -544,6 +587,7 @@ emToArtist:
     end;
 
   DoLog('--- СТРУКТУРА ЗАВЕРШЕНА ---');
+
 end;
 
 

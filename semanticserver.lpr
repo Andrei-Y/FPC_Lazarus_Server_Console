@@ -192,6 +192,8 @@ WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен л
             '  });' +
             '</script></body></html>';
         end;
+      if TempWorker.Suspended then
+        TempWorker.Start;
     finally
       TempWorker.Free;
     end;
@@ -234,6 +236,8 @@ WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен л
       AResponse.ContentType := 'text/html; charset=utf-8';
       AResponse.Content := TempWorker.FHtmlBuffer;
       AResponse.SendContent;
+      if TempWorker.Suspended then
+        TempWorker.Start;
     finally
       TempWorker.Free;
     end;
