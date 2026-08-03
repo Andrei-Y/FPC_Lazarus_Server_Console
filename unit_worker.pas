@@ -34,6 +34,7 @@ type
   protected
     procedure Execute; override;
   public
+       FIsRegistered: Boolean;
        FChunk: Boolean; // ⚡ ВОЗВРАЩАЕМ НАШЕ ЛОГИЧЕСКОЕ ПОЛЕ СЮДА
     FHtmlBuffer: string; // Временный буфер
     FArtistBuffer: string;
@@ -112,22 +113,6 @@ begin
 end;
 
 
-
-//function RenderAjaxButton(ANextID: Integer; ASavedStack: string): string;
-//begin
-//  Result :=
-//    '<div id="ajax-gate-container" style="text-align:center; margin:20px 0; clear:both; display:block;">' +
-//    '  <button onclick="fetch(''/forum_chunk?start=' + IntToStr(ANextID) + '&stack=' + ASavedStack + ''')' +
-//    '    .then(r => r.text()).then(html => {' +
-//    '       document.getElementById(''ajax-gate-container'').insertAdjacentHTML(''beforebegin'', html);' +
-//    '       btnContainer.insertAdjacentHTML(''beforebegin'', html);' +
-//////    '       document.getElementById(''ajax-gate-container'').remove();' +
-//    '    });" ' +
-//    '    style="color:#00FFFF; background:#252526; border:1px dashed #555; padding:8px 16px; border-radius:4px; font-weight:bold; cursor:pointer;">' +
-//    '     👉 Загрузить еще сообщения' +
-//    '  </button>' +
-//    '</div>';
-//end;
 function RenderAjaxButton(ANextID: Integer; ASavedStack: string): string;
 begin
 Result :=
@@ -212,8 +197,27 @@ begin
                     '┊(' + IntToStr(TargetParentID) + ')━&nbsp;</a>';
       end;
   end;
-
-  // Оставшаяся часть функции Result := ... остается без изменений
+ ////ответиь кнопка в карточке
+ // Result :=
+ //   '<div id="node_' + IntToStr(AID) + '">' +
+ //   '<table border="0" cellpadding="0" cellspacing="0" width="100%"><tr>' +
+ //   '<td valign="top" style="white-space:nowrap;">' + S_Prefix + '</td>' +
+ //   '<td width="100%">' +
+ //     '<div style="color: #6a9955; font-size: 11px; font-weight: bold; margin-bottom: 2px;">ID: ' + IntToStr(AID) + '</div>' +
+ //     '<table border="1" bordercolor="#2d5a27" cellpadding="10" cellspacing="0" width="100%" bgcolor="#3d3d3d" style="border-collapse: collapse;">' +
+ //     '<tr><td>' +
+ //       '<div style="color: #FFFFFF; line-height: 1.4; margin-bottom: 10px;">' + AContent + '</div>' +
+ //       '<div style="border-top: 1px dotted #555; padding-top: 5px; font-size: 11px; display: flex; justify-content: space-between;">' +
+ //         '<a href="/edit?pid='+ IntToStr(AID) + '&gate_stack=' + ButtonGateStack + '" ' +
+ //                    '    style="color: #00FFFF; text-decoration: none; font-size: 12px; font-weight: bold; ' +
+ //                    '           margin-left: 8px; border-bottom: 1px dashed #00FFFF;">' +
+ //                    '    ↩ Ответить' +
+ //                    ' </a>' + //////////////////////////////////////
+ //         '<a href="/report?id='+IntToStr(AID)+'" style="color:#888; text-decoration:none;">[ Позвать бота ]</a>' +
+ //       '</div>' +
+ //     '</td></tr></table>' +
+ //   '</td></tr></table><br></div>';
+   //ответиь кнопка в карточке
   Result :=
     '<div id="node_' + IntToStr(AID) + '">' +
     '<table border="0" cellpadding="0" cellspacing="0" width="100%"><tr>' +
@@ -223,17 +227,22 @@ begin
       '<table border="1" bordercolor="#2d5a27" cellpadding="10" cellspacing="0" width="100%" bgcolor="#3d3d3d" style="border-collapse: collapse;">' +
       '<tr><td>' +
         '<div style="color: #FFFFFF; line-height: 1.4; margin-bottom: 10px;">' + AContent + '</div>' +
-        '<div style="border-top: 1px dotted #555; padding-top: 5px; font-size: 11px; display: flex; justify-content: space-between;">' +
+        '<div style="border-top: 1px dotted #555; padding-top: 5px; font-size: 11px; display: flex; justify-content: space-between;">' ;
+  FIsRegistered := True;
+    if FIsRegistered then
+      begin
+        Result := Result +
           '<a href="/edit?pid='+ IntToStr(AID) + '&gate_stack=' + ButtonGateStack + '" ' +
-                     '    style="color: #00FFFF; text-decoration: none; font-size: 12px; font-weight: bold; ' +
-                     '           margin-left: 8px; border-bottom: 1px dashed #00FFFF;">' +
-                     '    ↩ Ответить' +
-                     ' </a>' + //////////////////////////////////////
-          '<a href="/report?id='+IntToStr(AID)+'" style="color:#888; text-decoration:none;">[ Позвать бота ]</a>' +
-        '</div>' +
-      '</td></tr></table>' +
-    '</td></tr></table><br></div>';
-  ///////////////////////////////////////////////////////////
+          '    style="color: #00FFFF; text-decoration: none; font-size: 12px; font-weight: bold; ' +
+          '           margin-left: 8px; border-bottom: 1px dashed #00FFFF;">' +
+          '    ↩ Ответить' +
+          ' </a>';
+      end;
+    Result := Result +
+            '<a href="/report?id='+IntToStr(AID)+'" style="color:#888; text-decoration:none;">[ Позвать бота ]</a>' +
+            '</div>' + // Этот </div> теперь закроет наш открытый выше контейнер!
+          '</td></tr></table>' +
+        '</td></tr></table><br></div>';
 
 end;
 

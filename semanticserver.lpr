@@ -31,10 +31,11 @@ var
   ForumHeader: string;
     TargetParent: string; // ◄=== ДОПИШИ ЭТИ ДВЕ СТРОКИ СЮДА!
   GateStackDNA: string;
+  IsUserAuth: Boolean;
 begin
  /////////////////////////////////////////////////////////
   ReqUser := '';
-
+   IsUserAuth := False;
   // ВЫВОДИМ В КОНСОЛЬ ВСЕ ВХОДЯЩИЕ КУКИ ДЛЯ ПРОВЕРКИ
   WriteLn('   [ОТЛАДКА] Сырая строка CookieFields: "', ARequest.CookieFields.Text, '"');
   WriteLn('   [ОТЛАДКА] Сырой заголовок Cookie: "', ARequest.CustomHeaders.Values['Cookie'], '"');
@@ -44,7 +45,11 @@ begin
     ReqUser := Trim(ARequest.CookieFields.Values['auth_user']);
 
   if ReqUser <> '' then
-    WriteLn('   [СЕРВЕР] Распознан пользователь из сессии: "', ReqUser, '"')
+    begin
+    WriteLn('   [СЕРВЕР] Распознан пользователь из сессии: "', ReqUser, '"');
+    TempWorker.FIsRegistered := True;
+    IsUserAuth := True;
+    end
   else
     WriteLn('   [СЕРВЕР] Запрос от неавторизованного гостя.');
 
@@ -116,7 +121,7 @@ WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен л
       // Вызываем твой рабочий метод модуля базы данных, который ты настроил:
       ULimit := FDB.GetUserLimit(ReqUser);
     end;
-    TempWorker := TServerWorker.Create(Self.FDB, nil, nil, emToViewer, True);
+    TempWorker := TServerWorker.Create(Self.FDB, nil, nil, emToViewer, IsUserAuth);
  // (Вставь имя переменной, в которой у тебя хранится лимит из базы)/////////////////////////////////////////////////////////////////////////
      // ⚡ ВОТ ОН, НАШ ЖЕСТКИЙ МОСТ: Прошиваем лимит ЛК внутрь публичного поля воркера!
     TempWorker.FMaxNodes := ULimit;
@@ -218,7 +223,7 @@ WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен л
     //  TempWorker.Free; // Чистим ОЗУ сервера (Green Computing)
     //end;
         // Создаем экземпляр воркера (False на конце — поток не заморожен)
-    TempWorker := TServerWorker.Create(Self.FDB, nil, nil, emToViewer, False);
+    TempWorker := TServerWorker.Create(Self.FDB, nil, nil, emToViewer, IsUserAuth);
     TempWorker.FMaxNodes := ULimit;
     TempWorker.FChunk := True; // Включаем режим чанка
 
