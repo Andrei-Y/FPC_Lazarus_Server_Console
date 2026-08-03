@@ -34,7 +34,6 @@ type
   protected
     procedure Execute; override;
   public
-       FIsRegistered: Boolean;
        FChunk: Boolean; // ⚡ ВОЗВРАЩАЕМ НАШЕ ЛОГИЧЕСКОЕ ПОЛЕ СЮДА
     FHtmlBuffer: string; // Временный буфер
     FArtistBuffer: string;
@@ -228,8 +227,7 @@ begin
       '<tr><td>' +
         '<div style="color: #FFFFFF; line-height: 1.4; margin-bottom: 10px;">' + AContent + '</div>' +
         '<div style="border-top: 1px dotted #555; padding-top: 5px; font-size: 11px; display: flex; justify-content: space-between;">' ;
-  FIsRegistered := True;
-    if FIsRegistered then
+    if Suspended then
       begin
         Result := Result +
           '<a href="/edit?pid='+ IntToStr(AID) + '&gate_stack=' + ButtonGateStack + '" ' +

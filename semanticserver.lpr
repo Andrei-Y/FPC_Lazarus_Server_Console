@@ -47,7 +47,6 @@ begin
   if ReqUser <> '' then
     begin
     WriteLn('   [СЕРВЕР] Распознан пользователь из сессии: "', ReqUser, '"');
-    TempWorker.FIsRegistered := True;
     IsUserAuth := True;
     end
   else
