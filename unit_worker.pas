@@ -8,7 +8,7 @@ uses
 type
   { Переносим тип сюда, ПЕРЕД описанием класса }
   TLogEvent = procedure(const AMsg: string) of object;
-  THTMLEvent = procedure(const AHtml: string) of object; // Добавь это
+  THTMLEvent = procedure(const AHtml: string) of object;
   TExtractMode = (emToViewer, emToArtist, emToNetwork);
   TWorkerTask = (wtIdle, wtModeration, wtForecast, wtVacuum);
   TArtistGoal = (agWebSync, agDeepAnalysis);
@@ -34,14 +34,14 @@ type
   protected
     procedure Execute; override;
   public
-       FChunk: Boolean; // ⚡ ВОЗВРАЩАЕМ НАШЕ ЛОГИЧЕСКОЕ ПОЛЕ СЮДА
+       FChunk: Boolean;
     FHtmlBuffer: string; // Временный буфер
     FArtistBuffer: string;
-        // ВОТ ОНО! Добавь это поле для хранения лимита:
+        //  поле для хранения лимита:
     FMaxNodes: Integer;
         FNextStartID: Integer;
     FSavedStack: string;
-        // ⚡ ДЕЛАЕМ МАССИВ ГЛОБАЛЬНЫМ ПОЛЕМ КЛАССА В ОЗУ:
+        //ДЕЛАЕМ МАССИВ ГЛОБАЛЬНЫМ ПОЛЕМ КЛАССА В ОЗУ:
     TailStack: TIntStack;
     ArtistGoal: TArtistGoal; // Кто нас вызвал?
     constructor Create(ADB: TDatabaseModule; ALogEv: TLogEvent; AHtmlEv: THTMLEvent; AMode: TExtractMode; CreateSuspended: boolean);
@@ -149,17 +149,17 @@ begin
   //  '</script>';
   Result :=
     '<!-- Семантический навигатор с поддержкой Drag & Drop и Изменением Размера -->' +
-    // 🎯 ВНИМАНИЕ НА СТИЛИ: Добавили resize:both; overflow:auto; и min-width/min-height, чтобы окно не сжалось в ноль
+    //   Добавили resize:both; overflow:auto; и min-width/min-height, чтобы окно не сжалось в ноль
     '<div id="floating-hub" style="position:fixed; top:70%; left:75%; width:350px; height:150px; min-width:200px; min-height:100px; background:#1e1e1e; border:1px dashed #00FFFF; z-index:9999; border-radius:8px; padding:12px; display:block; font-family:sans-serif; color:#fff; box-shadow:0 0 15px rgba(0,255,255,0.3); resize:both; overflow:auto;">' +
 
     '  <div id="floating-hub-header" style="padding:4px; cursor:move; background:#252526; border-radius:4px; font-weight:bold; color:#00FFFF; margin-bottom:10px; font-size:13px; text-align:center; user-select:none;">' +
-    '    ⋮⋮ 🛰️ Семантический Диспетчер' +
+    '    ⋮⋮ 🛰️ Диспетчер' +
     '  </div>' +
 
     '  <div style="font-size:12px; color:#aaa; text-align:center; padding:5px;">Удерживайте заголовок для перемещения.<br>Тяните за нижний правый угол для изменения размера.</div>' +
     '</div>' +
 
-    // Твой стабильный, неизменённый микро-скрипт перемещения Drag & Drop
+    // стабильный, неизменённый микро-скрипт перемещения Drag & Drop
     '<script>' +
     '  (function() {' +
     '    var el = document.getElementById("floating-hub");' +
@@ -182,7 +182,11 @@ begin
     '      document.onmouseup = null; document.onmousemove = null;' +
     '    }' +
     '  })();' +
+
+  ///////////////////////////////////////////////////
+
     '</script>';
+
 end;
 
 function RenderAjaxButton(ANextID: Integer; ASavedStack: string): string;
@@ -406,7 +410,7 @@ begin
     FSavedStack := NetParser.Values['stack'];
     DoLog('>>> Обходим в ' + FSavedStack + ')');
 
-    // 🎯 ЗАЩИТА ГЛАВНОЙ СТРАНИЦЫ: Если строка пуста (первый заход), принудительно стартуем с корня 1
+    //  ЗАЩИТА ГЛАВНОЙ СТРАНИЦЫ: Если строка пуста (первый заход), принудительно стартуем с корня 1
     if AStartID = 0 then
     begin
       AStartID := 1;
@@ -423,7 +427,7 @@ begin
         DoLog('>>> Обходим в ' + FSavedStack + ')');
 
 
-  // 3. ⚡ ЗРЯЧИЙ СДВИГ ПОРШНЯ (СКЛЕЙКА СЛОЕВ НА СТЫКЕ ЧАНКОВ):
+  // 3. СДВИГ ПОРШНЯ (СКЛЕЙКА СЛОЕВ НА СТЫКЕ ЧАНКОВ):
   // Работаем строго с твоим полем класса FNextStartID
   if  (Length(TailStack) > 0) and (TailStack[High(TailStack)] = FNextStartID) then
   begin
@@ -581,7 +585,7 @@ emToArtist:
 emToViewer:
 
   begin
-        // ⚡ 1. ЕСЛИ ЦИКЛ ПРЕРВАН ПО ЛИМИТУ — СРАЗУ ГЕНЕРИРУЕМ КНОПКУ:
+        //  1. ЕСЛИ ЦИКЛ ПРЕРВАН ПО ЛИМИТУ — СРАЗУ ГЕНЕРИРУЕМ КНОПКУ:
         if NodeCount >= FMaxNodes then
         begin
 
@@ -595,13 +599,13 @@ emToViewer:
 
         end;
 
-        // ⚡ 2. ЗАКРЫВАЕМ СТРАНИЦУ СТРОГО ДЛЯ ГЛАВНОГО ОКНА (ЕСЛИ ЭТО НЕ ЧАНК):
+        //  2. ЗАКРЫВАЕМ СТРАНИЦУ СТРОГО ДЛЯ ГЛАВНОГО ОКНА (ЕСЛИ ЭТО НЕ ЧАНК):
         // Используем твое реальное поле из репозитория — FChunk!
         if not FChunk then
         begin
         HTML_Acc.Append(RenderFloatingHub);
 
-          // Твой родной финальный тег закрытия страницы
+          // финальный тег закрытия страницы
           HTML_Acc.Append('</body></html>');
           //--------------------
 

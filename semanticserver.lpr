@@ -29,7 +29,7 @@ var
   UTheme: string;
   UserBlock: string;
   ForumHeader: string;
-    TargetParent: string; // ◄=== ДОПИШИ ЭТИ ДВЕ СТРОКИ СЮДА!
+    TargetParent: string;
   GateStackDNA: string;
   IsUserAuth: Boolean;
 begin
@@ -95,11 +95,10 @@ begin
        '</div>' +
 
        '</body></html>';
-   end // <--- Обрати внимание: тут нет точки с запятой, если следующим идет else if!
+   end
 
-  // 2. Твой рабочий блок Форума
+  // 2. рабочий блок Форума
 
-     // НАЙДИ ЭТО МЕСТО И ЗАМЕНИ НА КОД НИЖЕ:
   else if Path = '/forum' then
   begin
          TempWorker.TailStack := nil;
@@ -107,12 +106,12 @@ begin
     WriteLn('   [СИСТЕМА] Запуск обхода дерева для браузера...');
     ULimit := 50;
     UTheme := 'dark';
-        //  Если пилот распознан (ReqUser не пустой) — вытягиваем ЕГО личный лимит из базы
+        //  Если пользователь распознан (ReqUser не пустой) — вытягиваем ЕГО личный лимит из базы
     if ReqUser <> '' then
     begin
       // Вместо VerifyUser просто берем лимит по имени из куки
 //ULimit := Self.FDB.GetUserLimit(ReqUser);
-WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен лимит: ', ULimit);
+WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' применен лимит: ', ULimit);
     end;
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         if ReqUser <> '' then
@@ -121,8 +120,8 @@ WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен л
       ULimit := FDB.GetUserLimit(ReqUser);
     end;
     TempWorker := TServerWorker.Create(Self.FDB, nil, nil, emToViewer, IsUserAuth);
- // (Вставь имя переменной, в которой у тебя хранится лимит из базы)/////////////////////////////////////////////////////////////////////////
-     // ⚡ ВОТ ОН, НАШ ЖЕСТКИЙ МОСТ: Прошиваем лимит ЛК внутрь публичного поля воркера!
+ /////////////////////////////////////////////////////////////////////////
+     //Прошиваем лимит ЛК внутрь публичного поля воркера!
     TempWorker.FMaxNodes := ULimit;
     //TempWorker.FChunk := True;
     try
@@ -199,7 +198,7 @@ WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен л
     end;
   end // <--- Конец блока /forum (обрати внимание, тут нет точки с запятой, если сразу дальше идет else if)
 
-    // ⚡ СЛУШАЕМ ФОНОВЫЙ ЗАПРОС НА БЕСШОВНУЮ ПОДГРУЗКУ ЧАНКА СЛОЯ
+    // ЗАПРОС НА БЕСШОВНУЮ ПОДГРУЗКУ ЧАНКА СЛОЯ
   else if (Path = '/forum_chunk') or (Path = '/forum_chunk/') then
   begin
     // Считываем лимит пилота из СУБД (ReqUser у тебя вычислен сервером выше по коду)
@@ -229,7 +228,7 @@ WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен л
     TempWorker.FChunk := True; // Включаем режим чанка
 
     try
-      // 🎯 ТВОЙ КЛАССИЧЕСКИЙ ВЫЗОВ С ЕДИНЫМ СТРОКОВЫМ ПАРАМЕТРОМ:
+      // ВЫЗОВ С ЕДИНЫМ СТРОКОВЫМ ПАРАМЕТРОМ:
       // Склеиваем параметры URL и тела POST, воркер внутри сам во всём зряче разберётся!
       TempWorker.ExposeSystem(ARequest.QueryFields.Text + '&' + ARequest.ContentFields.Text);
 
@@ -252,21 +251,22 @@ WriteLn('   [СЕРВЕР] Для пилота ', ReqUser, ' применен л
     WriteLn('   [СЕКЬЮРИТИ] Перехвачен импульс ответа! Родословная считана из ОЗУ кнопки.');
 
     AResponse.ContentType := 'text/html; charset=utf-8';
-    AResponse.Content :=
-      '<html><body style="font-family:sans-serif; background:#1e1e1e; color:#d4d4d4; padding:30px;">' +
-      '  <h2 style="color:#00FFFF;">🧬 Семантический шлюз: Родословная узла зафиксирована</h2>' +
-      '  <hr style="border-color:#444;">' +
-      '  <p style="font-size:16px;">Вы отправляете ответ на сообщение ID: <b style="color:#fff;">' + TargetParent + '</b></p>' +
-      '  <div style="background:#252526; border:1px dashed #555; padding:15px; border-radius:4px; margin-top:20px;">' +
-      '    <span style="color:#888; font-family:monospace;">[ПРИЛЕТЕВШИЙ ГЕНОКОД СЛОЯ (gate_stack)]</span><br>' +
-      '    <strong style="font-size:20px; color:#00FFFF; font-family:monospace; display:block; margin-top:10px;">' + GateStackDNA + '</strong>' +
-      '  </div>' +
-      '  <br><br>' +
-      '  <a href="/forum" style="color:#888; text-decoration:none;">◀ Вернуться к срезу потока</a>' +
-      '</body></html>';
-
-    // ⚡ БРОНЕБОЙНЫЙ ИМПУЛЬС: Принудительно отправляем буфер в сеть прямо из этого цеха!
-    AResponse.SendContent;
+    //AResponse.Content :=
+    //  '<html><body style="font-family:sans-serif; background:#1e1e1e; color:#d4d4d4; padding:30px;">' +
+    //  '  <h2 style="color:#00FFFF;">🧬 Семантический шлюз: Ветки узла зафиксированы</h2>' +
+    //  '  <hr style="border-color:#444;">' +
+    //  '  <p style="font-size:16px;">Вы отправляете ответ на сообщение ID: <b style="color:#fff;">' + TargetParent + '</b></p>' +
+    //  '  <div style="background:#252526; border:1px dashed #555; padding:15px; border-radius:4px; margin-top:20px;">' +
+    //  '    <span style="color:#888; font-family:monospace;">[ПРИЛЕТЕВШИЙ ГЕНОКОД СЛОЯ (gate_stack)]</span><br>' +
+    //  '    <strong style="font-size:20px; color:#00FFFF; font-family:monospace; display:block; margin-top:10px;">' + GateStackDNA + '</strong>' +
+    //  '  </div>' +
+    //  '  <br><br>' +
+    //  '  <a href="/forum" style="color:#888; text-decoration:none;">◀ Вернуться к срезу потока</a>' +
+    //  '</body></html>';
+    //
+    //AResponse.SendContent;
+     AResponse.Content := 'Хело Ворлд';
+  AResponse.SendContent;
   end
     // --- МАРШРУТ 3: РЕГИСТРАЦИЯ ---
     else if Path = '/register' then
