@@ -251,22 +251,22 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
     WriteLn('   [СЕКЬЮРИТИ] Перехвачен импульс ответа! Родословная считана из ОЗУ кнопки.');
 
     AResponse.ContentType := 'text/html; charset=utf-8';
-    //AResponse.Content :=
-    //  '<html><body style="font-family:sans-serif; background:#1e1e1e; color:#d4d4d4; padding:30px;">' +
-    //  '  <h2 style="color:#00FFFF;">🧬 Семантический шлюз: Ветки узла зафиксированы</h2>' +
-    //  '  <hr style="border-color:#444;">' +
-    //  '  <p style="font-size:16px;">Вы отправляете ответ на сообщение ID: <b style="color:#fff;">' + TargetParent + '</b></p>' +
-    //  '  <div style="background:#252526; border:1px dashed #555; padding:15px; border-radius:4px; margin-top:20px;">' +
-    //  '    <span style="color:#888; font-family:monospace;">[ПРИЛЕТЕВШИЙ ГЕНОКОД СЛОЯ (gate_stack)]</span><br>' +
-    //  '    <strong style="font-size:20px; color:#00FFFF; font-family:monospace; display:block; margin-top:10px;">' + GateStackDNA + '</strong>' +
-    //  '  </div>' +
-    //  '  <br><br>' +
-    //  '  <a href="/forum" style="color:#888; text-decoration:none;">◀ Вернуться к срезу потока</a>' +
-    //  '</body></html>';
-    //
-    //AResponse.SendContent;
-     AResponse.Content := 'Хело Ворлд';
-  AResponse.SendContent;
+    AResponse.Content :=
+      '<html><body style="font-family:sans-serif; background:#1e1e1e; color:#d4d4d4; padding:30px;">' +
+      '  <h2 style="color:#00FFFF;">🧬 Семантический шлюз: Ветки узла зафиксированы</h2>' +
+      '  <hr style="border-color:#444;">' +
+      '  <p style="font-size:16px;">Вы отправляете ответ на сообщение ID: <b style="color:#fff;">' + TargetParent + '</b></p>' +
+      '  <div style="background:#252526; border:1px dashed #555; padding:15px; border-radius:4px; margin-top:20px;">' +
+      '    <span style="color:#888; font-family:monospace;">[ПРИЛЕТЕВШИЙ ГЕНОКОД СЛОЯ (gate_stack)]</span><br>' +
+      '    <strong style="font-size:20px; color:#00FFFF; font-family:monospace; display:block; margin-top:10px;">' + GateStackDNA + '</strong>' +
+      '  </div>' +
+      '  <br><br>' +
+      '  <a href="/forum" style="color:#888; text-decoration:none;">◀ Вернуться к срезу потока</a>' +
+      '</body></html>';
+
+    AResponse.SendContent;
+  //   AResponse.Content := 'Хело Ворлд';
+  //AResponse.SendContent;
   end
     // --- МАРШРУТ 3: РЕГИСТРАЦИЯ ---
     else if Path = '/register' then
