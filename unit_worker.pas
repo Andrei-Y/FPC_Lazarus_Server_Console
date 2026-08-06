@@ -147,21 +147,66 @@ begin
   //  '    }' +
   //  '  })();' +
   //  '</script>';
+  //Result :=
+  //  '<!-- Семантический навигатор с поддержкой Drag & Drop и Изменением Размера -->' +
+  //  //   Добавили resize:both; overflow:auto; и min-width/min-height, чтобы окно не сжалось в ноль
+  //  '<div id="floating-hub" style="position:fixed; top:70%; left:75%; width:350px; height:150px; min-width:200px; min-height:100px; background:#1e1e1e; border:1px dashed #00FFFF; z-index:9999; border-radius:8px; padding:12px; display:block; font-family:sans-serif; color:#fff; box-shadow:0 0 15px rgba(0,255,255,0.3); resize:both; overflow:auto;">' +
+  //
+  //  '  <div id="floating-hub-header" style="padding:4px; cursor:move; background:#252526; border-radius:4px; font-weight:bold; color:#00FFFF; margin-bottom:10px; font-size:13px; text-align:center; user-select:none;">' +
+  //  '    ⋮⋮ 🛰️ Диспетчер' +
+  //  '  </div>' +
+  //
+  //  '  <div style="font-size:12px; color:#aaa; text-align:center; padding:5px;">Удерживайте заголовок для перемещения.<br>Тяните за нижний правый угол для изменения размера.</div>' +
+  //  '</div>' +
+  //
+  //  // стабильный, неизменённый микро-скрипт перемещения Drag & Drop
+  //  '<script>' +
+  //  '  (function() {' +
+  //  '    var el = document.getElementById("floating-hub");' +
+  //  '    var header = document.getElementById("floating-hub-header");' +
+  //  '    var posX = 0, posY = 0, mouseX = 0, mouseY = 0;' +
+  //  '    if (header) { header.onmousedown = dragMouseDown; }' +
+  //  '    function dragMouseDown(e) {' +
+  //  '      e = e || window.event; e.preventDefault();' +
+  //  '      mouseX = e.clientX; mouseY = e.clientY;' +
+  //  '      document.onmouseup = closeDragElement; document.onmousemove = elementDrag;' +
+  //  '    }' +
+  //  '    function elementDrag(e) {' +
+  //  '      e = e || window.event; e.preventDefault();' +
+  //  '      posX = mouseX - e.clientX; posY = mouseY - e.clientY;' +
+  //  '      mouseX = e.clientX; mouseY = e.clientY;' +
+  //  '      el.style.top = (el.offsetTop - posY) + "px";' +
+  //  '      el.style.left = (el.offsetLeft - posX) + "px";' +
+  //  '    }' +
+  //  '    function closeDragElement() {' +
+  //  '      document.onmouseup = null; document.onmousemove = null;' +
+  //  '    }' +
+  //  '  })();' +
+  //
+  /////////////////////////////////////////////////////
+  //
+  //  '</script>';
   Result :=
-    '<!-- Семантический навигатор с поддержкой Drag & Drop и Изменением Размера -->' +
-    //   Добавили resize:both; overflow:auto; и min-width/min-height, чтобы окно не сжалось в ноль
+    '<!-- Семантический Диспетчер с формой и скрытым сетевым тоннелем -->' +
     '<div id="floating-hub" style="position:fixed; top:70%; left:75%; width:350px; height:150px; min-width:200px; min-height:100px; background:#1e1e1e; border:1px dashed #00FFFF; z-index:9999; border-radius:8px; padding:12px; display:block; font-family:sans-serif; color:#fff; box-shadow:0 0 15px rgba(0,255,255,0.3); resize:both; overflow:auto;">' +
-
     '  <div id="floating-hub-header" style="padding:4px; cursor:move; background:#252526; border-radius:4px; font-weight:bold; color:#00FFFF; margin-bottom:10px; font-size:13px; text-align:center; user-select:none;">' +
-    '    ⋮⋮ 🛰️ Диспетчер' +
+    '    ⋮⋮ 🛰️ Семантический Диспетчер' +
     '  </div>' +
 
-    '  <div style="font-size:12px; color:#aaa; text-align:center; padding:5px;">Удерживайте заголовок для перемещения.<br>Тяните за нижний правый угол для изменения размера.</div>' +
+    // НАША ЧИСТАЯ ФОРМА ПО УЧЕБНИКУ HTML:
+    '  <div id="hub-content" style="font-size:13px; text-align:center; padding:5px; color:#00FFFF; font-weight:bold;">' +
+    '    Ожидание мелкоты...' +
+    '  </div>' +
     '</div>' +
 
-    // стабильный, неизменённый микро-скрипт перемещения Drag & Drop
+    // 🎯 ТОТ САМЫЙ СКРЫТЫЙ СЕТЕВОЙ ТОННЕЛЬ ДЛЯ ПРИЕМА ВЫСТРЕЛОВ ИЗ ЛПР:
+    '<iframe name="hub-tunnel" id="hub-tunnel" style="display:none;"></iframe>' +
+
     '<script>' +
-    '  (function() {' +
+    // Твой родной, стабильный Drag & Drop код перемещения (бережно сохранен)
+    '  (function() {';
+    // ... здесь идёт твой стандартный код dragMouseDown, elementDrag и closeDragElement ...
+  Result := Result +
     '    var el = document.getElementById("floating-hub");' +
     '    var header = document.getElementById("floating-hub-header");' +
     '    var posX = 0, posY = 0, mouseX = 0, mouseY = 0;' +
@@ -182,11 +227,7 @@ begin
     '      document.onmouseup = null; document.onmousemove = null;' +
     '    }' +
     '  })();' +
-
-  ///////////////////////////////////////////////////
-
     '</script>';
-
 end;
 
 function RenderAjaxButton(ANextID: Integer; ASavedStack: string): string;
@@ -603,8 +644,6 @@ emToViewer:
         // Используем твое реальное поле из репозитория — FChunk!
         if not FChunk then
         begin
-        HTML_Acc.Append(RenderFloatingHub);
-
           // финальный тег закрытия страницы
           HTML_Acc.Append('</body></html>');
           //--------------------
