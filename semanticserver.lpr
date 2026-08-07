@@ -174,10 +174,38 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
             '  html { scroll-behavior: smooth; }' +
             '</style></head><body>' +
             ForumHeader +
-            '<div id="main-container">' +
+            //'<div id="main-container">' +
+            //'  <div id="left-panel">' + TempWorker.FHtmlBuffer + '</div>' +
+            //'  <div id="resizer"></div>' +
+            //'  <div id="right-panel"><canvas id="artistCanvas"></canvas></div>' +
+            //'</div>' +
+            //'<script>' +
+            //'  const left = document.getElementById("left-panel");' +
+            //'  const resizer = document.getElementById("resizer");' +
+            //'  let isResizing = false;' +
+            //'  resizer.addEventListener("mousedown", (e) => { isResizing = true; document.body.style.userSelect = "none"; });' +
+            //'  document.addEventListener("mouseup", () => { isResizing = false; document.body.style.userSelect = "auto"; });' +
+            //'  document.addEventListener("mousemove", (e) => {' +
+            //'    if (!isResizing) return;' +
+            //'    left.style.width = e.clientX + "px";' +
+            //'  });' +
+            //'</script></body></html>';
+             '<div id="main-container">' +
             '  <div id="left-panel">' + TempWorker.FHtmlBuffer + '</div>' +
             '  <div id="resizer"></div>' +
-            '  <div id="right-panel"><canvas id="artistCanvas"></canvas></div>' +
+
+            // 🎯 НАШЕ ОТРЕГУЛИРОВАННОЕ ДВУХРЕЖИМНОЕ ПРАВОЕ ОКНО:
+            '  <div id="right-panel" style="position: relative;">' +
+            // Слой №1: Графическая карта графа (всегда горит на экране по умолчанию)
+            '    <div id="tab-graph-map" style="display: block; width: 100%; height: 100%;">' +
+            '      <canvas id="artistCanvas"></canvas>' +
+            '    </div>' +
+            // Слой №2: Изолированный контейнер текстовой формы редактора (изначально скрыт)
+            '    <div id="tab-editor-container" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #1e1e1e; z-index: 10;">' +
+            '      <iframe name="editor-viewport" id="editor-viewport" style="width: 100%; height: 100%; border: none;"></iframe>' +
+            '    </div>' +
+            '  </div>' +
+
             '</div>' +
             '<script>' +
             '  const left = document.getElementById("left-panel");' +
@@ -189,6 +217,16 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
             '    if (!isResizing) return;' +
             '    left.style.width = e.clientX + "px";' +
             '  });' +
+
+            // 🎯 ДВЕ НАШИ НОВЫЕ ГЛОБАЛЬНЫЕ ФУНКЦИИ ПЕРЕКЛЮЧЕНИЯ РЕЖИМОВ:
+            '  window.OpenEditorTab = function() {' +
+            '    document.getElementById("tab-graph-map").style.display = "none";' +
+            '    document.getElementById("tab-editor-container").style.display = "block";' +
+            '  };' +
+            '  window.CloseEditorTab = function() {' +
+            '    document.getElementById("tab-editor-container").style.display = "none";' +
+            '    document.getElementById("tab-graph-map").style.display = "block";' +
+            '  };' +
             '</script></body></html>';
         end;
       if TempWorker.Suspended then
@@ -243,7 +281,7 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
   end
 
 
-  else if Path = '/edit' then
+  else if Path = '/interaction' then
   begin
     TargetParent := ARequest.QueryFields.Values['pid'];
     GateStackDNA := ARequest.QueryFields.Values['gate_stack'];
@@ -251,22 +289,30 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
     WriteLn('   [СЕКЬЮРИТИ] Перехвачен импульс ответа! Родословная считана из ОЗУ кнопки.');
 
     AResponse.ContentType := 'text/html; charset=utf-8';
-    AResponse.Content :=
+      AResponse.Content :=
       '<html><body style="font-family:sans-serif; background:#1e1e1e; color:#d4d4d4; padding:30px;">' +
+      '  <script>' +
+      '    if (parent && typeof parent.OpenEditorTab === "function") {' +
+      '      parent.OpenEditorTab();' +
+      '    }' +
+      '  </script>' +
+
       '  <h2 style="color:#00FFFF;">🧬 Семантический шлюз: Ветки узла зафиксированы</h2>' +
       '  <hr style="border-color:#444;">' +
       '  <p style="font-size:16px;">Вы отправляете ответ на сообщение ID: <b style="color:#fff;">' + TargetParent + '</b></p>' +
       '  <div style="background:#252526; border:1px dashed #555; padding:15px; border-radius:4px; margin-top:20px;">' +
-      '    <span style="color:#888; font-family:monospace;">[ПРИЛЕТЕВШИЙ ГЕНОКОД СЛОЯ (gate_stack)]</span><br>' +
+      '    <span style="color:#888; font-family:monospace;">[КОД ВЕТКИ (gate_stack)]</span><br>' +
       '    <strong style="font-size:20px; color:#00FFFF; font-family:monospace; display:block; margin-top:10px;">' + GateStackDNA + '</strong>' +
       '  </div>' +
       '  <br><br>' +
-      '  <a href="/forum" style="color:#888; text-decoration:none;">◀ Вернуться к срезу потока</a>' +
-      '</body></html>';
 
-    AResponse.SendContent;
-  //   AResponse.Content := 'Хело Ворлд';
-  //AResponse.SendContent;
+      // Кнопка возврата к Карте созвездий (просто гасит слой редактора в Хроме)
+      '  <button onclick="if(parent && typeof parent.CloseEditorTab === &apos;function&apos;){parent.CloseEditorTab();}" ' +
+      '          style="background:transparent; border:1px solid #555; color:#888; padding:6px 14px; border-radius:4px; cursor:pointer; font-size:13px;">' +
+      '    ◀ Вернуться к просмотру карты' +
+      '  </button>' +
+      '</body></html>';
+ //   AResponse.SendContent;
   end
     // --- МАРШРУТ 3: РЕГИСТРАЦИЯ ---
     else if Path = '/register' then
