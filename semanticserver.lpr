@@ -174,10 +174,22 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
             '  html { scroll-behavior: smooth; }' +
             '</style></head><body>' +
             ForumHeader +
-            //'<div id="main-container">' +
-            //'  <div id="left-panel">' + TempWorker.FHtmlBuffer + '</div>' +
-            //'  <div id="resizer"></div>' +
-            //'  <div id="right-panel"><canvas id="artistCanvas"></canvas></div>' +
+             '<div id="main-container">' +
+            '  <div id="left-panel">' + TempWorker.FHtmlBuffer + '</div>' +
+            '  <div id="resizer"></div>' +
+
+            // 🎯 НАШЕ ОТРЕГУЛИРОВАННОЕ ДВУХРЕЖИМНОЕ ПРАВОЕ ОКНО:
+            //'  <div id="right-panel" style="position: relative;">' +
+            //// Слой №1: Графическая карта графа (всегда горит на экране по умолчанию)
+            //'    <div id="tab-graph-map" style="display: block; width: 100%; height: 100%;">' +
+            //'      <canvas id="artistCanvas"></canvas>' +
+            //'    </div>' +
+            //// Слой №2: Изолированный контейнер текстовой формы редактора (изначально скрыт)
+            //'    <div id="tab-editor-container" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #1e1e1e; z-index: 10;">' +
+            //'      <iframe name="editor-viewport" id="editor-viewport" style="width: 100%; height: 100%; border: none;"></iframe>' +
+            //'    </div>' +
+            //'  </div>' +
+            //
             //'</div>' +
             //'<script>' +
             //'  const left = document.getElementById("left-panel");' +
@@ -189,22 +201,35 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
             //'    if (!isResizing) return;' +
             //'    left.style.width = e.clientX + "px";' +
             //'  });' +
-            //'</script></body></html>';
-             '<div id="main-container">' +
-            '  <div id="left-panel">' + TempWorker.FHtmlBuffer + '</div>' +
-            '  <div id="resizer"></div>' +
+            //
+            //// 🎯 ДВЕ НАШИ НОВЫЕ ГЛОБАЛЬНЫЕ ФУНКЦИИ ПЕРЕКЛЮЧЕНИЯ РЕЖИМОВ:
+            //'  window.OpenEditorTab = function() {' +
+            //'    document.getElementById("tab-graph-map").style.display = "none";' +
+            //'    document.getElementById("tab-editor-container").style.display = "block";' +
+            //'  };' +
+            //'  window.CloseEditorTab = function() {' +
+            //'    document.getElementById("tab-editor-container").style.display = "none";' +
+            //'    document.getElementById("tab-graph-map").style.display = "block";' +
+            //'  };'
+                         '  <div id="right-panel" style="position: relative; display: flex; flex-direction: column;">' +
 
-            // 🎯 НАШЕ ОТРЕГУЛИРОВАННОЕ ДВУХРЕЖИМНОЕ ПРАВОЕ ОКНО:
-            '  <div id="right-panel" style="position: relative;">' +
-            // Слой №1: Графическая карта графа (всегда горит на экране по умолчанию)
-            '    <div id="tab-graph-map" style="display: block; width: 100%; height: 100%;">' +
+            // 1. Узкая, строгая футуристичная полоска вкладок (высота 30px) на самом чердаке окна:
+            '    <div id="right-panel-tabs" style="height: 30px; background: #252526; border-bottom: 1px solid #333; display: flex; align-items: center; padding: 0 10px; box-sizing: border-box;">' +
+            '      <button id="btn-tab-map" onclick="CloseEditorTab()" style="background: #1e1e1e; color: #00FFFF; border: 1px solid #00FFFF; padding: 2px 12px; font-size: 11px; font-weight: bold; cursor: pointer; border-radius: 4px; margin-right: 8px; outline: none;">🗺️ КАРТА</button>' +
+            '      <button id="btn-tab-edit" onclick="OpenEditorTab()" style="background: transparent; color: #888; border: 1px solid #444; padding: 2px 12px; font-size: 11px; font-weight: bold; cursor: pointer; border-radius: 4px; outline: none;">📝 РЕДАКТОР</button>' +
+            '    </div>' +
+
+            // 2. Слой №1: Наш родной Canvas графической карты (занимает всё оставшееся пространство)
+            '    <div id="tab-graph-map" style="flex: 1; display: block; width: 100%; position: relative;">' +
             '      <canvas id="artistCanvas"></canvas>' +
             '    </div>' +
-            // Слой №2: Изолированный контейнер текстовой формы редактора (изначально скрыт)
-            '    <div id="tab-editor-container" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #1e1e1e; z-index: 10;">' +
+
+            // 3. Слой №2: Изолированный контейнер фрейма редактора (абсолютно перекрывает карту по сигналу)
+            '    <div id="tab-editor-container" style="display: none; position: absolute; top: 30px; bottom: 0; left: 0; right: 0; background: #1e1e1e; z-index: 10;">' +
             '      <iframe name="editor-viewport" id="editor-viewport" style="width: 100%; height: 100%; border: none;"></iframe>' +
             '    </div>' +
-            '  </div>' +
+
+            '  </div>' + // Конец #right-panel
 
             '</div>' +
             '<script>' +
@@ -218,15 +243,28 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
             '    left.style.width = e.clientX + "px";' +
             '  });' +
 
-            // 🎯 ДВЕ НАШИ НОВЫЕ ГЛОБАЛЬНЫЕ ФУНКЦИИ ПЕРЕКЛЮЧЕНИЯ РЕЖИМОВ:
+            // 🎯 МОДЕРНИЗИРОВАННЫЕ ФУНКЦИИ ПЕРЕКЛЮЧЕНИЯ (ОБНОВЛЯЮТ ЕЩЁ И СТИЛИ КНОПОК ДЛЯ НАГЛЯДНОСТИ):
             '  window.OpenEditorTab = function() {' +
             '    document.getElementById("tab-graph-map").style.display = "none";' +
             '    document.getElementById("tab-editor-container").style.display = "block";' +
+            '    document.getElementById("btn-tab-edit").style.background = "#1e1e1e";' +
+            '    document.getElementById("btn-tab-edit").style.color = "#00FFFF";' +
+            '    document.getElementById("btn-tab-edit").style.border = "1px solid #00FFFF";' +
+            '    document.getElementById("btn-tab-map").style.background = "transparent";' +
+            '    document.getElementById("btn-tab-map").style.color = "#888";' +
+            '    document.getElementById("btn-tab-map").style.border = "1px solid #444";' +
             '  };' +
             '  window.CloseEditorTab = function() {' +
             '    document.getElementById("tab-editor-container").style.display = "none";' +
             '    document.getElementById("tab-graph-map").style.display = "block";' +
+            '    document.getElementById("btn-tab-map").style.background = "#1e1e1e";' +
+            '    document.getElementById("btn-tab-map").style.color = "#00FFFF";' +
+            '    document.getElementById("btn-tab-map").style.border = "1px solid #00FFFF";' +
+            '    document.getElementById("btn-tab-edit").style.background = "transparent";' +
+            '    document.getElementById("btn-tab-edit").style.color = "#888";' +
+            '    document.getElementById("btn-tab-edit").style.border = "1px solid #444";' +
             '  };' +
+
             '</script></body></html>';
         end;
       if TempWorker.Suspended then
@@ -523,31 +561,6 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
 end;
 
 
-
-
-
-//procedure TSemanticApp.DoRun;
-//begin
-//  FServer := TFPHTTPServer.Create(nil);
-//  try
-//    FServer.Port := 8080;
-//    FServer.OnRequest := @HandleRequest;
-//    FServer.Threaded :=  True;/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//    WriteLn('=== SEMANTIC SERVER STARTED ===');
-//    WriteLn('URL: http://localhost:8080');
-//    WriteLn('Press [ENTER] to stop...');
-//
-//    FServer.Active := True;
-//    ReadLn; // Ожидание команды на выход
-//
-//    WriteLn('Stopping server...');
-//    FServer.Active := False;
-//  finally
-//    FServer.Free;
-//  end;
-//  Terminate;
-//end;
 
 procedure TSemanticApp.DoRun;
 begin
