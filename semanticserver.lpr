@@ -18,6 +18,150 @@ type
   end;
 
 
+  function HTML_RenderForumPage(const AReqUser, FHtmlBuffer: string): string;
+  var
+    ForumHeader: string;
+     begin
+          // Формируем сквозную шапку, которая встанет НАД обоими окнами
+          if AReqUser <> '' then
+            ForumHeader := '<div id="top-bar">' +
+                           '  <div class="logo">🌌 Срез</div>' +
+                           '  <div class="user-info">' +
+                           '    Пилот: <b>' + AReqUser + '</b> | ' +
+                           '    <a href="/profile" class="nav-btn">[ Личный кабинет ]</a> | ' +
+                           '    <a href="/logout" class="nav-btn-exit">[ Выход ]</a> | ' +
+                           '    <a href="/" class="nav-btn-gray">Главная</a>' +
+                           '  </div>' +
+                           '</div>'
+          else
+            ForumHeader := '<div id="top-bar">' +
+                           '  <div class="logo">🌌 Срез</div>' +
+                           '  <div class="user-info">' +
+                           '    Вы зашли как гость | ' +
+                           '    <a href="/login" class="nav-btn">[ Авторизация ]</a> | ' +
+                           '    <a href="/register" class="nav-btn">[ Регистрация ]</a> | ' +
+                           '    <a href="/" class="nav-btn-gray">Главная</a>' +
+                           '  </div>' +
+                           '</div>';
+
+          Result :=
+            '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Semantic Artist</title>' +
+            '<style>' +
+            '  body { margin: 0; padding: 0; overflow: hidden; display: flex; flex-direction: column; height: 100vh; background: #1e1e1e; color: #d4d4d4; font-family: sans-serif; }' +
+            '  #top-bar { height: 45px; background: #252525; border-bottom: 1px solid #3c3c3c; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; box-sizing: border-box; z-index: 10; }' +
+            '  .logo { font-weight: bold; color: #00FFFF; letter-spacing: 0.5px; font-size: 15px; }' +
+            '  .user-info { font-size: 13px; }' +
+            '  .nav-btn { color: #00FFFF; text-decoration: none; margin-left: 10px; font-weight: bold; }' +
+            '  .nav-btn-exit { color: #F44336; text-decoration: none; margin-left: 10px; }' +
+            '  .nav-btn-gray { color: #aaa; text-decoration: none; margin-left: 10px; }' +
+            '  #main-container { display: flex; flex-grow: 1; height: calc(100vh - 45px); overflow: hidden; }' +
+            '  #left-panel { width: 50%; min-width: 150px; overflow-y: auto; padding: 10px; box-sizing: border-box; }' +
+            '  #resizer { width: 6px; cursor: col-resize; background: #333; transition: 0.2s; }' +
+            '  #resizer:hover { background: #4A90E2; }' +
+            '  #right-panel { flex-grow: 1; background: #111; position: relative; overflow: hidden; }' +
+            '  canvas { display: block; width: 100%; height: 100%; }' +
+            '  html { scroll-behavior: smooth; }' +
+            '</style></head><body>' +
+            ForumHeader +
+             '<div id="main-container">' +
+            '  <div id="left-panel">' + FHtmlBuffer + '</div>' +
+            '  <div id="resizer"></div>' +
+
+            // 🎯 НАШЕ ОТРЕГУЛИРОВАННОЕ ДВУХРЕЖИМНОЕ ПРАВОЕ ОКНО:
+
+                         '  <div id="right-panel" style="position: relative; display: flex; flex-direction: column;">' +
+
+            // 1. Узкая, строгая футуристичная полоска вкладок (высота 30px) на самом чердаке окна:
+            '    <div id="right-panel-tabs" style="height: 30px; background: #252526; border-bottom: 1px solid #333; display: flex; align-items: center; padding: 0 10px; box-sizing: border-box;">' +
+            '      <button id="btn-tab-map" onclick="CloseEditorTab()" style="background: #1e1e1e; color: #00FFFF; border: 1px solid #00FFFF; padding: 2px 12px; font-size: 11px; font-weight: bold; cursor: pointer; border-radius: 4px; margin-right: 8px; outline: none;">🗺️ КАРТА</button>' +
+            '      <button id="btn-tab-edit" onclick="OpenEditorTab()" style="background: transparent; color: #888; border: 1px solid #444; padding: 2px 12px; font-size: 11px; font-weight: bold; cursor: pointer; border-radius: 4px; outline: none;">📝 РЕДАКТОР</button>' +
+            '    </div>' +
+
+            // 2. Слой №1: Наш родной Canvas графической карты (занимает всё оставшееся пространство)
+            '    <div id="tab-graph-map" style="flex: 1; display: block; width: 100%; position: relative;">' +
+            '      <canvas id="artistCanvas"></canvas>' +
+            '    </div>' +
+
+            // 3. Слой №2: Изолированный контейнер фрейма редактора (абсолютно перекрывает карту по сигналу)
+            '    <div id="tab-editor-container" style="display: none; position: absolute; top: 30px; bottom: 0; left: 0; right: 0; background: #1e1e1e; z-index: 10;">' +
+            '      <iframe name="editor-viewport" id="editor-viewport" style="width: 100%; height: 100%; border: none;"></iframe>' +
+            '    </div>' +
+
+            '  </div>' + // Конец #right-panel
+
+            '</div>' +
+            '<script>' +
+            '  const left = document.getElementById("left-panel");' +
+            '  const resizer = document.getElementById("resizer");' +
+            '  let isResizing = false;' +
+            '  resizer.addEventListener("mousedown", (e) => { isResizing = true; document.body.style.userSelect = "none"; });' +
+            '  document.addEventListener("mouseup", () => { isResizing = false; document.body.style.userSelect = "auto"; });' +
+            '  document.addEventListener("mousemove", (e) => {' +
+            '    if (!isResizing) return;' +
+            '    left.style.width = e.clientX + "px";' +
+            '  });' +
+
+            // 🎯 МОДЕРНИЗИРОВАННЫЕ ФУНКЦИИ ПЕРЕКЛЮЧЕНИЯ (ОБНОВЛЯЮТ ЕЩЁ И СТИЛИ КНОПОК ДЛЯ НАГЛЯДНОСТИ):
+            '  window.OpenEditorTab = function() {' +
+            '    document.getElementById("tab-graph-map").style.display = "none";' +
+            '    document.getElementById("tab-editor-container").style.display = "block";' +
+            '    document.getElementById("btn-tab-edit").style.background = "#1e1e1e";' +
+            '    document.getElementById("btn-tab-edit").style.color = "#00FFFF";' +
+            '    document.getElementById("btn-tab-edit").style.border = "1px solid #00FFFF";' +
+            '    document.getElementById("btn-tab-map").style.background = "transparent";' +
+            '    document.getElementById("btn-tab-map").style.color = "#888";' +
+            '    document.getElementById("btn-tab-map").style.border = "1px solid #444";' +
+            '  };' +
+            '  window.CloseEditorTab = function() {' +
+            '    document.getElementById("tab-editor-container").style.display = "none";' +
+            '    document.getElementById("tab-graph-map").style.display = "block";' +
+            '    document.getElementById("btn-tab-map").style.background = "#1e1e1e";' +
+            '    document.getElementById("btn-tab-map").style.color = "#00FFFF";' +
+            '    document.getElementById("btn-tab-map").style.border = "1px solid #00FFFF";' +
+            '    document.getElementById("btn-tab-edit").style.background = "transparent";' +
+            '    document.getElementById("btn-tab-edit").style.color = "#888";' +
+            '    document.getElementById("btn-tab-edit").style.border = "1px solid #444";' +
+            '  };' +
+
+            '</script></body></html>';
+        end;
+
+  function HTML_RenderInteraction(const AParentID, AGateStack: string): string;
+begin
+  Result :=
+    '<html><body style="font-family:sans-serif; background:#1e1e1e; color:#d4d4d4; padding:20px; margin:0;">' +
+    '  <script>' +
+    '    if (parent && typeof parent.OpenEditorTab === "function") {' +
+    '      parent.OpenEditorTab();' +
+    '    }' +
+    '  </script>' +
+    '  <div style="max-width: 600px; margin: 0 auto;">' +
+    '    <div style="margin-bottom:15px; font-weight:bold; font-size:16px;">' +
+      '      <span style="color:#00FFFF; margin-right:10px;">🛰️ Интеракция с узлом ветки:</span>' + AGateStack +
+      '    </div>' +
+    '    ' +
+    '    <form action="/save_reply" method="POST" style="margin:0; padding:0;">' +
+    '      <input type="hidden" name="parent_id" value="' + AParentID + '">' +
+    '      <input type="hidden" name="gate_stack" value="' + AGateStack + '">' +
+    '      ' +
+    '      <textarea name="reply_text" rows="8" placeholder="Введите ваш ответ..." ' +
+    '                style="width:100%; background:#252526; color:#fff; border:1px solid #444; border-radius:4px; padding:10px; resize:vertical; box-sizing:border-box; font-size:14px; font-family:sans-serif; margin-bottom:15px; outline:none;"></textarea>' +
+    '      ' +
+    '      <div style="display:flex; justify-content:space-between; align-items:center;">' +
+    '          <button type="button" onclick="if(parent && typeof parent.CloseEditorTab === &apos;function&apos;){parent.CloseEditorTab();}" ' +
+    '                  style="background:transparent; border:1px solid #444; color:#888; padding:8px 16px; border-radius:4px; cursor:pointer; font-size:13px;">' +
+    '            ◀ К карте' +
+    '          </button>' +
+    '          <button type="submit" style="background:#00FFFF; color:#000; border:none; padding:8px 24px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:13px;">' +
+    '            Сохранить узел' +
+    '          </button>' +
+    '      </div>' +
+    '    </form>' +
+    '  </div>' +
+    '</body></html>';
+end;
+
+
 
 procedure TSemanticApp.HandleRequest(Sender: TObject; var ARequest: TFPHTTPConnectionRequest;
                                      var AResponse: TFPHTTPConnectionResponse);
@@ -30,7 +174,7 @@ var
   UserBlock: string;
   ForumHeader: string;
     TargetParent: string;
-  GateStackDNA: string;
+  GateStackDNA, TextContent: string;
   IsUserAuth: Boolean;
 begin
  /////////////////////////////////////////////////////////
@@ -132,141 +276,111 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
       if TempWorker.FHtmlBuffer = '' then
         AResponse.Content := '<html><body><h1>Ошибка: Буфер пуст</h1></body></html>'
       else
-        begin
-          // Формируем сквозную шапку, которая встанет НАД обоими окнами
-          if ReqUser <> '' then
-            ForumHeader := '<div id="top-bar">' +
-                           '  <div class="logo">🌌 Семантический срез</div>' +
-                           '  <div class="user-info">' +
-                           '    Пилот: <b>' + ReqUser + '</b> | ' +
-                           '    <a href="/profile" class="nav-btn">[ Личный кабинет ]</a> | ' +
-                           '    <a href="/logout" class="nav-btn-exit">[ Выход ]</a> | ' +
-                           '    <a href="/" class="nav-btn-gray">Главная</a>' +
-                           '  </div>' +
-                           '</div>'
-          else
-            ForumHeader := '<div id="top-bar">' +
-                           '  <div class="logo">🌌 Семантический срез</div>' +
-                           '  <div class="user-info">' +
-                           '    Вы зашли как гость | ' +
-                           '    <a href="/login" class="nav-btn">[ Авторизация ]</a> | ' +
-                           '    <a href="/register" class="nav-btn">[ Регистрация ]</a> | ' +
-                           '    <a href="/" class="nav-btn-gray">Главная</a>' +
-                           '  </div>' +
-                           '</div>';
-
-          AResponse.Content :=
-            '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Semantic Artist</title>' +
-            '<style>' +
-            '  body { margin: 0; padding: 0; overflow: hidden; display: flex; flex-direction: column; height: 100vh; background: #1e1e1e; color: #d4d4d4; font-family: sans-serif; }' +
-            '  #top-bar { height: 45px; background: #252525; border-bottom: 1px solid #3c3c3c; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; box-sizing: border-box; z-index: 10; }' +
-            '  .logo { font-weight: bold; color: #00FFFF; letter-spacing: 0.5px; font-size: 15px; }' +
-            '  .user-info { font-size: 13px; }' +
-            '  .nav-btn { color: #00FFFF; text-decoration: none; margin-left: 10px; font-weight: bold; }' +
-            '  .nav-btn-exit { color: #F44336; text-decoration: none; margin-left: 10px; }' +
-            '  .nav-btn-gray { color: #aaa; text-decoration: none; margin-left: 10px; }' +
-            '  #main-container { display: flex; flex-grow: 1; height: calc(100vh - 45px); overflow: hidden; }' +
-            '  #left-panel { width: 50%; min-width: 150px; overflow-y: auto; padding: 10px; box-sizing: border-box; }' +
-            '  #resizer { width: 6px; cursor: col-resize; background: #333; transition: 0.2s; }' +
-            '  #resizer:hover { background: #4A90E2; }' +
-            '  #right-panel { flex-grow: 1; background: #111; position: relative; overflow: hidden; }' +
-            '  canvas { display: block; width: 100%; height: 100%; }' +
-            '  html { scroll-behavior: smooth; }' +
-            '</style></head><body>' +
-            ForumHeader +
-             '<div id="main-container">' +
-            '  <div id="left-panel">' + TempWorker.FHtmlBuffer + '</div>' +
-            '  <div id="resizer"></div>' +
-
-            // 🎯 НАШЕ ОТРЕГУЛИРОВАННОЕ ДВУХРЕЖИМНОЕ ПРАВОЕ ОКНО:
-            //'  <div id="right-panel" style="position: relative;">' +
-            //// Слой №1: Графическая карта графа (всегда горит на экране по умолчанию)
-            //'    <div id="tab-graph-map" style="display: block; width: 100%; height: 100%;">' +
-            //'      <canvas id="artistCanvas"></canvas>' +
-            //'    </div>' +
-            //// Слой №2: Изолированный контейнер текстовой формы редактора (изначально скрыт)
-            //'    <div id="tab-editor-container" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #1e1e1e; z-index: 10;">' +
-            //'      <iframe name="editor-viewport" id="editor-viewport" style="width: 100%; height: 100%; border: none;"></iframe>' +
-            //'    </div>' +
-            //'  </div>' +
-            //
-            //'</div>' +
-            //'<script>' +
-            //'  const left = document.getElementById("left-panel");' +
-            //'  const resizer = document.getElementById("resizer");' +
-            //'  let isResizing = false;' +
-            //'  resizer.addEventListener("mousedown", (e) => { isResizing = true; document.body.style.userSelect = "none"; });' +
-            //'  document.addEventListener("mouseup", () => { isResizing = false; document.body.style.userSelect = "auto"; });' +
-            //'  document.addEventListener("mousemove", (e) => {' +
-            //'    if (!isResizing) return;' +
-            //'    left.style.width = e.clientX + "px";' +
-            //'  });' +
-            //
-            //// 🎯 ДВЕ НАШИ НОВЫЕ ГЛОБАЛЬНЫЕ ФУНКЦИИ ПЕРЕКЛЮЧЕНИЯ РЕЖИМОВ:
-            //'  window.OpenEditorTab = function() {' +
-            //'    document.getElementById("tab-graph-map").style.display = "none";' +
-            //'    document.getElementById("tab-editor-container").style.display = "block";' +
-            //'  };' +
-            //'  window.CloseEditorTab = function() {' +
-            //'    document.getElementById("tab-editor-container").style.display = "none";' +
-            //'    document.getElementById("tab-graph-map").style.display = "block";' +
-            //'  };'
-                         '  <div id="right-panel" style="position: relative; display: flex; flex-direction: column;">' +
-
-            // 1. Узкая, строгая футуристичная полоска вкладок (высота 30px) на самом чердаке окна:
-            '    <div id="right-panel-tabs" style="height: 30px; background: #252526; border-bottom: 1px solid #333; display: flex; align-items: center; padding: 0 10px; box-sizing: border-box;">' +
-            '      <button id="btn-tab-map" onclick="CloseEditorTab()" style="background: #1e1e1e; color: #00FFFF; border: 1px solid #00FFFF; padding: 2px 12px; font-size: 11px; font-weight: bold; cursor: pointer; border-radius: 4px; margin-right: 8px; outline: none;">🗺️ КАРТА</button>' +
-            '      <button id="btn-tab-edit" onclick="OpenEditorTab()" style="background: transparent; color: #888; border: 1px solid #444; padding: 2px 12px; font-size: 11px; font-weight: bold; cursor: pointer; border-radius: 4px; outline: none;">📝 РЕДАКТОР</button>' +
-            '    </div>' +
-
-            // 2. Слой №1: Наш родной Canvas графической карты (занимает всё оставшееся пространство)
-            '    <div id="tab-graph-map" style="flex: 1; display: block; width: 100%; position: relative;">' +
-            '      <canvas id="artistCanvas"></canvas>' +
-            '    </div>' +
-
-            // 3. Слой №2: Изолированный контейнер фрейма редактора (абсолютно перекрывает карту по сигналу)
-            '    <div id="tab-editor-container" style="display: none; position: absolute; top: 30px; bottom: 0; left: 0; right: 0; background: #1e1e1e; z-index: 10;">' +
-            '      <iframe name="editor-viewport" id="editor-viewport" style="width: 100%; height: 100%; border: none;"></iframe>' +
-            '    </div>' +
-
-            '  </div>' + // Конец #right-panel
-
-            '</div>' +
-            '<script>' +
-            '  const left = document.getElementById("left-panel");' +
-            '  const resizer = document.getElementById("resizer");' +
-            '  let isResizing = false;' +
-            '  resizer.addEventListener("mousedown", (e) => { isResizing = true; document.body.style.userSelect = "none"; });' +
-            '  document.addEventListener("mouseup", () => { isResizing = false; document.body.style.userSelect = "auto"; });' +
-            '  document.addEventListener("mousemove", (e) => {' +
-            '    if (!isResizing) return;' +
-            '    left.style.width = e.clientX + "px";' +
-            '  });' +
-
-            // 🎯 МОДЕРНИЗИРОВАННЫЕ ФУНКЦИИ ПЕРЕКЛЮЧЕНИЯ (ОБНОВЛЯЮТ ЕЩЁ И СТИЛИ КНОПОК ДЛЯ НАГЛЯДНОСТИ):
-            '  window.OpenEditorTab = function() {' +
-            '    document.getElementById("tab-graph-map").style.display = "none";' +
-            '    document.getElementById("tab-editor-container").style.display = "block";' +
-            '    document.getElementById("btn-tab-edit").style.background = "#1e1e1e";' +
-            '    document.getElementById("btn-tab-edit").style.color = "#00FFFF";' +
-            '    document.getElementById("btn-tab-edit").style.border = "1px solid #00FFFF";' +
-            '    document.getElementById("btn-tab-map").style.background = "transparent";' +
-            '    document.getElementById("btn-tab-map").style.color = "#888";' +
-            '    document.getElementById("btn-tab-map").style.border = "1px solid #444";' +
-            '  };' +
-            '  window.CloseEditorTab = function() {' +
-            '    document.getElementById("tab-editor-container").style.display = "none";' +
-            '    document.getElementById("tab-graph-map").style.display = "block";' +
-            '    document.getElementById("btn-tab-map").style.background = "#1e1e1e";' +
-            '    document.getElementById("btn-tab-map").style.color = "#00FFFF";' +
-            '    document.getElementById("btn-tab-map").style.border = "1px solid #00FFFF";' +
-            '    document.getElementById("btn-tab-edit").style.background = "transparent";' +
-            '    document.getElementById("btn-tab-edit").style.color = "#888";' +
-            '    document.getElementById("btn-tab-edit").style.border = "1px solid #444";' +
-            '  };' +
-
-            '</script></body></html>';
-        end;
+        //begin
+        //  // Формируем сквозную шапку, которая встанет НАД обоими окнами
+        //  if ReqUser <> '' then
+        //    ForumHeader := '<div id="top-bar">' +
+        //                   '  <div class="logo">🌌 Семантический срез</div>' +
+        //                   '  <div class="user-info">' +
+        //                   '    Пилот: <b>' + ReqUser + '</b> | ' +
+        //                   '    <a href="/profile" class="nav-btn">[ Личный кабинет ]</a> | ' +
+        //                   '    <a href="/logout" class="nav-btn-exit">[ Выход ]</a> | ' +
+        //                   '    <a href="/" class="nav-btn-gray">Главная</a>' +
+        //                   '  </div>' +
+        //                   '</div>'
+        //  else
+        //    ForumHeader := '<div id="top-bar">' +
+        //                   '  <div class="logo">🌌 Семантический срез</div>' +
+        //                   '  <div class="user-info">' +
+        //                   '    Вы зашли как гость | ' +
+        //                   '    <a href="/login" class="nav-btn">[ Авторизация ]</a> | ' +
+        //                   '    <a href="/register" class="nav-btn">[ Регистрация ]</a> | ' +
+        //                   '    <a href="/" class="nav-btn-gray">Главная</a>' +
+        //                   '  </div>' +
+        //                   '</div>';
+        //
+        //  AResponse.Content :=
+        //    '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Semantic Artist</title>' +
+        //    '<style>' +
+        //    '  body { margin: 0; padding: 0; overflow: hidden; display: flex; flex-direction: column; height: 100vh; background: #1e1e1e; color: #d4d4d4; font-family: sans-serif; }' +
+        //    '  #top-bar { height: 45px; background: #252525; border-bottom: 1px solid #3c3c3c; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; box-sizing: border-box; z-index: 10; }' +
+        //    '  .logo { font-weight: bold; color: #00FFFF; letter-spacing: 0.5px; font-size: 15px; }' +
+        //    '  .user-info { font-size: 13px; }' +
+        //    '  .nav-btn { color: #00FFFF; text-decoration: none; margin-left: 10px; font-weight: bold; }' +
+        //    '  .nav-btn-exit { color: #F44336; text-decoration: none; margin-left: 10px; }' +
+        //    '  .nav-btn-gray { color: #aaa; text-decoration: none; margin-left: 10px; }' +
+        //    '  #main-container { display: flex; flex-grow: 1; height: calc(100vh - 45px); overflow: hidden; }' +
+        //    '  #left-panel { width: 50%; min-width: 150px; overflow-y: auto; padding: 10px; box-sizing: border-box; }' +
+        //    '  #resizer { width: 6px; cursor: col-resize; background: #333; transition: 0.2s; }' +
+        //    '  #resizer:hover { background: #4A90E2; }' +
+        //    '  #right-panel { flex-grow: 1; background: #111; position: relative; overflow: hidden; }' +
+        //    '  canvas { display: block; width: 100%; height: 100%; }' +
+        //    '  html { scroll-behavior: smooth; }' +
+        //    '</style></head><body>' +
+        //    ForumHeader +
+        //     '<div id="main-container">' +
+        //    '  <div id="left-panel">' + TempWorker.FHtmlBuffer + '</div>' +
+        //    '  <div id="resizer"></div>' +
+        //
+        //    // 🎯 НАШЕ ОТРЕГУЛИРОВАННОЕ ДВУХРЕЖИМНОЕ ПРАВОЕ ОКНО:
+        //
+        //                 '  <div id="right-panel" style="position: relative; display: flex; flex-direction: column;">' +
+        //
+        //    // 1. Узкая, строгая футуристичная полоска вкладок (высота 30px) на самом чердаке окна:
+        //    '    <div id="right-panel-tabs" style="height: 30px; background: #252526; border-bottom: 1px solid #333; display: flex; align-items: center; padding: 0 10px; box-sizing: border-box;">' +
+        //    '      <button id="btn-tab-map" onclick="CloseEditorTab()" style="background: #1e1e1e; color: #00FFFF; border: 1px solid #00FFFF; padding: 2px 12px; font-size: 11px; font-weight: bold; cursor: pointer; border-radius: 4px; margin-right: 8px; outline: none;">🗺️ КАРТА</button>' +
+        //    '      <button id="btn-tab-edit" onclick="OpenEditorTab()" style="background: transparent; color: #888; border: 1px solid #444; padding: 2px 12px; font-size: 11px; font-weight: bold; cursor: pointer; border-radius: 4px; outline: none;">📝 РЕДАКТОР</button>' +
+        //    '    </div>' +
+        //
+        //    // 2. Слой №1: Наш родной Canvas графической карты (занимает всё оставшееся пространство)
+        //    '    <div id="tab-graph-map" style="flex: 1; display: block; width: 100%; position: relative;">' +
+        //    '      <canvas id="artistCanvas"></canvas>' +
+        //    '    </div>' +
+        //
+        //    // 3. Слой №2: Изолированный контейнер фрейма редактора (абсолютно перекрывает карту по сигналу)
+        //    '    <div id="tab-editor-container" style="display: none; position: absolute; top: 30px; bottom: 0; left: 0; right: 0; background: #1e1e1e; z-index: 10;">' +
+        //    '      <iframe name="editor-viewport" id="editor-viewport" style="width: 100%; height: 100%; border: none;"></iframe>' +
+        //    '    </div>' +
+        //
+        //    '  </div>' + // Конец #right-panel
+        //
+        //    '</div>' +
+        //    '<script>' +
+        //    '  const left = document.getElementById("left-panel");' +
+        //    '  const resizer = document.getElementById("resizer");' +
+        //    '  let isResizing = false;' +
+        //    '  resizer.addEventListener("mousedown", (e) => { isResizing = true; document.body.style.userSelect = "none"; });' +
+        //    '  document.addEventListener("mouseup", () => { isResizing = false; document.body.style.userSelect = "auto"; });' +
+        //    '  document.addEventListener("mousemove", (e) => {' +
+        //    '    if (!isResizing) return;' +
+        //    '    left.style.width = e.clientX + "px";' +
+        //    '  });' +
+        //
+        //    // 🎯 МОДЕРНИЗИРОВАННЫЕ ФУНКЦИИ ПЕРЕКЛЮЧЕНИЯ (ОБНОВЛЯЮТ ЕЩЁ И СТИЛИ КНОПОК ДЛЯ НАГЛЯДНОСТИ):
+        //    '  window.OpenEditorTab = function() {' +
+        //    '    document.getElementById("tab-graph-map").style.display = "none";' +
+        //    '    document.getElementById("tab-editor-container").style.display = "block";' +
+        //    '    document.getElementById("btn-tab-edit").style.background = "#1e1e1e";' +
+        //    '    document.getElementById("btn-tab-edit").style.color = "#00FFFF";' +
+        //    '    document.getElementById("btn-tab-edit").style.border = "1px solid #00FFFF";' +
+        //    '    document.getElementById("btn-tab-map").style.background = "transparent";' +
+        //    '    document.getElementById("btn-tab-map").style.color = "#888";' +
+        //    '    document.getElementById("btn-tab-map").style.border = "1px solid #444";' +
+        //    '  };' +
+        //    '  window.CloseEditorTab = function() {' +
+        //    '    document.getElementById("tab-editor-container").style.display = "none";' +
+        //    '    document.getElementById("tab-graph-map").style.display = "block";' +
+        //    '    document.getElementById("btn-tab-map").style.background = "#1e1e1e";' +
+        //    '    document.getElementById("btn-tab-map").style.color = "#00FFFF";' +
+        //    '    document.getElementById("btn-tab-map").style.border = "1px solid #00FFFF";' +
+        //    '    document.getElementById("btn-tab-edit").style.background = "transparent";' +
+        //    '    document.getElementById("btn-tab-edit").style.color = "#888";' +
+        //    '    document.getElementById("btn-tab-edit").style.border = "1px solid #444";' +
+        //    '  };' +
+        //
+        //    '</script></body></html>';
+        //end;
+        AResponse.Content := HTML_RenderForumPage(ReqUser, TempWorker.FHtmlBuffer);
       if TempWorker.Suspended then
         TempWorker.Start;
     finally
@@ -280,24 +394,6 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
     // Считываем лимит пилота из СУБД (ReqUser у тебя вычислен сервером выше по коду)
     ULimit := 50; // Базовый предохранитель
     if ReqUser <> '' then ULimit := FDB.GetUserLimit(ReqUser);
-    //TempWorker := TServerWorker.Create(Self.FDB, nil, nil, emToViewer, True);
-    //TempWorker.FMaxNodes := ULimit;
-    //TempWorker.FChunk := True;
-    //// Присваиваем прилетевшую координату старта напрямую в LongInt-поле класса воркера
-    //TempWorker.FNextStartID := StrToIntDef(ARequest.QueryFields.Values['start'], 0);
-    //
-    //try
-    //  // Запускаем эстафету. Теперь воркер с первой же микросекунды "помнит" всех
-    //  // своих родителей, и палочки вложений ┆ плавно продолжат рисовать фрактал!
-    //  TempWorker.ExposeSystem(TempWorker.FNextStartID,ARequest.QueryFields.Values['stack']);
-    //
-    //  // Отдаем чистые карточки сообщений без тяжелой шапки и подвала сайта
-    //  AResponse.ContentType := 'text/html; charset=utf-8';
-    //  AResponse.Content := TempWorker.FHtmlBuffer;
-    //  AResponse.SendContent;
-    //finally
-    //  TempWorker.Free; // Чистим ОЗУ сервера (Green Computing)
-    //end;
         // Создаем экземпляр воркера (False на конце — поток не заморожен)
     TempWorker := TServerWorker.Create(Self.FDB, nil, nil, emToViewer, IsUserAuth);
     TempWorker.FMaxNodes := ULimit;
@@ -327,32 +423,35 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
     WriteLn('   [СЕКЬЮРИТИ] Перехвачен импульс ответа! Родословная считана из ОЗУ кнопки.');
 
     AResponse.ContentType := 'text/html; charset=utf-8';
-      AResponse.Content :=
-      '<html><body style="font-family:sans-serif; background:#1e1e1e; color:#d4d4d4; padding:30px;">' +
-      '  <script>' +
-      '    if (parent && typeof parent.OpenEditorTab === "function") {' +
-      '      parent.OpenEditorTab();' +
-      '    }' +
-      '  </script>' +
-
-      '  <h2 style="color:#00FFFF;">🧬 Семантический шлюз: Ветки узла зафиксированы</h2>' +
-      '  <hr style="border-color:#444;">' +
-      '  <p style="font-size:16px;">Вы отправляете ответ на сообщение ID: <b style="color:#fff;">' + TargetParent + '</b></p>' +
-      '  <div style="background:#252526; border:1px dashed #555; padding:15px; border-radius:4px; margin-top:20px;">' +
-      '    <span style="color:#888; font-family:monospace;">[КОД ВЕТКИ (gate_stack)]</span><br>' +
-      '    <strong style="font-size:20px; color:#00FFFF; font-family:monospace; display:block; margin-top:10px;">' + GateStackDNA + '</strong>' +
-      '  </div>' +
-      '  <br><br>' +
-
-      // Кнопка возврата к Карте созвездий (просто гасит слой редактора в Хроме)
-      '  <button onclick="if(parent && typeof parent.CloseEditorTab === &apos;function&apos;){parent.CloseEditorTab();}" ' +
-      '          style="background:transparent; border:1px solid #555; color:#888; padding:6px 14px; border-radius:4px; cursor:pointer; font-size:13px;">' +
-      '    ◀ Вернуться к просмотру карты' +
-      '  </button>' +
-      '</body></html>';
+      AResponse.Content := HTML_RenderInteraction(TargetParent, GateStackDNA);
  //   AResponse.SendContent;
   end
-    // --- МАРШРУТ 3: РЕГИСТРАЦИЯ ---
+  // -----МАРШРУТ 3: ПРИЁМ ОТВЕТА
+    else if Path = '/save_reply' then
+  begin
+    // Извлекаем "мелкоту" и текст ответа из POST-параметров сетевого кабеля:
+    TargetParent := ARequest.ContentFields.Values['parent_id'];
+    GateStackDNA := ARequest.ContentFields.Values['gate_stack'];
+    TextContent  := ARequest.ContentFields.Values['reply_text'];
+
+    // Пишем зрячий лог в консоль Jetson Nano для контроля транзита данных:
+    WriteLn('   [БЭКЕНД] Принят пакет сохранения ответа!');
+    WriteLn('            Родительский узел: #', TargetParent);
+    WriteLn('            Родословная (DNA): ', GateStackDNA);
+    WriteLn('            Текст сообщения  : "', TextContent, '"');
+
+    AResponse.ContentType := 'text/html; charset=utf-8';
+
+    // Временно выдаем во фрейм текстовое подтверждение, чтобы проверить физику моста:
+    AResponse.Content :=
+      '<html><body style="font-family:sans-serif; background:#1e1e1e; color:#00FFFF; padding:20px;">' +
+      '  <h4 style="margin:0 0 10px 0;">✔ Пакет успешно доставлен на Jetson Nano!</h4>' +
+      '  <p style="color:#aaa; font-size:13px; margin:0;">Текст зафиксирован в ОЗУ сервера. База данных SQLite готова к записи.</p>' +
+      '</body></html>';
+
+    // Никаких ручных SendContent! Паскаль вытолкнет буфер автоматически при выходе из процедуры
+  end
+    // --- МАРШРУТ 4: РЕГИСТРАЦИЯ ---
     else if Path = '/register' then
     begin
       AResponse.ContentType := 'text/html; charset=utf-8';
