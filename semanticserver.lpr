@@ -18,7 +18,7 @@ type
   end;
 
 
-  // 🎯 1. КОНСТРУКТОР ГЛАВНОЙ СТРАНИЦЫ
+  // 1. КОНСТРУКТОР ГЛАВНОЙ СТРАНИЦЫ
   function HTML_RenderIndexPage(const ReqUser: string): string;
   var
    UserBlock: string;
@@ -61,7 +61,7 @@ type
 
 
   end;
-
+  // 2. КОНСТРУКТОР СТРАНИЦЫ форума
   function HTML_RenderForumPage(const AReqUser, FHtmlBuffer: string): string;
   var
     ForumHeader: string;
@@ -169,7 +169,7 @@ type
 
             '</script></body></html>';
         end;
-
+  // 3. КОНСТРУКТОР СТРАНИЦЫ взаимодействия
   function HTML_RenderInteraction(const AParentID, AGateStack: string): string;
 begin
   Result :=
@@ -204,8 +204,92 @@ begin
     '  </div>' +
     '</body></html>';
 end;
-
-
+ // 4. КОНСТРУКТОР СТРАНИЦЫ РЕГИСТРАЦИИ
+ function HTML_RenderRegisterPage: string;
+begin
+  Result :=  '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Регистрация</title>' +
+          '<style>' +
+          '  body { background: #1e1e1e; color: #eee; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }' +
+          '  .reg-box { background: #2d2d2d; padding: 30px; border-radius: 5px; border: 1px solid #444; width: 300px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }' +
+          '  h2 { margin-top: 0; color: #4A90E2; text-align: center; font-size: 22px; }' +
+          '  label { display: block; font-size: 13px; color: #aaa; margin-top: 10px; }' +
+          '  input[type="text"], input[type="password"] { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #555; background: #111; color: #fff; box-sizing: border-box; border-radius: 3px; }' +
+          '  input[type="submit"] { width: 100%; padding: 12px; background: #4A90E2; border: none; color: white; font-weight: bold; cursor: pointer; border-radius: 3px; font-size: 14px; transition: 0.2s; }' +
+          '  input[type="submit"]:hover { background: #357ABD; }' +
+          '  .link { text-align: center; margin-top: 15px; font-size: 13px; }' +
+          '  .link a { color: #888; text-decoration: none; }' +
+          '  .link a:hover { color: #4A90E2; }' +
+          '</style></head><body>' +
+          '<div class="reg-box">' +
+          '  <h2>Создать аккаунт</h2>' +
+          '  <form method="POST" action="/register">' +
+          '    <label>Имя пользователя:</label>' +
+          '    <input type="text" name="user" required autocomplete="off">' +
+          '    <label>Пароль:</label>' +
+          '    <input type="password" name="pass" required>' +
+          '    <input type="submit" value="Зарегистрироваться">' +
+          '  </form>' +
+          '  <div class="link"><a href="/login">Уже есть аккаунт? Войти</a> | <a href="/">На главную</a></div>' +
+          '</div>' +
+          '</body></html>';
+end;
+ // 5. КОНСТРУКТОР СТРАНИЦЫ АВТОРИЗАЦИИ
+function HTML_RenderLoginPage: string;
+begin
+  Result :=           '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Вход</title>' +
+          '<style>' +
+          '  body { background: #1e1e1e; color: #eee; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }' +
+          '  .login-box { background: #2d2d2d; padding: 30px; border-radius: 5px; border: 1px solid #444; width: 300px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }' +
+          '  h2 { margin-top: 0; color: #4A90E2; text-align: center; font-size: 22px; }' +
+          '  label { display: block; font-size: 13px; color: #aaa; margin-top: 10px; }' +
+          '  input[type="text"], input[type="password"] { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #555; background: #111; color: #fff; box-sizing: border-box; border-radius: 3px; }' +
+          '  input[type="submit"] { width: 100%; padding: 12px; background: #4A90E2; border: none; color: white; font-weight: bold; cursor: pointer; border-radius: 3px; font-size: 14px; transition: 0.2s; }' +
+          '  input[type="submit"]:hover { background: #357ABD; }' +
+          '  .link { text-align: center; margin-top: 15px; font-size: 13px; }' +
+          '  .link a { color: #888; text-decoration: none; }' +
+          '  .link a:hover { color: #4A90E2; }' +
+          '</style></head><body>' +
+          '<div class="login-box">' +
+          '  <h2>Авторизация</h2>' +
+          '  <form method="POST" action="/login">' +
+          '    <label>Имя пользователя:</label>' +
+          '    <input type="text" name="user" required autocomplete="off">' +
+          '    <label>Пароль:</label>' +
+          '    <input type="password" name="pass" required>' +
+          '    <input type="submit" value="Войти">' +
+          '  </form>' +
+          '  <div class="link"><a href="/register">Регистрация</a> | <a href="/">На главную</a></div>' +
+          '</div>' +
+          '</body></html>';
+end;
+ // 6. КОНСТРУКТОР ЛИЧНОГО КАБИНЕТА
+function HTML_RenderProfilePage(const ReqUser: string; ULimit: Integer): string;
+begin
+  Result :=           '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Личный кабинет</title>' +
+          '<style>' +
+          '  body { background: #1e1e1e; color: #eee; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }' +
+          '  .profile-box { background: #2d2d2d; padding: 30px; border-radius: 5px; border: 1px solid #444; width: 350px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }' +
+          '  h2 { margin-top: 0; color: #00FFFF; text-align: center; }' +
+          '  .info { font-size: 14px; color: #aaa; margin-bottom: 20px; text-align: center; }' +
+          '  label { display: block; font-size: 13px; color: #ccc; margin-top: 15px; }' +
+          '  input[type="number"], select { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #555; background: #111; color: #fff; box-sizing: border-box; border-radius: 3px; }' +
+          '  input[type="submit"] { width: 100%; padding: 12px; background: #00FFFF; border: none; color: #111; font-weight: bold; cursor: pointer; border-radius: 3px; font-size: 14px; transition: 0.2s; }' +
+          '  input[type="submit"]:hover { background: #00b3b3; }' +
+          '  .link { text-align: center; margin-top: 20px; font-size: 13px; }' +
+          '  .link a { color: #888; text-decoration: none; }' +
+          '</style></head><body>' +
+          '<div class="profile-box">' +
+          '  <h2>Личный кабинет</h2>' +
+          '  <div class="info">Пилот семантического пространства: <b>' + ReqUser + '</b></div>' +
+          '  <form method="POST" action="/profile">' +
+          '    <label>Лимит узлов среза на страницу:</label>' +
+          '    <input type="number" name="limit" value="' + IntToStr(ULimit) + '" min="1" max="500" required>' +
+          '    <input type="submit" value="Сохранить настройки">' +
+          '  </form>' +
+          '  <div class="link"><a href="/forum">🌌 Назад к срезу</a> | <a href="/">Главная</a></div>' +
+          '</div>' +
+          '</body></html>';
+end;
 
 procedure TSemanticApp.HandleRequest(Sender: TObject; var ARequest: TFPHTTPConnectionRequest;
                                      var AResponse: TFPHTTPConnectionResponse);
@@ -273,14 +357,13 @@ begin
 //ULimit := Self.FDB.GetUserLimit(ReqUser);
 WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' применен лимит: ', ULimit);
     end;
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         if ReqUser <> '' then
     begin
-      // Вызываем твой рабочий метод модуля базы данных, который ты настроил:
+      // Вызываем  рабочий метод модуля базы данных:
       ULimit := FDB.GetUserLimit(ReqUser);
     end;
     TempWorker := TServerWorker.Create(Self.FDB, nil, nil, emToViewer, IsUserAuth);
- /////////////////////////////////////////////////////////////////////////
+
      //Прошиваем лимит ЛК внутрь публичного поля воркера!
     TempWorker.FMaxNodes := ULimit;
     //TempWorker.FChunk := True;
@@ -298,12 +381,12 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
     finally
       TempWorker.Free;
     end;
-  end // <--- Конец блока /forum (обрати внимание, тут нет точки с запятой, если сразу дальше идет else if)
+  end // <--- Конец блока /forum
 
     // ЗАПРОС НА БЕСШОВНУЮ ПОДГРУЗКУ ЧАНКА СЛОЯ
   else if (Path = '/forum_chunk') or (Path = '/forum_chunk/') then
   begin
-    // Считываем лимит пилота из СУБД (ReqUser у тебя вычислен сервером выше по коду)
+    // Считываем лимит из СУБД (ReqUser у тебя вычислен сервером выше по коду)
     ULimit := 50; // Базовый предохранитель
     if ReqUser <> '' then ULimit := FDB.GetUserLimit(ReqUser);
         // Создаем экземпляр воркера (False на конце — поток не заморожен)
@@ -313,7 +396,7 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
 
     try
       // ВЫЗОВ С ЕДИНЫМ СТРОКОВЫМ ПАРАМЕТРОМ:
-      // Склеиваем параметры URL и тела POST, воркер внутри сам во всём зряче разберётся!
+      // Склеиваем параметры URL и тела POST, воркер внутри сам во всём разберётся
       TempWorker.ExposeSystem(ARequest.QueryFields.Text + '&' + ARequest.ContentFields.Text);
 
       AResponse.ContentType := 'text/html; charset=utf-8';
@@ -369,32 +452,7 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
       AResponse.ContentType := 'text/html; charset=utf-8';
       if ARequest.Method = 'GET' then
       begin
-        AResponse.Content :=
-          '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Регистрация</title>' +
-          '<style>' +
-          '  body { background: #1e1e1e; color: #eee; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }' +
-          '  .reg-box { background: #2d2d2d; padding: 30px; border-radius: 5px; border: 1px solid #444; width: 300px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }' +
-          '  h2 { margin-top: 0; color: #4A90E2; text-align: center; font-size: 22px; }' +
-          '  label { display: block; font-size: 13px; color: #aaa; margin-top: 10px; }' +
-          '  input[type="text"], input[type="password"] { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #555; background: #111; color: #fff; box-sizing: border-box; border-radius: 3px; }' +
-          '  input[type="submit"] { width: 100%; padding: 12px; background: #4A90E2; border: none; color: white; font-weight: bold; cursor: pointer; border-radius: 3px; font-size: 14px; transition: 0.2s; }' +
-          '  input[type="submit"]:hover { background: #357ABD; }' +
-          '  .link { text-align: center; margin-top: 15px; font-size: 13px; }' +
-          '  .link a { color: #888; text-decoration: none; }' +
-          '  .link a:hover { color: #4A90E2; }' +
-          '</style></head><body>' +
-          '<div class="reg-box">' +
-          '  <h2>Создать аккаунт</h2>' +
-          '  <form method="POST" action="/register">' +
-          '    <label>Имя пользователя:</label>' +
-          '    <input type="text" name="user" required autocomplete="off">' +
-          '    <label>Пароль:</label>' +
-          '    <input type="password" name="pass" required>' +
-          '    <input type="submit" value="Зарегистрироваться">' +
-          '  </form>' +
-          '  <div class="link"><a href="/login">Уже есть аккаунт? Войти</a> | <a href="/">На главную</a></div>' +
-          '</div>' +
-          '</body></html>';
+        AResponse.Content := HTML_RenderRegisterPage();
       end
       else if ARequest.Method = 'POST' then
       begin
@@ -418,32 +476,7 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
       AResponse.ContentType := 'text/html; charset=utf-8';
       if ARequest.Method = 'GET' then
       begin
-        AResponse.Content :=
-          '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Вход</title>' +
-          '<style>' +
-          '  body { background: #1e1e1e; color: #eee; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }' +
-          '  .login-box { background: #2d2d2d; padding: 30px; border-radius: 5px; border: 1px solid #444; width: 300px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }' +
-          '  h2 { margin-top: 0; color: #4A90E2; text-align: center; font-size: 22px; }' +
-          '  label { display: block; font-size: 13px; color: #aaa; margin-top: 10px; }' +
-          '  input[type="text"], input[type="password"] { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #555; background: #111; color: #fff; box-sizing: border-box; border-radius: 3px; }' +
-          '  input[type="submit"] { width: 100%; padding: 12px; background: #4A90E2; border: none; color: white; font-weight: bold; cursor: pointer; border-radius: 3px; font-size: 14px; transition: 0.2s; }' +
-          '  input[type="submit"]:hover { background: #357ABD; }' +
-          '  .link { text-align: center; margin-top: 15px; font-size: 13px; }' +
-          '  .link a { color: #888; text-decoration: none; }' +
-          '  .link a:hover { color: #4A90E2; }' +
-          '</style></head><body>' +
-          '<div class="login-box">' +
-          '  <h2>Авторизация</h2>' +
-          '  <form method="POST" action="/login">' +
-          '    <label>Имя пользователя:</label>' +
-          '    <input type="text" name="user" required autocomplete="off">' +
-          '    <label>Пароль:</label>' +
-          '    <input type="password" name="pass" required>' +
-          '    <input type="submit" value="Войти">' +
-          '  </form>' +
-          '  <div class="link"><a href="/register">Регистрация</a> | <a href="/">На главную</a></div>' +
-          '</div>' +
-          '</body></html>';
+        AResponse.Content :=  HTML_RenderLoginPage();
       end
       else if ARequest.Method = 'POST' then
       begin
@@ -516,31 +549,7 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
 
         WriteLn('   [СЕРВЕР] ЛК отображается для пилота: "', ReqUser, '". Выводимый лимит: ', ULimit);
 
-        AResponse.Content :=
-          '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Личный кабинет</title>' +
-          '<style>' +
-          '  body { background: #1e1e1e; color: #eee; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }' +
-          '  .profile-box { background: #2d2d2d; padding: 30px; border-radius: 5px; border: 1px solid #444; width: 350px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }' +
-          '  h2 { margin-top: 0; color: #00FFFF; text-align: center; }' +
-          '  .info { font-size: 14px; color: #aaa; margin-bottom: 20px; text-align: center; }' +
-          '  label { display: block; font-size: 13px; color: #ccc; margin-top: 15px; }' +
-          '  input[type="number"], select { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #555; background: #111; color: #fff; box-sizing: border-box; border-radius: 3px; }' +
-          '  input[type="submit"] { width: 100%; padding: 12px; background: #00FFFF; border: none; color: #111; font-weight: bold; cursor: pointer; border-radius: 3px; font-size: 14px; transition: 0.2s; }' +
-          '  input[type="submit"]:hover { background: #00b3b3; }' +
-          '  .link { text-align: center; margin-top: 20px; font-size: 13px; }' +
-          '  .link a { color: #888; text-decoration: none; }' +
-          '</style></head><body>' +
-          '<div class="profile-box">' +
-          '  <h2>Личный кабинет</h2>' +
-          '  <div class="info">Пилот семантического пространства: <b>' + ReqUser + '</b></div>' +
-          '  <form method="POST" action="/profile">' +
-          '    <label>Лимит узлов среза на страницу:</label>' +
-          '    <input type="number" name="limit" value="' + IntToStr(ULimit) + '" min="1" max="500" required>' +
-          '    <input type="submit" value="Сохранить настройки">' +
-          '  </form>' +
-          '  <div class="link"><a href="/forum">🌌 Назад к срезу</a> | <a href="/">Главная</a></div>' +
-          '</div>' +
-          '</body></html>';
+        AResponse.Content := HTML_RenderProfilePage(ReqUser, ULimit);
       end
 
       // POST: Принимаем измененные настройки от пользователя
@@ -570,7 +579,6 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
     AResponse.Content := '<html><body><h1>404 Not Found</h1></body></html>';
   end;
 end;
-
 
 
 procedure TSemanticApp.DoRun;
