@@ -18,6 +18,50 @@ type
   end;
 
 
+  // 🎯 1. КОНСТРУКТОР ГЛАВНОЙ СТРАНИЦЫ
+  function HTML_RenderIndexPage(const ReqUser: string): string;
+  var
+   UserBlock: string;
+  begin
+     // Формируем блок профиля на основе значения ReqUser
+     if ReqUser <> '' then
+       UserBlock := 'Привет, <b>' + ReqUser + '</b>! | ' +
+                    '<a href="/profile" style="color: #4A90E2; text-decoration: none;">[ Личный кабинет ]</a> | ' +
+                    '<a href="/logout" style="color: #F44336; text-decoration: none;">[ Выход ]</a>'
+     else
+       UserBlock := '<a href="/login" style="color: #4A90E2; text-decoration: none;">[ Авторизация ]</a> | ' +
+                    '<a href="/register" style="color: #4A90E2; text-decoration: none;">[ Регистрация ]</a>';
+
+         Result :=
+       '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Semantic Space</title>' +
+       '<style>' +
+       '  body { background: #121212; color: #eee; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }' +
+       '  .container { background: #1e1e1e; padding: 40px; border-radius: 8px; border: 1px solid #333; text-align: center; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }' +
+       '  h1 { margin-top: 0; color: #00FFFF; font-size: 28px; letter-spacing: 1px; }' +
+       '  .user-bar { background: #252525; padding: 10px 15px; border-radius: 4px; margin-bottom: 30px; font-size: 14px; border: 1px solid #3c3c3c; }' +
+       '  .btn-galaxy { display: inline-block; padding: 15px 35px; background: linear-gradient(135deg, #4A90E2, #00FFFF); color: #fff; font-weight: bold; font-size: 18px; text-decoration: none; border-radius: 5px; box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3); transition: 0.3s; }' +
+       '  .btn-galaxy:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 255, 255, 0.5); }' +
+       '  .footer { margin-top: 25px; font-size: 11px; color: #555; }' +
+       '</style></head><body>' +
+
+       '<div class="container">' +
+       '  <h1>Семантический Сервер</h1>' +
+
+       '  <!-- Блок авторизации / профиля -->' +
+       '  <div class="user-bar">' + UserBlock + '</div>' +
+
+       '  <!-- Семантический Срез" -->' +
+       '  <p style="color: #aaa; font-size: 14px; margin-bottom: 30px;">Ультракомпактный движок для работы с древовидными структурами данных без использования рекурсии.</p>' +
+       '  <a href="/forum" class="btn-galaxy">🌌 Срез</a>' +
+
+       '  <div class="footer">FPC Релиз • Архитектура Green Computing</div>' +
+       '</div>' +
+
+       '</body></html>';
+
+
+  end;
+
   function HTML_RenderForumPage(const AReqUser, FHtmlBuffer: string): string;
   var
     ForumHeader: string;
@@ -203,43 +247,15 @@ begin
   if (Path = '/') or (Path = '') then
   begin
      AResponse.ContentType := 'text/html; charset=utf-8';
-
-     // Формируем блок профиля на основе значения ReqUser
-     if ReqUser <> '' then
-       UserBlock := 'Привет, <b>' + ReqUser + '</b>! | ' +
-                    '<a href="/profile" style="color: #4A90E2; text-decoration: none;">[ Личный кабинет ]</a> | ' +
-                    '<a href="/logout" style="color: #F44336; text-decoration: none;">[ Выход ]</a>'
-     else
-       UserBlock := '<a href="/login" style="color: #4A90E2; text-decoration: none;">[ Авторизация ]</a> | ' +
-                    '<a href="/register" style="color: #4A90E2; text-decoration: none;">[ Регистрация ]</a>';
-
-     AResponse.Content :=
-       '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Semantic Space</title>' +
-       '<style>' +
-       '  body { background: #121212; color: #eee; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }' +
-       '  .container { background: #1e1e1e; padding: 40px; border-radius: 8px; border: 1px solid #333; text-align: center; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }' +
-       '  h1 { margin-top: 0; color: #00FFFF; font-size: 28px; letter-spacing: 1px; }' +
-       '  .user-bar { background: #252525; padding: 10px 15px; border-radius: 4px; margin-bottom: 30px; font-size: 14px; border: 1px solid #3c3c3c; }' +
-       '  .btn-galaxy { display: inline-block; padding: 15px 35px; background: linear-gradient(135deg, #4A90E2, #00FFFF); color: #fff; font-weight: bold; font-size: 18px; text-decoration: none; border-radius: 5px; box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3); transition: 0.3s; }' +
-       '  .btn-galaxy:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 255, 255, 0.5); }' +
-       '  .footer { margin-top: 25px; font-size: 11px; color: #555; }' +
-       '</style></head><body>' +
-
-       '<div class="container">' +
-       '  <h1>Семантический Сервер</h1>' +
-
-       '  <!-- Блок авторизации / профиля -->' +
-       '  <div class="user-bar">' + UserBlock + '</div>' +
-
-       '  <!-- Семантический Срез" -->' +
-       '  <p style="color: #aaa; font-size: 14px; margin-bottom: 30px;">Ультракомпактный движок направленных графов смыслов без использования рекурсии.</p>' +
-       '  <a href="/forum" class="btn-galaxy">🌌 Срез</a>' +
-
-       '  <div class="footer">FPC Релиз • Архитектура Green Computing</div>' +
-       '</div>' +
-
-       '</body></html>';
+  AResponse.Content := HTML_RenderIndexPage(UserBlock);
    end
+
+    else  if (Path = '/') or (Path = '') then
+  begin
+    AResponse.ContentType := 'text/html; charset=utf-8';
+    // ... логика определения UserBlock ...
+    AResponse.Content := HTML_RenderIndexPage(UserBlock);
+  end
 
   // 2. рабочий блок Форума
 
@@ -276,111 +292,7 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
       if TempWorker.FHtmlBuffer = '' then
         AResponse.Content := '<html><body><h1>Ошибка: Буфер пуст</h1></body></html>'
       else
-        //begin
-        //  // Формируем сквозную шапку, которая встанет НАД обоими окнами
-        //  if ReqUser <> '' then
-        //    ForumHeader := '<div id="top-bar">' +
-        //                   '  <div class="logo">🌌 Семантический срез</div>' +
-        //                   '  <div class="user-info">' +
-        //                   '    Пилот: <b>' + ReqUser + '</b> | ' +
-        //                   '    <a href="/profile" class="nav-btn">[ Личный кабинет ]</a> | ' +
-        //                   '    <a href="/logout" class="nav-btn-exit">[ Выход ]</a> | ' +
-        //                   '    <a href="/" class="nav-btn-gray">Главная</a>' +
-        //                   '  </div>' +
-        //                   '</div>'
-        //  else
-        //    ForumHeader := '<div id="top-bar">' +
-        //                   '  <div class="logo">🌌 Семантический срез</div>' +
-        //                   '  <div class="user-info">' +
-        //                   '    Вы зашли как гость | ' +
-        //                   '    <a href="/login" class="nav-btn">[ Авторизация ]</a> | ' +
-        //                   '    <a href="/register" class="nav-btn">[ Регистрация ]</a> | ' +
-        //                   '    <a href="/" class="nav-btn-gray">Главная</a>' +
-        //                   '  </div>' +
-        //                   '</div>';
-        //
-        //  AResponse.Content :=
-        //    '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Semantic Artist</title>' +
-        //    '<style>' +
-        //    '  body { margin: 0; padding: 0; overflow: hidden; display: flex; flex-direction: column; height: 100vh; background: #1e1e1e; color: #d4d4d4; font-family: sans-serif; }' +
-        //    '  #top-bar { height: 45px; background: #252525; border-bottom: 1px solid #3c3c3c; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; box-sizing: border-box; z-index: 10; }' +
-        //    '  .logo { font-weight: bold; color: #00FFFF; letter-spacing: 0.5px; font-size: 15px; }' +
-        //    '  .user-info { font-size: 13px; }' +
-        //    '  .nav-btn { color: #00FFFF; text-decoration: none; margin-left: 10px; font-weight: bold; }' +
-        //    '  .nav-btn-exit { color: #F44336; text-decoration: none; margin-left: 10px; }' +
-        //    '  .nav-btn-gray { color: #aaa; text-decoration: none; margin-left: 10px; }' +
-        //    '  #main-container { display: flex; flex-grow: 1; height: calc(100vh - 45px); overflow: hidden; }' +
-        //    '  #left-panel { width: 50%; min-width: 150px; overflow-y: auto; padding: 10px; box-sizing: border-box; }' +
-        //    '  #resizer { width: 6px; cursor: col-resize; background: #333; transition: 0.2s; }' +
-        //    '  #resizer:hover { background: #4A90E2; }' +
-        //    '  #right-panel { flex-grow: 1; background: #111; position: relative; overflow: hidden; }' +
-        //    '  canvas { display: block; width: 100%; height: 100%; }' +
-        //    '  html { scroll-behavior: smooth; }' +
-        //    '</style></head><body>' +
-        //    ForumHeader +
-        //     '<div id="main-container">' +
-        //    '  <div id="left-panel">' + TempWorker.FHtmlBuffer + '</div>' +
-        //    '  <div id="resizer"></div>' +
-        //
-        //    // 🎯 НАШЕ ОТРЕГУЛИРОВАННОЕ ДВУХРЕЖИМНОЕ ПРАВОЕ ОКНО:
-        //
-        //                 '  <div id="right-panel" style="position: relative; display: flex; flex-direction: column;">' +
-        //
-        //    // 1. Узкая, строгая футуристичная полоска вкладок (высота 30px) на самом чердаке окна:
-        //    '    <div id="right-panel-tabs" style="height: 30px; background: #252526; border-bottom: 1px solid #333; display: flex; align-items: center; padding: 0 10px; box-sizing: border-box;">' +
-        //    '      <button id="btn-tab-map" onclick="CloseEditorTab()" style="background: #1e1e1e; color: #00FFFF; border: 1px solid #00FFFF; padding: 2px 12px; font-size: 11px; font-weight: bold; cursor: pointer; border-radius: 4px; margin-right: 8px; outline: none;">🗺️ КАРТА</button>' +
-        //    '      <button id="btn-tab-edit" onclick="OpenEditorTab()" style="background: transparent; color: #888; border: 1px solid #444; padding: 2px 12px; font-size: 11px; font-weight: bold; cursor: pointer; border-radius: 4px; outline: none;">📝 РЕДАКТОР</button>' +
-        //    '    </div>' +
-        //
-        //    // 2. Слой №1: Наш родной Canvas графической карты (занимает всё оставшееся пространство)
-        //    '    <div id="tab-graph-map" style="flex: 1; display: block; width: 100%; position: relative;">' +
-        //    '      <canvas id="artistCanvas"></canvas>' +
-        //    '    </div>' +
-        //
-        //    // 3. Слой №2: Изолированный контейнер фрейма редактора (абсолютно перекрывает карту по сигналу)
-        //    '    <div id="tab-editor-container" style="display: none; position: absolute; top: 30px; bottom: 0; left: 0; right: 0; background: #1e1e1e; z-index: 10;">' +
-        //    '      <iframe name="editor-viewport" id="editor-viewport" style="width: 100%; height: 100%; border: none;"></iframe>' +
-        //    '    </div>' +
-        //
-        //    '  </div>' + // Конец #right-panel
-        //
-        //    '</div>' +
-        //    '<script>' +
-        //    '  const left = document.getElementById("left-panel");' +
-        //    '  const resizer = document.getElementById("resizer");' +
-        //    '  let isResizing = false;' +
-        //    '  resizer.addEventListener("mousedown", (e) => { isResizing = true; document.body.style.userSelect = "none"; });' +
-        //    '  document.addEventListener("mouseup", () => { isResizing = false; document.body.style.userSelect = "auto"; });' +
-        //    '  document.addEventListener("mousemove", (e) => {' +
-        //    '    if (!isResizing) return;' +
-        //    '    left.style.width = e.clientX + "px";' +
-        //    '  });' +
-        //
-        //    // 🎯 МОДЕРНИЗИРОВАННЫЕ ФУНКЦИИ ПЕРЕКЛЮЧЕНИЯ (ОБНОВЛЯЮТ ЕЩЁ И СТИЛИ КНОПОК ДЛЯ НАГЛЯДНОСТИ):
-        //    '  window.OpenEditorTab = function() {' +
-        //    '    document.getElementById("tab-graph-map").style.display = "none";' +
-        //    '    document.getElementById("tab-editor-container").style.display = "block";' +
-        //    '    document.getElementById("btn-tab-edit").style.background = "#1e1e1e";' +
-        //    '    document.getElementById("btn-tab-edit").style.color = "#00FFFF";' +
-        //    '    document.getElementById("btn-tab-edit").style.border = "1px solid #00FFFF";' +
-        //    '    document.getElementById("btn-tab-map").style.background = "transparent";' +
-        //    '    document.getElementById("btn-tab-map").style.color = "#888";' +
-        //    '    document.getElementById("btn-tab-map").style.border = "1px solid #444";' +
-        //    '  };' +
-        //    '  window.CloseEditorTab = function() {' +
-        //    '    document.getElementById("tab-editor-container").style.display = "none";' +
-        //    '    document.getElementById("tab-graph-map").style.display = "block";' +
-        //    '    document.getElementById("btn-tab-map").style.background = "#1e1e1e";' +
-        //    '    document.getElementById("btn-tab-map").style.color = "#00FFFF";' +
-        //    '    document.getElementById("btn-tab-map").style.border = "1px solid #00FFFF";' +
-        //    '    document.getElementById("btn-tab-edit").style.background = "transparent";' +
-        //    '    document.getElementById("btn-tab-edit").style.color = "#888";' +
-        //    '    document.getElementById("btn-tab-edit").style.border = "1px solid #444";' +
-        //    '  };' +
-        //
-        //    '</script></body></html>';
-        //end;
-        AResponse.Content := HTML_RenderForumPage(ReqUser, TempWorker.FHtmlBuffer);
+        AResponse.Content := HTML_RenderForumPage(ReqUser, TempWorker.FHtmlBuffer);/////////////////////////////////////////////////////////////////////////////////////////////
       if TempWorker.Suspended then
         TempWorker.Start;
     finally
@@ -423,7 +335,7 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
     WriteLn('   [СЕКЬЮРИТИ] Перехвачен импульс ответа! Родословная считана из ОЗУ кнопки.');
 
     AResponse.ContentType := 'text/html; charset=utf-8';
-      AResponse.Content := HTML_RenderInteraction(TargetParent, GateStackDNA);
+      AResponse.Content := HTML_RenderInteraction(TargetParent, GateStackDNA);///////////////////////////////////////////////////
  //   AResponse.SendContent;
   end
   // -----МАРШРУТ 3: ПРИЁМ ОТВЕТА
