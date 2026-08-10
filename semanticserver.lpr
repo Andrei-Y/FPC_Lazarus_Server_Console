@@ -421,7 +421,7 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
       AResponse.Content := HTML_RenderInteraction(TargetParent, GateStackDNA);///////////////////////////////////////////////////
  //   AResponse.SendContent;
   end
-  // -----МАРШРУТ 3: ПРИЁМ ОТВЕТА
+  // -----МАРШРУТ : ПРИЁМ ОТВЕТА
     else if Path = '/save_reply' then
   begin
     // Извлекаем "мелкоту" и текст ответа из POST-параметров сетевого кабеля:
@@ -446,7 +446,7 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
 
     // Никаких ручных SendContent! Паскаль вытолкнет буфер автоматически при выходе из процедуры
   end
-    // --- МАРШРУТ 4: РЕГИСТРАЦИЯ ---
+    // --- МАРШРУТ : РЕГИСТРАЦИЯ ---
     else if Path = '/register' then
     begin
       AResponse.ContentType := 'text/html; charset=utf-8';
@@ -470,7 +470,7 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
       end;
     end
 
-    // --- МАРШРУТ 4: ВХОД (ЛОГИН) ---
+    // --- МАРШРУТ : ВХОД (ЛОГИН) ---
     else if Path = '/login' then
     begin
       AResponse.ContentType := 'text/html; charset=utf-8';
@@ -518,7 +518,7 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
           end;
           AResponse.SendRedirect('/forum');
         end
-     // --- МАРШРУТ 6: ЛИЧНЫЙ КАБИНЕТ ---
+     // --- МАРШРУТ : ЛИЧНЫЙ КАБИНЕТ ---
    else if Path = '/profile' then
   begin
     // Дублируем чтение куки прямо внутри маршрута для максимальной надежности
