@@ -213,17 +213,16 @@ begin
              '<a href="/interaction?pid=' + IntToStr(AID) + '&gate_stack=' + ButtonGateStack + '" target="editor-viewport" onclick="if(parent && typeof parent.OpenEditorTab===&apos;function&apos;){parent.OpenEditorTab();}else if(typeof OpenEditorTab===&apos;function&apos;){OpenEditorTab();}" ' +
       '    style="color: #00FFFF; text-decoration: none; font-size: 12px; font-weight: bold; ' +
       '           margin-left: 8px; border-bottom: 1px dashed #00FFFF; cursor: pointer;">' +
-      '    ↩ Ответить' +
+      '    ↩ Интеракция' +
       ' </a>';
       end;
     Result := Result +
             '<a href="/report?id='+IntToStr(AID)+'" style="color:#888; text-decoration:none;">[ Позвать бота ]</a>' +
-            '</div>' + // Этот </div> теперь закроет наш открытый выше контейнер!
+            '</div>' +
           '</td></tr></table>' +
         '</td></tr></table><br></div>';
 
 end;
-
 
 
 constructor TServerWorker.Create(ADB: TDatabaseModule; ALogEv: TLogEvent; AHtmlEv: THTMLEvent; AMode: TExtractMode; CreateSuspended: boolean);
@@ -303,11 +302,9 @@ begin
     ////////////////////////////////////////////////////////////////////////
     try
     NetParser.Delimiter := '&'; // Разделитель параметров в HTTP-строке (start=11&stack=1,4,7,9)
-    //NetParser.StrictDelimiter := True;
-    //NetParser.DelimitedText := AStrRaw;
     NetParser.Text := AStrRaw;
     DoLog('AStrRaw = ??? ' + AStrRaw);
-    // Записываем данные СТРОГО в поле класса из репозитория!
+    // Записываем данные СТРОГО в поле класса из репозитория
     AStartID := StrToIntDef(NetParser.Values['start'], 0);
     DoLog(' AStartID = ' + IntToStr(AStartID));
     FSavedStack := NetParser.Values['stack'];
@@ -325,15 +322,15 @@ begin
           DoLog('>>> Обходим в ' + IntToStr(FNextStartID) + ')');
 
     if FChunk then
-  begin
-    StringToStack(FSavedStack);
+  begin // задача этого блока ввести первую карточку в пакет и далее передать его формирование циклу
+    StringToStack(FSavedStack);// распаковываем стёк из строки переданной в качестве параметра
         DoLog('>>> Обходим в ' + FSavedStack + ')');
 
 
   // 3. СДВИГ ПОРШНЯ (СКЛЕЙКА СЛОЕВ НА СТЫКЕ ЧАНКОВ):
   // Работаем строго с твоим полем класса FNextStartID
   if  (Length(TailStack) > 0) and (TailStack[High(TailStack)] = FNextStartID) then
-  begin
+  begin // если стёк хвостов не пустой и ID последнего равен ID с которого начат обход, то:
     DoLog('>>> Условие проверки выполнено на узелке ' + IntToStr(FNextStartID));
 
     // Выводим головную карточку стыка
@@ -349,14 +346,14 @@ begin
     // Извлекаем строку хронологии предшественников
     StrList := TStringList.Create;
     try
-      StrList.Delimiter := ','; // Наша родная запятая из базы данных SQLite
+      StrList.Delimiter := ',';
       StrList.StrictDelimiter := True;
       StrList.DelimitedText := FDB.GetNodeChrono(AStartID);
 
       // Сдвигаем поршень старта на предшественника NodeB (индекс 1) через Strings
       if StrList.Count >= 2 then
       begin
-        FNextStartID := StrToIntDef(StrList.Strings[1], 0); // Твой Strings-индекс
+        FNextStartID := StrToIntDef(StrList.Strings[1], 0); //  0  - Strings-индекс
         DoLog('>>> Обход сдвинут на предшественника: ' + IntToStr(FNextStartID) + ')');
       end;
     finally
@@ -367,7 +364,6 @@ begin
     SetLength(TailStack, Length(TailStack) - 1);
     Inc(NodeCount);
   end;
-  //FChunk := False;
     end;
 
 //    TailStack := nil;

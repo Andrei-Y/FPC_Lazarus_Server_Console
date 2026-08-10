@@ -197,7 +197,7 @@ begin
     '            ◀ К карте' +
     '          </button>' +
     '          <button type="submit" style="background:#00FFFF; color:#000; border:none; padding:8px 24px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:13px;">' +
-    '            Сохранить узел' +
+    '            Ответ' +
     '          </button>' +
     '      </div>' +
     '    </form>' +
