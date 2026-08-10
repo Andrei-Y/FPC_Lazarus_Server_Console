@@ -369,7 +369,7 @@ begin
   end;
   //FChunk := False;
     end;
-  //////////////////////////////////////////////////////////////////////////////////////////////
+
 //    TailStack := nil;
     CurrentID := AStartID;
     StrList := TStringList.Create;
@@ -395,7 +395,7 @@ emToArtist:
 
     while (CurrentID <> 0) do
     begin
-      // --- Вот этот "датчик" ---
+
   if Terminated then Exit;
       Chrono := FDB.GetNodeChrono(CurrentID);
       StrList.DelimitedText := Chrono;
@@ -404,16 +404,17 @@ emToArtist:
       NodeT := StrToIntDef(StrList[2], 0);
       // --- ШАГ 1: НЫРОК ---
       if (NodeT <> 0) and
-         ((Length(TailStack) = 0) or (TailStack[High(TailStack)] <> CurrentID)) then  // ЕСЛИ ЭТО КОРЕНЬ, ИЛИ ЭТО УЗЕЛ В ХВОСТ КОТОРОГО МЫ НЕ НЫРЯЛИ, ТО НЫРЯЕМ
-      begin
+         ((Length(TailStack) = 0) or (TailStack[High(TailStack)] <> CurrentID)) then
+  //если узел имеет хвост и дышащий стек нырков равен нулю или ID его верхнего элемента не равен ID текущего узла, то производим
+         begin
         DoLog('>>> НЫРОК В ВЕТКУ (из ' + IntToStr(CurrentID) + ')');
-        SetLength(TailStack, Length(TailStack) + 1);
-        TailStack[High(TailStack)] := CurrentID;
-        CurrentID := NodeT;
+        SetLength(TailStack, Length(TailStack) + 1); // увеличиваем стек нырков на один
+        TailStack[High(TailStack)] := CurrentID; //записываем в него последним ID текущего узла
+        CurrentID := NodeT;//текущим узлом для обхода назначаем хвост
         Continue;
       end;
 
-      // --- ШАГ 2: ОПРЕДЕЛЯЕМ ВИЗУАЛЬНЫЙ УРОВЕНЬ ---
+      // --- ШАГ 2: ОПРЕДЕЛЯЕМ ВИЗУАЛЬНЫЙ УРОВЕНЬ (для префикса карточки сообщения) ---
       // Если узел в стеке — значит это РОДИТЕЛЬ, из которого мы вынырнули.
       // Чтобы дети были ПРАВЕЕ него, его уровень должен быть меньше.////////////////////////////////////////////////////////////////////////////
       IsParentNode := (Length(TailStack) > 0) and (TailStack[High(TailStack)] = CurrentID);
