@@ -307,7 +307,7 @@ begin
     //NetParser.DelimitedText := AStrRaw;
     NetParser.Text := AStrRaw;
     DoLog('AStrRaw = ??? ' + AStrRaw);
-    // Записываем данные СТРОГО в твоё родное поле класса из репозитория!
+    // Записываем данные СТРОГО в поле класса из репозитория!
     AStartID := StrToIntDef(NetParser.Values['start'], 0);
     DoLog(' AStartID = ' + IntToStr(AStartID));
     FSavedStack := NetParser.Values['stack'];
