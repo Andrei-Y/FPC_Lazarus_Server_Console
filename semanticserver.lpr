@@ -170,7 +170,7 @@ type
             '</script></body></html>';
         end;
   // 3. КОНСТРУКТОР СТРАНИЦЫ взаимодействия
-  function HTML_RenderInteraction(const AParentID, AGateStack: string): string;
+function HTML_RenderInteraction(const AParentID, AGateStack: string; ARank: Integer): string;
 begin
   Result :=
     '<html><body style="font-family:sans-serif; background:#1e1e1e; color:#d4d4d4; padding:20px; margin:0;">' +
@@ -196,9 +196,10 @@ begin
     '                  style="background:transparent; border:1px solid #444; color:#888; padding:8px 16px; border-radius:4px; cursor:pointer; font-size:13px;">' +
     '            ◀ К карте' +
     '          </button>' +
-    '          <button type="submit" style="background:#00FFFF; color:#000; border:none; padding:8px 24px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:13px;">' +
-    '            Ответ' +
-    '          </button>' +
+    //'          <button type="submit" style="background:#00FFFF; color:#000; border:none; padding:8px 24px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:13px;">' +
+    //'            Ответ' +
+    //'          </button>' +
+
     '      </div>' +
     '    </form>' +
     '  </div>' +
@@ -297,7 +298,7 @@ var
   Path: string;
   TempWorker: TServerWorker;
   ReqUser, ReqPass: string;
-  UID, ULimit: Integer;
+  UID, ULimit,UserRankInt: Integer;
   UTheme: string;
   UserBlock: string;
   ForumHeader: string;
@@ -320,6 +321,7 @@ begin
     begin
     WriteLn('   [СЕРВЕР] Распознан пользователь из сессии: "', ReqUser, '"');
     IsUserAuth := True;
+
     end
   else
     WriteLn('   [СЕРВЕР] Запрос от неавторизованного гостя.');
@@ -411,15 +413,39 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
 
 
   else if Path = '/interaction' then
-  begin
+ // begin
+ //   TargetParent := ARequest.QueryFields.Values['pid'];
+ //   GateStackDNA := ARequest.QueryFields.Values['gate_stack'];
+ //
+ //   WriteLn('   [СЕКЬЮРИТИ] Перехвачен импульс ответа! Родословная считана из ОЗУ кнопки.');
+ //
+ //   AResponse.ContentType := 'text/html; charset=utf-8';
+ //     AResponse.Content := HTML_RenderInteraction(TargetParent, GateStackDNA);///////////////////////////////////////////////////
+ ////   AResponse.SendContent;
+ // end
+    begin
+    // 1. Первый барьер безопасности: гостя отсекаем сразу
+    if ReqUser = '' then
+    begin
+      AResponse.ContentType := 'text/html; charset=utf-8';
+      AResponse.Content := '<html><body>🚨 Доступ ограничен. Авторизуйтесь.</body></html>';
+      Exit;
+    end;
+
+    // 2. Считываем параметры "мелкоты" из сетевого кабеля
     TargetParent := ARequest.QueryFields.Values['pid'];
     GateStackDNA := ARequest.QueryFields.Values['gate_stack'];
 
-    WriteLn('   [СЕКЬЮРИТИ] Перехвачен импульс ответа! Родословная считана из ОЗУ кнопки.');
+    // 🎯 3. ИДЕАЛЬНЫЙ АКАДЕМИЧЕСКИЙ ВЫЗОВ:
+    // Роутер больше не занимается черновой SQL-работой. Он просто просит модуль FDB
+    // узнать ранг пользователя по имени через вылеченную функцию GetUserRank!
+    UserRankInt := Self.FDB.GetUserRank(ReqUser);
+
 
     AResponse.ContentType := 'text/html; charset=utf-8';
-      AResponse.Content := HTML_RenderInteraction(TargetParent, GateStackDNA);///////////////////////////////////////////////////
- //   AResponse.SendContent;
+
+    // Скармливаем функции конструктора живую роль, вычисленную по числу из SQLite!
+    AResponse.Content := HTML_RenderInteraction(TargetParent, GateStackDNA, UserRankInt);
   end
   // -----МАРШРУТ : ПРИЁМ ОТВЕТА
     else if Path = '/save_reply' then

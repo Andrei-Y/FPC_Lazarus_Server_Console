@@ -34,6 +34,7 @@ type
       function CreateHead(AContent: string): Integer;
       function GetUserLimit(const AName: string): Integer;
   function UpdateUserPrefs(const AName: string; ALimit: Integer): Boolean;
+  function GetUserRank(const AUsername: string): Integer;
   end;
 
 implementation
@@ -439,6 +440,29 @@ begin
   except
     on E: Exception do WriteLn('!!! [ПОТОК БД] Ошибка в UpdateUserPrefs: ', E.Message);
   end;
+end;
+
+
+function TDatabaseModule.GetUserRank(const AUsername: string): Integer;
+var
+  LocalQuery: TSQLQuery;
+begin
+  Result := 1; // По умолчанию ранг = 1 (рядовой Исследователь)
+  if AUsername = '' then Exit;
+
+  LocalQuery := TSQLQuery.Create(nil);
+  try
+    LocalQuery.Database := Self.FConn; // Твоё прямое подключение к базе forum.db
+    LocalQuery.SQL.Text := 'SELECT access_rank FROM users WHERE username = ' + QuotedStr(AUsername) + ';';
+    LocalQuery.Open;
+
+    if not LocalQuery.EOF then
+      Result := LocalQuery.Fields[0].AsInteger;
+  except
+    on E: Exception do
+      WriteLn('   [БАЗА ДАННЫХ-ОШИБКА] Осечка чтения access_rank: ', E.Message);
+  end;
+  LocalQuery.Free; // Намертво освобождаем ОЗУ ноутбука!
 end;
 
 
