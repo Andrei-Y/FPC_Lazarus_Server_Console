@@ -225,7 +225,10 @@ begin
       'karma INTEGER DEFAULT 100, ' +            // Карма для модератора
       'pref_nodes_limit INTEGER DEFAULT 50, ' +  // Лимит "эстафеты"
       'pref_theme TEXT DEFAULT "dark", ' +       // Тема оформления (dark/light)
-      'profile_node_id INTEGER DEFAULT 0);');    // ID корня личной ветки в nodes
+      //'profile_node_id INTEGER DEFAULT 0 '+    // ID корня личной ветки в nodes
+      //'access_rank INTEGER DEFAULT 1);');        // ПОЛЕ РАНГА ПРАВ (1 - Исследователь по умолчанию)
+       'profile_node_id INTEGER DEFAULT 0, ' +    // 🎯 Поставили запятую, скобку убрали!
+      'access_rank INTEGER DEFAULT 1);');
 
     FTran.Commit;
     WriteLn('   [БАЗА] Все таблицы успешно инициализированы в режиме WAL.');
