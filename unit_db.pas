@@ -226,10 +226,15 @@ begin
       'karma INTEGER DEFAULT 100, ' +            // Карма для модератора
       'pref_nodes_limit INTEGER DEFAULT 50, ' +  // Лимит "эстафеты"
       'pref_theme TEXT DEFAULT "dark", ' +       // Тема оформления (dark/light)
-      //'profile_node_id INTEGER DEFAULT 0 '+    // ID корня личной ветки в nodes
-      //'access_rank INTEGER DEFAULT 1);');        // ПОЛЕ РАНГА ПРАВ (1 - Исследователь по умолчанию)
-       'profile_node_id INTEGER DEFAULT 0, ' +    // 🎯 Поставили запятую, скобку убрали!
+       'profile_node_id INTEGER DEFAULT 0, ' +    // ПОЛЕ РАНГА ПРАВ (1 - Исследователь по умолчанию)
       'access_rank INTEGER DEFAULT 1);');
+
+     // 6. ДОБАВОЧНЫЙ КОД ВРЕМЕННОГО АНГАРА РЕГИСТРАЦИИ (ДЛЯ СБОРКИ С НУЛЯ) ---
+    FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS pending_registrations (' +
+      'token TEXT PRIMARY KEY, ' +                 // Уникальный хэш-токен ссылки из письма
+      'username TEXT UNIQUE, ' +                   // Резервируем ник (чтобы боты не перехватили во время ожидания клика)
+      'email TEXT, ' +                             // Куда ушло письмо верификации
+      'created_at DATETIME DEFAULT CURRENT_TIMESTAMP);'); // Штамп времени (для автоочистки заявок старше 24 часов)
 
     FTran.Commit;
     WriteLn('   [БАЗА] Все таблицы успешно инициализированы в режиме WAL.');
@@ -372,28 +377,6 @@ end;
    FQuery.Close;
  end;
 
-// function TDatabaseModule.UpdateUserPrefs(const AName: string; ALimit: Integer; const ATheme: string): Boolean;
-//begin
-//  Result := False;
-//  try
-//    FQuery.Close;
-//    FQuery.SQL.Clear;
-//
-//    FQuery.SQL.Text := 'UPDATE users SET pref_nodes_limit = :limit, pref_theme = :theme WHERE username = :name;';
-//    FQuery.ParamByName('limit').AsInteger := ALimit;
-//    FQuery.ParamByName('theme').AsString := ATheme;
-//    FQuery.ParamByName('name').AsString := AName;
-//    FQuery.ExecSQL;
-//
-//    Result := True;
-//    WriteLn('   [БАЗА] Обновлены настройки для пользователя: ', AName);
-//  except
-//    on E: Exception do
-//    begin
-//      WriteLn('!!! [БАЗА] Ошибка обновления настроек: ', E.Message);
-//    end;
-//  end;
-//end;
 
 function TDatabaseModule.GetUserLimit(const AName: string): Integer;
 var

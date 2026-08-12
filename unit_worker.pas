@@ -214,7 +214,15 @@ begin
       '    style="color: #00FFFF; text-decoration: none; font-size: 12px; font-weight: bold; ' +
       '           margin-left: 8px; border-bottom: 1px dashed #00FFFF; cursor: pointer;">' +
       '    ↩ Интеракция' +
-      ' </a>';
+      ' </a>' +
+      // 2. 🎯 НАШ НОВЫЙ БЕСШУМНЫЙ КОМПАКТНЫЙ ОПЕРАТОР КОПИРОВАНИЯ
+             '<button type="button" onclick="navigator.clipboard.writeText(&apos;' + ButtonGateStack + '&apos;);" ' +
+             '        style="background: transparent; border: 1px solid #00FFFF; color: #00FFFF; ' +
+             '               width: 32px; height: 32px; border-radius: 4px; font-weight: bold; ' +
+             '               cursor: pointer; font-size: 14px; outline: none; margin-left: 12px; ' +
+             '               display: inline-flex; align-items: center; justify-content: center; vertical-align: middle;">' +
+             '   ⧉' +
+             '</button>';
       end;
     Result := Result +
             '<a href="/report?id='+IntToStr(AID)+'" style="color:#888; text-decoration:none;">[ Позвать бота ]</a>' +
