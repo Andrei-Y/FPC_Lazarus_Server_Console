@@ -169,74 +169,84 @@ type
 
             '</script></body></html>';
         end;
-  // 3. КОНСТРУКТОР СТРАНИЦЫ взаимодействия
+  // 3. КОНСТРУКТОР ОКНА взаимодействия
 function HTML_RenderInteraction(const AParentID, AGateStack: string; ARank: Integer): string;
 begin
   Result :=
-    '<html><body style="font-family:sans-serif; background:#1e1e1e; color:#d4d4d4; padding:20px; margin:0;">' +
-    '  <script>' +
-    '    if (parent && typeof parent.OpenEditorTab === "function") { parent.OpenEditorTab(); }' +
-    '  </script>' +
-    '  <div style="max-width: 700px; margin: 0 auto;">' +
-    '    ' +
-    '    <div style="margin-bottom:20px; font-weight:bold; font-size:15px;">' +
-    '      <span style="color:#00FFFF; margin-right:10px;">🛰️ Интеракция с узлом ветки:</span>' + AGateStack +
-    '    </div>' +
-    '    ' +
-    '    <form action="/save_reply" method="POST" style="margin:0; padding:0;">' +
-    '      <input type="hidden" name="parent_id" value="' + AParentID + '">' +
-    '      <input type="hidden" name="gate_stack" value="' + AGateStack + '">' +
-    '      ' +
-    '      <textarea name="reply_text" rows="8" placeholder="Введите ваше высказывание, описание синтаксических ошибок или аргументацию для модерации..." ' +
-    '                style="width:100%; background:#252526; color:#fff; border:1px solid #444; border-radius:4px; padding:12px; resize:vertical; box-sizing:border-box; font-size:14px; font-family:sans-serif; margin-bottom:20px; outline:none; line-height:1.5;"></textarea>' +
-    '      ' +
-    '      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px;">' +
-    '          <button type="button" onclick="if(parent && typeof parent.CloseEditorTab === &apos;function&apos;){parent.CloseEditorTab();}" ' +
-    '                  style="background:transparent; border:1px solid #444; color:#888; padding:0 12px; border-radius:4px; cursor:pointer; font-size:13px; font-weight:bold; height:32px; outline:none; display:flex; align-items:center;">' +
-    '            ◀ К карте' +
-    '          </button>' +
-    '          ' +
-    '          <div style="display:flex; gap:6px; flex-wrap:wrap;">' +
-    '            <button type="submit" name="action_type" value="syntax_error" ' +
-    '                    style="background:transparent; border:1px solid #ff9900; color:#ff9900; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:16px; outline:none; display:flex; align-items:center; justify-content:center;">' +
-    '               !' +
-    '            </button>' +
-    '            ' +
-    '            <button type="submit" name="action_type" value="report_deletion" ' +
-    '                    style="background:transparent; border:1px solid #ff9900; color:#ff9900; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:16px; outline:none; display:flex; align-items:center; justify-content:center;">' +
-    '               X' +
-    '            </button>' +
-    '            ' +
-    '            <button type="submit" name="action_type" value="reply_confirm" ' +
-    '                    style="background:transparent; border:1px solid #00FFaa; color:#00FFaa; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:16px; outline:none; display:flex; align-items:center; justify-content:center;">' +
-    '               +' +
-    '            </button>' +
-    '            ' +
-    '            <button type="submit" name="action_type" value="reply_refuse" ' +
-    '                    style="background:transparent; border:1px solid #00FFaa; color:#00FFaa; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:16px; outline:none; display:flex; align-items:center; justify-content:center;">' +
-    '               -' +
-    '            </button>' +
-    '            ' +
-    '            <button type="submit" name="action_type" value="alternative" ' +
-    '                    style="background:transparent; border:1px solid #00FFFF; color:#00FFFF; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:14px; outline:none; display:flex; align-items:center; justify-content:center;">' +
-    '               &lt;' +
-    '            </button>' +
-    '            ' +
-    '            <button type="submit" name="action_type" value="merge_proposal" ' +
-    '                    style="background:transparent; border:1px solid #00FFFF; color:#00FFFF; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:14px; outline:none; display:flex; align-items:center; justify-content:center;">' +
-    '               &gt;' +
-    '            </button>' +
-    '            ' +
-    '            <button type="submit" name="action_type" value="request_edit" ' +
-    '                    style="background:transparent; border:1px solid #00FFFF; color:#00FFFF; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:16px; outline:none; display:flex; align-items:center; justify-content:center;">' +
-    '               ≈' +
-    '            </button>' +
-    '          </div>' +
-    '      </div>' +
-    '      ' +
-    '    </form>' +
-    '  </div>' +
-    '</body></html>';
+      '<html><body style="font-family:sans-serif; background:#1e1e1e; color:#d4d4d4; padding:20px; margin:0;">' +
+      '  <script>' +
+      '    if (parent && typeof parent.OpenEditorTab === "function") { parent.OpenEditorTab(); }' +
+      '  </script>' +
+      '  <div style="max-width: 700px; margin: 0 auto;">' +
+      '    ' +
+      '    <div style="margin-bottom:20px; font-weight:bold; font-size:15px;">' +
+      '      <span style="color:#00FFFF; margin-right:10px;">🛰️ Интеракция с узлом ветки:</span>' + AGateStack +
+      '    </div>' +
+      '    ' +
+      '    <form action="/save_reply" method="POST" style="margin:0; padding:0;">' +
+      '      <input type="hidden" name="parent_id" value="' + AParentID + '">' +
+      '      <input type="hidden" name="gate_stack" value="' + AGateStack + '">' +
+      '      ' +
+      '      <textarea name="reply_text" rows="8" placeholder="Введите ваше высказывание, описание синтаксических ошибок или аргументацию для модерации..." ' +
+      '                style="width:100%; background:#252526; color:#fff; border:1px solid #444; border-radius:4px; padding:12px; resize:vertical; box-sizing:border-box; font-size:14px; font-family:sans-serif; margin-bottom:20px; outline:none; line-height:1.5;"></textarea>' +
+      '      ' +
+      '      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px;">' +
+      '          <button type="button" onclick="if(parent && typeof parent.CloseEditorTab === &apos;function&apos;){parent.CloseEditorTab();}" ' +
+      '                  style="background:transparent; border:1px solid #444; color:#888; padding:0 12px; border-radius:4px; cursor:pointer; font-size:13px; font-weight:bold; height:32px; outline:none; display:flex; align-items:center;">' +
+      '            ◀ К карте ' +
+      '          </button>' +
+      '          ' +
+      '          <div style="display:flex; gap:6px; flex-wrap:wrap;">' +
+      '            <button type="submit" name="action_type" value="apply_moderation" ' +
+      '                    style="background:transparent; border:1px solid #BB99FF; color:#BB99FF; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:15px; outline:none; display:flex; align-items:center; justify-content:center;">' +
+      '               §' +
+      '            </button>' +
+      '            ' +
+      '            <button type="submit" name="action_type" value="syntax_error" ' +
+      '                    style="background:transparent; border:1px solid #ff9900; color:#ff9900; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:16px; outline:none; display:flex; align-items:center; justify-content:center;">' +
+      '               !' +
+      '            </button>' +
+      '            ' +
+      '            <button type="submit" name="action_type" value="report_deletion" ' +
+      '                    style="background:transparent; border:1px solid #ff9900; color:#ff9900; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:16px; outline:none; display:flex; align-items:center; justify-content:center;">' +
+      '               X' +
+      '            </button>' +
+      '            ' +
+      '            <button type="submit" name="action_type" value="reply_confirm" ' +
+      '                    style="background:transparent; border:1px solid #00FFaa; color:#00FFaa; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:16px; outline:none; display:flex; align-items:center; justify-content:center;">' +
+      '               +' +
+      '            </button>' +
+      '            ' +
+      '            <button type="submit" name="action_type" value="reply_refuse" ' +
+      '                    style="background:transparent; border:1px solid #00FFaa; color:#00FFaa; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:16px; outline:none; display:flex; align-items:center; justify-content:center;">' +
+      '               -' +
+      '            </button>' +
+      '            ' +
+      '            <button type="submit" name="action_type" value="alternative" ' +
+      '                    style="background:transparent; border:1px solid #00FFFF; color:#00FFFF; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:14px; outline:none; display:flex; align-items:center; justify-content:center;">' +
+      '               &lt;' +
+      '            </button>' +
+      '            ' +
+      '            <button type="submit" name="action_type" value="merge_request" ' +
+      '                    style="background:transparent; border:1px solid #00FFFF; color:#00FFFF; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:15px; outline:none; display:flex; align-items:center; justify-content:center;">' +
+      '               &amp;' +
+      '            </button>' +
+      '            ' +
+      '            <button type="submit" name="action_type" value="merge_proposal" ' +
+      '                    style="background:transparent; border:1px solid #00FFFF; color:#00FFFF; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:14px; outline:none; display:flex; align-items:center; justify-content:center;">' +
+      '               &gt;' +
+      '            </button>' +
+      '            ' +
+      '            <button type="submit" name="action_type" value="request_edit" ' +
+      '                    style="background:transparent; border:1px solid #00FFFF; color:#00FFFF; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:16px; outline:none; display:flex; align-items:center; justify-content:center;">' +
+      '               ≈' +
+      '            </button>' +
+      '          </div>' +
+      '      </div>' +
+      '      ' +
+      '    </form>' +
+      '  </div>' +
+      '</body></html>';
 end;
  // 4. КОНСТРУКТОР СТРАНИЦЫ РЕГИСТРАЦИИ
  function HTML_RenderRegisterPage: string;
