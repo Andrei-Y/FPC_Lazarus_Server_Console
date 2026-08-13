@@ -4,7 +4,7 @@ program semanticserver;
 
 uses
   {$IFDEF UNIX}cthreads,{$ENDIF}
-  SysUtils, Classes, CustApp, fphttpserver, Unit_DB, Unit_Worker, md5, DateUtils, netdb;
+  SysUtils, Classes, CustApp, fphttpserver, Unit_DB, Unit_Worker, md5;
 
 type
   TSemanticApp = class(TCustomApplication)
@@ -17,172 +17,8 @@ type
     procedure DoRun; override;
   end;
 
- // 0. КОНСТРУКТОР СТРАНИЦЫ РЕГИСТРАЦИИ
-// function HTML_RenderRegisterForm(ANum1, ANum2: Integer; const AErrorMsg: string): string;
-//var
-//  ErrorBlock: string;
-//begin
-//  // Если бэкенд передал ошибку (например, "Ник уже занят"), формируем зрячий блок
-//  if AErrorMsg <> '' then
-//    ErrorBlock := '<div style="background:#CC3355; color:#fff; padding:10px; border-radius:4px; margin-bottom:15px; font-size:13px; font-weight:bold; border:1px solid #ff3366;">⚠️ ' + AErrorMsg + '</div>'
-//  else
-//    ErrorBlock := '';
-//
-//  Result :=
-//    '<html><head><meta charset="utf-8"></head>' + // 🎯 НАМЕРТВО ЛЕЧИТ КРАКОЗЯБРЫ В БРАУЗЕРЕ
-//    '<body style="font-family:sans-serif; background:#1e1e1e; color:#d4d4d4; padding:40px; margin:0; display:flex; align-items:center; justify-content:center; min-height:100vh;">' +
-//    '  <div style="width:100%; max-width: 400px; background:#111; border:1px solid #333; padding:30px; border-radius:8px; box-shadow: 0 0 20px rgba(0,255,255,0.05);">' +
-//    '    ' +
-//    '    <div style="text-align:center; margin-bottom:25px;">' +
-//    '      <div style="font-size:24px; font-weight:bold; color:#00FFFF; letter-spacing:1px; margin-bottom:8px;">🛰️ РЕГИСТРАЦИЯ ПИЛОТА</div>' +
-//    '      <div style="font-size:12px; color:#888;">Подайте заявку на подключение к графу созвездий</div>' +
-//    '    </div>' +
-//    '    ' +
-//    '    ' + ErrorBlock +
-//    '    ' +
-//    '    <form action="/do_register" method="POST" style="margin:0; padding:0;">' +
-//    '      ' +
-//    '      <div style="margin-bottom:15px;">' +
-//    '        <label style="display:block; font-size:12px; color:#aaa; font-weight:bold; margin-bottom:6px; letter-spacing:0.5px;">ПОЗЫВНОЙ (USERNAME):</label>' +
-//    '        <input type="text" name="username" required autocomplete="off" placeholder="Введите уникальный ник..." ' +
-//    '               style="width:100%; background:#252526; color:#fff; border:1px solid #444; border-radius:4px; padding:10px; font-size:14px; outline:none; box-sizing:border-box;">' +
-//    '      </div>' +
-//    '      ' +
-//    '      <div style="margin-bottom:20px;">' +
-//    '        <label style="display:block; font-size:12px; color:#aaa; font-weight:bold; margin-bottom:6px; letter-spacing:0.5px;">СТОРОННЯЯ ПОЧТА (EMAIL):</label>' +
-//    '        <input type="email" name="email" required autocomplete="off" placeholder="your-mail@domain.com" ' +
-//    '               style="width:100%; background:#252526; color:#fff; border:1px solid #444; border-radius:4px; padding:10px; font-size:14px; outline:none; box-sizing:border-box;">' +
-//    '      </div>' +
-//    '      ' +
-//    '      <div style="margin-bottom:25px; background:#161616; border:1px dashed #333; padding:12px; border-radius:4px;">' +
-//    '        <label style="display:block; font-size:11px; color:#888; font-weight:bold; margin-bottom:8px; letter-spacing:0.5px;">ЗАЩИТА ОТ АВТОМАТИЧЕСКИХ БОТОВ:</label>' +
-//    '        <div style="display:flex; align-items:center; gap:10px;">' +
-//    '          <div style="font-size:16px; font-weight:bold; color:#00FFaa; background:#252526; border:1px solid #444; padding:6px 12px; border-radius:4px; white-space:nowrap;">' +
-//               IntToStr(ANum1) + ' + ' + IntToStr(ANum2) + ' = ' +
-//    '          </div>' +
-//    '          <input type="number" name="captcha_answer" required autocomplete="off" placeholder="Ответ" ' +
-//    '                 style="width:100%; background:#252526; color:#fff; border:1px solid #444; border-radius:4px; padding:8px; font-size:14px; outline:none; box-sizing:border-box; text-align:center;">' +
-//    '        </div>' +
-//    '      </div>' +
-//    '      ' +
-//    '      <input type="hidden" name="c_n1" value="' + IntToStr(ANum1) + '">' +
-//    '      <input type="hidden" name="c_n2" value="' + IntToStr(ANum2) + '">' +
-//    '      ' +
-//    '      <button type="submit" style="width:100%; background:transparent; border:1px solid #00FFFF; color:#00FFFF; padding:12px; border-radius:4px; font-size:14px; font-weight:bold; cursor:pointer; outline:none; transition: 0.2s; letter-spacing:1px;">' +
-//    '        ОТПРАВИТЬ ССЫЛКУ АКТИВАЦИИ' +
-//    '      </button>' +
-//    '      ' +
-//    '    </form>' +
-//    '  </div>' +
-//    '</body></html>';
-//end;
+
   // 1. КОНСТРУКТОР ГЛАВНОЙ СТРАНИЦЫ
-
- function HTML_RenderRegisterForm(const AErrorMsg: string): string;
-var
-  ErrorBlock: string;
-  TargetX: Integer;
-begin
-  // Генерируем случайную координату для символа-цели на треке (ширина трека 300px, бегунок 32px)
-  // Безопасный диапазон для центровки символа: от 40 до 240 пикселей
-  TargetX := Random(200) + 40;
-
-  if AErrorMsg <> '' then
-    ErrorBlock := '<div style="background:#CC3355; color:#fff; padding:10px; border-radius:4px; margin-bottom:15px; font-size:13px; font-weight:bold; border:1px solid #ff3366;">⚠️ ' + AErrorMsg + '</div>'
-  else
-    ErrorBlock := '';
-
-  Result :=
-    '<html><head><meta charset="utf-8"></head>' +
-    '<body style="font-family:sans-serif; background:#1e1e1e; color:#d4d4d4; padding:40px; margin:0; display:flex; align-items:center; justify-content:center; min-height:100vh; user-select:none;">' +
-    '  <div style="width:100%; max-width: 400px; background:#111; border:1px solid #333; padding:30px; border-radius:8px; box-shadow: 0 0 20px rgba(0,255,255,0.05);">' +
-    '    ' +
-    '    <div style="text-align:center; margin-bottom:25px;">' +
-    '      <div style="font-size:24px; font-weight:bold; color:#00FFFF; letter-spacing:1px; margin-bottom:8px;">🛰️ РЕГИСТРАЦИЯ ПИЛОТА</div>' +
-    '      <div style="font-size:12px; color:#888;">Подайте заявку на подключение к графу созвездий</div>' +
-    '    </div>' +
-    '    ' +
-    '    ' + ErrorBlock +
-    '    ' +
-    '    <form action="/do_register" method="POST" style="margin:0; padding:0;">' +
-    '      ' +
-    '      <div style="margin-bottom:15px;">' +
-    '        <label style="display:block; font-size:12px; color:#aaa; font-weight:bold; margin-bottom:6px; letter-spacing:0.5px;">ПОЗЫВНОЙ (USERNAME):</label>' +
-    '        <input type="text" name="username" required autocomplete="off" placeholder="Введите уникальный ник..." ' +
-    '               style="width:100%; background:#252526; color:#fff; border:1px solid #444; border-radius:4px; padding:10px; font-size:14px; outline:none; box-sizing:border-box;">' +
-    '      </div>' +
-    '      ' +
-    '      <div style="margin-bottom:20px;">' +
-    '        <label style="display:block; font-size:12px; color:#aaa; font-weight:bold; margin-bottom:6px; letter-spacing:0.5px;">СТОРОННЯЯ ПОЧТА (EMAIL):</label>' +
-    '        <input type="email" name="email" required autocomplete="off" placeholder="your-mail@domain.com" ' +
-    '               style="width:100%; background:#252526; color:#fff; border:1px solid #444; border-radius:4px; padding:10px; font-size:14px; outline:none; box-sizing:border-box;">' +
-    '      </div>' +
-    '      ' +
-    '      {--- ИНТЕРАКТИВНЫЙ КООРДИНАТНЫЙ ПОЛЗУНОК ---}' +
-    '      <div style="margin-bottom:25px; background:#161616; border:1px solid #444; padding:15px; border-radius:4px;">' +
-    '        <label style="display:block; font-size:11px; color:#888; font-weight:bold; margin-bottom:10px; letter-spacing:0.5px;">КАЛИБРОВКА ПРИБОРОВ: СОВМЕСТИТЕ МЕТКУ С СИМВОЛОМ §</label>' +
-    '        ' +
-    '        <div id="slider-track" style="position:relative; width:300px; height:32px; background:#0b0b0b; border:1px solid #333; border-radius:16px; margin:0 auto; overflow:hidden;">' +
-    '          ' +
-    '          {--- Лавандовая мишень §, намертво запечённая бэкендом на случайную позицию ---}' +
-    '          <div style="position:absolute; left:' + IntToStr(TargetX) + 'px; top:0; width:32px; height:32px; display:flex; align-items:center; justify-content:center; color:#BB99FF; font-weight:bold; font-size:16px; z-index:1;">§</div>' +
-    '          ' +
-    '          {--- Подвижный бирюзовый прицел ---}' +
-    '          <div id="slider-thumb" style="position:absolute; left:0; top:0; width:32px; height:32px; background:transparent; border:1px solid #00FFFF; border-radius:50%; box-shadow:0 0 8px rgba(0,255,255,0.3); cursor:grab; z-index:2; display:flex; align-items:center; justify-content:center; background:#111;">' +
-    '            <div style="width:6px; height:6px; background:#00FFFF; border-radius:50%;"></div>' +
-    '          </div>' +
-    '        </div>' +
-    '      </div>' +
-    '      ' +
-    '      {--- СКРЫТЫЕ ПОЛЯ ДЛЯ СЕРВЕРНОЙ ПРОВЕРКИ ПРОМАХА ---}' +
-    '      <input type="hidden" id="user_answer" name="user_answer" value="0">' +
-    '      <input type="hidden" name="target_x" value="' + IntToStr(TargetX) + '">' +
-    '      ' +
-    '      <button type="submit" style="width:100%; background:transparent; border:1px solid #00FFFF; color:#00FFFF; padding:12px; border-radius:4px; font-size:14px; font-weight:bold; cursor:pointer; outline:none; letter-spacing:1px;">' +
-    '        ОТПРАВИТЬ ССЫЛКУ АКТИВАЦИИ' +
-    '      </button>' +
-    '    </form>' +
-    '  </div>' +
-    '  ' +
-    '  {--- БЕСШУМНЫЙ МЕХАНИЗМ КАЛИБРОВКИ ---}' +
-    '  <script>' +
-    '    (function() {' +
-    '      var thumb = document.getElementById("slider-thumb");' +
-    '      var track = document.getElementById("slider-track");' +
-    '      var input = document.getElementById("user_answer");' +
-    '      var isDragging = false;' +
-    '      var startX, startLeft;' +
-    '      ' +
-    '      thumb.onmousedown = function(e) {' +
-    '        isDragging = true;' +
-    '        thumb.style.cursor = "grabbing";' +
-    '        startX = e.clientX;' +
-    '        startLeft = parseInt(thumb.style.left) || 0;' +
-    '        return false;' +
-    '      };' +
-    '      ' +
-    '      document.onmousemove = function(e) {' +
-    '        if (!isDragging) return;' +
-    '        var deltaX = e.clientX - startX;' +
-    '        var newLeft = startLeft + deltaX;' +
-    '        var maxLeft = track.clientWidth - thumb.clientWidth;' +
-    '        if (newLeft < 0) newLeft = 0;' +
-    '        if (newLeft > maxLeft) newLeft = maxLeft;' +
-    '        thumb.style.left = newLeft + "px";' +
-    '        input.value = newLeft;' + // Бесшумно пишем текущую координату в скрытый инпут
-    '      };' +
-    '      ' +
-    '      document.onmouseup = function() {' +
-    '        if (isDragging) {' +
-    '          isDragging = false;' +
-    '          thumb.style.cursor = "grab";' +
-    '        }' +
-    '      };' +
-    '    })();' +
-    '  </script>' +
-    '</body></html>';
-end;
-
   function HTML_RenderIndexPage(const ReqUser: string): string;
   var
    UserBlock: string;
@@ -512,15 +348,6 @@ var
     TargetParent: string;
   GateStackDNA, TextContent: string;
   IsUserAuth: Boolean;
-  ////////////////////////////////////////////
-   ClientIP: string;
-  MachineName: string;
-  ShieldQuery: string;
-  HasBan: Boolean;
-  CurrentMisses: Integer;
-  TargetX, UserAnswer, Delta: Integer;
-  ReqEmail: string;       // УБРАЛ ОТСЮДА ReqUser, ТАК КАК ОН УЖЕ ОБЪЯВЛЕН ВЫШЕ!
-  UnlockTimeStr: string;
 begin
  /////////////////////////////////////////////////////////
   ReqUser := '';
@@ -691,29 +518,25 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
     // --- МАРШРУТ : РЕГИСТРАЦИЯ ---
     else if Path = '/register' then
     begin
-      //AResponse.ContentType := 'text/html; charset=utf-8';
-      //if ARequest.Method = 'GET' then
-      //begin
-      //  AResponse.Content := HTML_RenderRegisterPage();
-      //end
-      //else if ARequest.Method = 'POST' then
-      //begin
-      //  ReqUser := Trim(ARequest.ContentFields.Values['user']); // Исправлен пробел
-      // // ReqPass := Trim(ARequest.ContentFields.Values['pass']);
-      //       // ХЭШИРУЕМ ПАРОЛЬ ПЕРЕД ОТПРАВКОЙ В БАЗУ:
-      //ReqPass := MD5Print(MD5String(ARequest.ContentFields.Values['pass'])); //поставил точку с запятой, теперь эта строка
-      //  if Self.FDB.RegisterUser(ReqUser, ReqPass) then
-      //  begin
-      //    AResponse.SendRedirect('/login');
-      //    Exit; // Жесткая изоляция от проваливания кода вниз
-      //  end
-      //  else
-      //    AResponse.Content := '<html><body><h2>Ошибка регистрации</h2></body></html>';
-      //end;
-    // Генерируем два случайных числа для математической капчи (от 1 до 9)
-    // Randomize вызывается один раз при старте сервера, здесь просто берем такты
-        AResponse.ContentType := 'text/html; charset=utf-8';
-    AResponse.Content := HTML_RenderRegisterForm('');
+      AResponse.ContentType := 'text/html; charset=utf-8';
+      if ARequest.Method = 'GET' then
+      begin
+        AResponse.Content := HTML_RenderRegisterPage();
+      end
+      else if ARequest.Method = 'POST' then
+      begin
+        ReqUser := Trim(ARequest.ContentFields.Values['user']); // Исправлен пробел
+       // ReqPass := Trim(ARequest.ContentFields.Values['pass']);
+             // ХЭШИРУЕМ ПАРОЛЬ ПЕРЕД ОТПРАВКОЙ В БАЗУ:
+      ReqPass := MD5Print(MD5String(ARequest.ContentFields.Values['pass'])); //поставил точку с запятой, теперь эта строка
+        if Self.FDB.RegisterUser(ReqUser, ReqPass) then
+        begin
+          AResponse.SendRedirect('/login');
+          Exit; // Жесткая изоляция от проваливания кода вниз
+        end
+        else
+          AResponse.Content := '<html><body><h2>Ошибка регистрации</h2></body></html>';
+      end;
     end
 
     // --- МАРШРУТ : ВХОД (ЛОГИН) ---
@@ -818,49 +641,6 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
       end;
     end;
   end
-   else if Path = '/do_register' then
-  begin
-    AResponse.ContentType := 'text/html; charset=utf-8';
-
-    // 1. ИДЕНТИФИКАЦИЯ МАШИНЫ: Берем чистый IP-адрес Хрома в качестве хостнейма
-    ClientIP := ARequest.RemoteAddr;
-    MachineName := ClientIP;
-
-    // 2. СБОР КООРДИНАТ ИЗ ФОРМЫ
-    TargetX := StrToIntDef(ARequest.ContentFields.Values['target_x'], 0);
-    UserAnswer := StrToIntDef(ARequest.ContentFields.Values['user_answer'], 0);
-    ReqEmail := Trim(ARequest.ContentFields.Values['email']);
-
-    // 3. МАТЕМАТИКА КАЛИБРОВКИ: Вычисляем дельту попадания ползунка (допуск 15 пикселей)
-    Delta := Abs(TargetX - UserAnswer);
-
-    // 4. ТАКТ ПРОВЕРКИ ПРОМАХА
-    if Delta > 15 then
-    begin
-      // Стучимся в твою БД через новый метод (его структуру мы пропишем в модуле базы)
-      // Передаем MachineName и флаг IsMiss = True
-      // Функция запишет промах в SQLite и вернет текущее количество осечек
-      CurrentMisses := Self.FDB.LogBotAttempt(MachineName, True);
-
-      if CurrentMisses >= 3 then
-      begin
-        AResponse.Content := HTML_RenderRegisterForm('Калибровка провалена 3 раза подряд. Система заблокировала доступ для вашей машины на 1 час.');
-      end
-      else
-      begin
-        AResponse.Content := HTML_RenderRegisterForm('Приборы не откалиброваны (промах на ' + IntToStr(Delta) + 'px). Попробуйте совместить метку точнее.');
-      end;
-      Exit;
-    end;
-
-    {=== ТАКТ СНАЙПЕРСКОГО ПОПАДАНИЯ (ЧЕЛОВЕК ПРОШЁЛ) ===}
-    // Сбрасываем промахи в ноль внутри БД (IsMiss = False)
-    Self.FDB.LogBotAttempt(MachineName, False);
-
-    // Блокируем дублирование ника по твоей классической схеме:
-    // (Пока выводим успешный маркер прохождения калибровки)
-    AResponse.Content := '<html><head><meta charset="utf-8"></head><body><h2>Калибровка успешна! Проверка ника и отправка письма...</h2></body></html>';
-  end
   // 3. Если зашли по непонятному адресу
   else
   begin
@@ -905,5 +685,4 @@ begin
   Application.Run;
   Application.Free;
 end.
-
 
