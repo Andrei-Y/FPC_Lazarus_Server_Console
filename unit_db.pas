@@ -28,13 +28,15 @@ type
       function LandingNode(AParentID: Integer; AContent: string): Integer;
       function GetNodeChrono(AID: Integer): string;
       function GetNodeContent(AID: Integer): string;
-      function RegisterUser(const AName, APassHash: string; AProfileNodeID: Integer = 0): Boolean;
+//      function RegisterUser(const AName, APassHash: string; AProfileNodeID: Integer = 0): Boolean;
    function VerifyUser(const AName, APassHash: string): Boolean;//    function VerifyUser(const AName, APassHash: string; out AUserID, ANodesLimit: Integer; out ATheme: string): Boolean;
       procedure ExecSQL(const ASQL: string);
       function CreateHead(AContent: string): Integer;
       function GetUserLimit(const AName: string): Integer;
   function UpdateUserPrefs(const AName: string; ALimit: Integer): Boolean;
   function GetUserRank(const AUsername: string): Integer;
+   function RegisterUser(const AUser, APass: string): Boolean; //  рабочая функция
+  function LogBotAttempt(const AMachineName: string; AIsMiss: Boolean): Integer; // НОВЫЙ МЕТОД ЩИТА
   end;
 
 implementation
@@ -217,17 +219,21 @@ begin
       'img_data BLOB, ' +               // Бинарные данные картинки (PNG/BMP)
       'last_update INTEGER);');         // Когда кэш был создан (хронология)
 
-    // 5. Users - Единая расширенная таблица (Авторизация + Настройки + Карма + Профиль)
+
+
+        // 5. Users - Единая расширенная таблица (Авторизация + Настройки + Карма + Профиль)
     FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS users (' +
       'id INTEGER PRIMARY KEY AUTOINCREMENT, ' + // Уникальный ID пользователя
-      'username TEXT UNIQUE, ' +                 // Уникальный логин
-      'password TEXT, ' +                       // пароль для безопасности
+      'username TEXT UNIQUE, ' +                 // Уникальный логин (позывной)
+      'password TEXT, ' +                        // Хэшированный пароль для безопасности
       'reg_date DATETIME DEFAULT CURRENT_TIMESTAMP, ' + // Дата регистрации
       'karma INTEGER DEFAULT 100, ' +            // Карма для модератора
       'pref_nodes_limit INTEGER DEFAULT 50, ' +  // Лимит "эстафеты"
       'pref_theme TEXT DEFAULT "dark", ' +       // Тема оформления (dark/light)
-       'profile_node_id INTEGER DEFAULT 0, ' +    // ПОЛЕ РАНГА ПРАВ (1 - Исследователь по умолчанию)
-      'access_rank INTEGER DEFAULT 1);');
+      'profile_node_id INTEGER DEFAULT 0, ' +    // Идентификатор узла профиля
+      'email TEXT UNIQUE, ' +                    // 🎯 ВРЕЗАЛИ ПОЧТУ, УНИКАЛЬНУЮ КАК ИМЯ!
+      'access_rank INTEGER DEFAULT 1);');        // Поле ранга прав (1 - Исследователь)
+
 
      // 6. ДОБАВОЧНЫЙ КОД ВРЕМЕННОГО АНГАРА РЕГИСТРАЦИИ (ДЛЯ СБОРКИ С НУЛЯ) ---
     FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS pending_registrations (' +
@@ -235,6 +241,17 @@ begin
       'username TEXT UNIQUE, ' +                   // Резервируем ник (чтобы боты не перехватили во время ожидания клика)
       'email TEXT, ' +                             // Куда ушло письмо верификации
       'created_at DATETIME DEFAULT CURRENT_TIMESTAMP);'); // Штамп времени (для автоочистки заявок старше 24 часов)
+
+    // 7. МАТЕРИАЛИЗАЦИЯ ЩИТА БОТОВ (ДЛЯ РЕГИСТРАЦИИ) ---
+    FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS bot_shield (' +
+      'machine_name TEXT PRIMARY KEY, ' +          // Сетевое имя машины (хостнейм) или спец-ключ
+      'miss_count INTEGER DEFAULT 0, ' +           // Число промахов ползунка
+      'unlock_time DATETIME);');                    // Штамп времени блокировки на 1 час
+
+        // --- ТАКТ 8. ИНИЦИАЛИЗАЦИЯ ЕДИНСТВЕННОЙ ГЛОБАЛЬНОЙ ПЕРЕМЕННОЙ СЧЁТЧИКА ---
+    // INSERT OR IGNORE гарантирует, что строка запечётся только один раз при самом первом старте сервера с нуля
+    FConn.ExecuteDirect('INSERT OR IGNORE INTO bot_shield (machine_name, miss_count) ' +
+      'VALUES (''GLOBAL_BOT_MISS_COUNT'', 0);');
 
     FTran.Commit;
     WriteLn('   [БАЗА] Все таблицы успешно инициализированы в режиме WAL.');
@@ -296,35 +313,35 @@ end;
  end;
 
 
- function TDatabaseModule.RegisterUser(const AName, APassHash: string; AProfileNodeID: Integer = 0): Boolean;
-begin
-  Result := False;
-  try
-    // РАБОТАЕМ СТРОГО ЧЕРЕЗ ГЛОБАЛЬНЫЙ FQuery (Как до внедрения лимитов!)
-    FQuery.Close;
-    FQuery.SQL.Clear;
-
-    FQuery.SQL.Text := 'INSERT INTO users (username, password, profile_node_id) VALUES (:name, :pass, :pid);';
-    FQuery.ParamByName('name').AsString := AName;
-    FQuery.ParamByName('pass').AsString := APassHash;
-    FQuery.ParamByName('pid').AsInteger := AProfileNodeID;
-
-    // Выполняем атомарную запись
-    FQuery.ExecSQL;
-
-    // Обязательно фиксируем транзакцию, чтобы данные физически легли на диск
-    FTran.CommitRetaining;
-
-    Result := True;
-    WriteLn('   [БАЗА] Успешно создан аккаунт для: ', AName);
-  except
-    on E: Exception do
-    begin
-      FTran.RollbackRetaining;
-      WriteLn('!!! [БАЗА] Сбой при регистрации пользователя: ', E.Message);
-    end;
-  end;
-end;
+// function TDatabaseModule.RegisterUser(const AName, APassHash: string; AProfileNodeID: Integer = 0): Boolean;
+//begin
+//  Result := False;
+//  try
+//    // РАБОТАЕМ СТРОГО ЧЕРЕЗ ГЛОБАЛЬНЫЙ FQuery (Как до внедрения лимитов!)
+//    FQuery.Close;
+//    FQuery.SQL.Clear;
+//
+//    FQuery.SQL.Text := 'INSERT INTO users (username, password, profile_node_id) VALUES (:name, :pass, :pid);';
+//    FQuery.ParamByName('name').AsString := AName;
+//    FQuery.ParamByName('pass').AsString := APassHash;
+//    FQuery.ParamByName('pid').AsInteger := AProfileNodeID;
+//
+//    // Выполняем атомарную запись
+//    FQuery.ExecSQL;
+//
+//    // Обязательно фиксируем транзакцию, чтобы данные физически легли на диск
+//    FTran.CommitRetaining;
+//
+//    Result := True;
+//    WriteLn('   [БАЗА] Успешно создан аккаунт для: ', AName);
+//  except
+//    on E: Exception do
+//    begin
+//      FTran.RollbackRetaining;
+//      WriteLn('!!! [БАЗА] Сбой при регистрации пользователя: ', E.Message);
+//    end;
+//  end;
+//end;
 
 
 
@@ -446,6 +463,215 @@ begin
       WriteLn('   [БАЗА ДАННЫХ-ОШИБКА] Осечка чтения access_rank: ', E.Message);
   end;
   LocalQuery.Free; // Намертво освобождаем ОЗУ ноутбука!
+end;
+
+{=== 1. ТВОЯ ВОССТАНОВЛЕННАЯ РАБОЧАЯ ФУНКЦИЯ РЕГИСТРАЦИИ ПОЛЬЗОВАТЕЛЕЙ ===}
+function TDatabaseModule.RegisterUser(const AUser, APass: string): Boolean;
+begin
+  Result := False;
+  try
+    // Запекаем проверенного пилота прямо в твою основную таблицу users в SQLite.
+    // access_rank = 1 выставляется автоматически по дефолту структуры таблицы.
+    FConn.ExecuteDirect('INSERT INTO users (username, password) VALUES (' +
+                        QuotedStr(AUser) + ', ' + QuotedStr(APass) + ');');
+    Result := True;
+  except
+    // Если ник уже занят, SQLite выбросит ошибку уникальности (UNIQUE constraint failed),
+    // функция ламинарно вернет False, и роутер зряче попросит гостя сменить позывной.
+    Result := False;
+  end;
+end;
+
+{=== 2. НАШ НОВЫЙ МЕТОД ЩИТА БОТОВ ===}
+
+//function TDatabaseModule.LogBotAttempt(const AMachineName: string; AIsMiss: Boolean): Integer;
+//var
+//  TempQuery: TSQLQuery; // Временный радар для чтения данных из SQLite
+//begin
+//  Result := 0;
+//
+//  if not FConn.Transaction.Active then
+//    FConn.Transaction.StartTransaction;
+//
+//  try
+//    if AIsMiss then
+//    begin
+//      {=== ТАКТ ПРОВЕРКИ ПРОМАХА БОТА ===}
+//      // 1. Апдейтим глобальный счетчик интернета
+//      FConn.ExecuteDirect('UPDATE bot_shield SET miss_count = miss_count + 1 WHERE machine_name = ''GLOBAL_BOT_MISS_COUNT'';');
+//
+//      // 2. Накручиваем личные промахи этой конкретной машине (IP-адресу)
+//      FConn.ExecuteDirect('INSERT INTO bot_shield (machine_name, miss_count) VALUES (' + QuotedStr(AMachineName) + ', 1) ' +
+//                          'ON CONFLICT(machine_name) DO UPDATE SET miss_count = miss_count + 1;');
+//
+//      // 🎯 3. ЗРЯЧЕЕ ЧТЕНИЕ: Вытаскиваем реальный miss_count нарушителя из SQLite
+//      TempQuery := TSQLQuery.Create(nil);
+//      try
+//        TempQuery.Database := FConn; // Привязываем к твоему соединению SQLite
+//        TempQuery.SQL.Text := 'SELECT miss_count FROM bot_shield WHERE machine_name = ' + QuotedStr(AMachineName) + ';';
+//        TempQuery.Open;
+//
+//        if not TempQuery.EOF then
+//          Result := TempQuery.Fields[0].AsInteger // Присваиваем реальное число промахов (1, 2 или 3)
+//        else
+//          Result := 1;
+//
+//        TempQuery.Close;
+//      finally
+//        TempQuery.Free; // Намертво вычищаем радар из ОЗУ, чтобы не было утечек памяти
+//      end;
+//    end
+//    else
+//    begin
+//      {=== ТАКТ УСПЕШНОГО ПОПАДАНИЯ ЧЕЛОВЕКА ===}
+//      FConn.ExecuteDirect('UPDATE bot_shield SET miss_count = 0, unlock_time = NULL WHERE machine_name = ' + QuotedStr(AMachineName) + ';');
+//      Result := 0;
+//    end;
+//
+//    FConn.Transaction.Commit; // Запекаем изменения в файл базы на диске!
+//
+//  except
+//    FConn.Transaction.Rollback;
+//    Result := 0;
+//  end;
+//end;
+
+// function TDatabaseModule.LogBotAttempt(const AMachineName: string; AIsMiss: Boolean): Integer;
+//var
+//  TempQuery: TSQLQuery;
+//  CurrentDbMisses: Integer;
+//begin
+//  Result := 0;
+//
+//  if not FConn.Transaction.Active then
+//    FConn.Transaction.StartTransaction;
+//
+//  try
+//    if AIsMiss then
+//    begin
+//      {=== ТАКТ ПРОМАХА БОТА ===}
+//      // 1. Апдейтим глобальный счетчик интернета (факт каждого промаха для истории)
+//      FConn.ExecuteDirect('UPDATE bot_shield SET miss_count = miss_count + 1 WHERE machine_name = ''GLOBAL_BOT_MISS_COUNT'';');
+//
+//      // 2. Считываем, сколько промахов (или банов) уже числится за этой машиной в базе
+//      CurrentDbMisses := 0;
+//      TempQuery := TSQLQuery.Create(nil);
+//      try
+//        TempQuery.Database := FConn;
+//        TempQuery.SQL.Text := 'SELECT miss_count FROM bot_shield WHERE machine_name = ' + QuotedStr(AMachineName) + ';';
+//        TempQuery.Open;
+//        if not TempQuery.EOF then
+//          CurrentDbMisses := TempQuery.Fields[0].AsInteger;
+//        TempQuery.Close;
+//      finally
+//        TempQuery.Free;
+//      end;
+//
+//      // 3. Вычисляем виртуальный шаг.
+//      // Если в базе пусто (0) или это прошлые баны, мы увеличиваем локальный шаг нарушителя.
+//      // Чтобы сохранить логику роутера (который ждет цифру 3 для триггера бана),
+//      // мы симулируем промахи, но в саму базу запишем +1 к банам только на 3-й клик!
+//
+//      // Для простоты и надёжности: пускай база хранит реальные промахи, НО
+//      // если ты хочешь видеть именно количество банов, давай временно оставим
+//      // подсчет кликов на стороне роутера, а в базу отправим инкремент инцидента:
+//
+//      { Мы вернем роутеру число 3, чтобы он вывел бан, но в базу запишем +1 к инцидентам }
+//      FConn.ExecuteDirect('INSERT INTO bot_shield (machine_name, miss_count) VALUES (' + QuotedStr(AMachineName) + ', 1) ' +
+//                          'ON CONFLICT(machine_name) DO UPDATE SET miss_count = miss_count + 1;');
+//
+//      // Заставляем роутер сработать на бан
+//      Result := 3;
+//    end
+//    else
+//    begin
+//      {=== ТАКТ УСПЕШНОГО ПОПАДАНИЯ ЧЕЛОВЕКА ===}
+//      FConn.ExecuteDirect('UPDATE bot_shield SET miss_count = 0, unlock_time = NULL WHERE machine_name = ' + QuotedStr(AMachineName) + ';');
+//      Result := 0;
+//    end;
+//
+//    FConn.Transaction.Commit;
+//
+//  except
+//    FConn.Transaction.Rollback;
+//    Result := 0;
+//  end;
+//end;
+
+   function TDatabaseModule.LogBotAttempt(const AMachineName: string; AIsMiss: Boolean): Integer;
+var
+  TempQuery: TSQLQuery;
+  HasRecord: Boolean;
+begin
+  Result := 0;
+
+  // 🎯 ОПТИМИЗАЦИЯ ДЛЯ СНАЙПЕРОВ (ЧЕЛОВЕКА):
+  if not AIsMiss then
+  begin
+    // Быстро проверяем в ОЗУ через SELECT, есть ли вообще этот IP в таблице
+    HasRecord := False;
+    TempQuery := TSQLQuery.Create(nil);
+    try
+      TempQuery.Database := FConn;
+      TempQuery.SQL.Text := 'SELECT 1 FROM bot_shield WHERE machine_name = ' + QuotedStr(AMachineName) + ' LIMIT 1;';
+      TempQuery.Open;
+      HasRecord := not TempQuery.EOF;
+      TempQuery.Close;
+    finally
+      TempQuery.Free;
+    end;
+
+    // Если промахов за этой машиной не числилось — тихо выходим. Сбрасывать нечего!
+    if not HasRecord then
+    begin
+      Result := 0;
+      Exit;
+    end;
+  end;
+
+  // --- ДАЛЬШЕ КОД СРАБАТЫВАЕТ СТРОГО ЕСЛИ БЫЛ ПРОМАХ ИЛИ НАДО СБРОСИТЬ СУЩЕСТВУЮЩИЙ БАН ---
+  if not FConn.Transaction.Active then
+    FConn.Transaction.StartTransaction;
+
+  try
+    if AIsMiss then
+    begin
+      {=== ТАКТ ПРОМАХА БОТА ===}
+      // 1. Апдейтим глобальный счетчик интернета (факт каждого промаха для истории)
+      FConn.ExecuteDirect('UPDATE bot_shield SET miss_count = miss_count + 1 WHERE machine_name = ''GLOBAL_BOT_MISS_COUNT'';');
+
+      // 2. Инкрементируем личные промахи этой конкретной машине (IP-адресу)
+      FConn.ExecuteDirect('INSERT INTO bot_shield (machine_name, miss_count) VALUES (' + QuotedStr(AMachineName) + ', 1) ' +
+                          'ON CONFLICT(machine_name) DO UPDATE SET miss_count = miss_count + 1;');
+
+      // 3. ЗРЯЧЕЕ ЧТЕНИЕ: Вытаскиваем реальный miss_count нарушителя из SQLite
+      TempQuery := TSQLQuery.Create(nil);
+      try
+        TempQuery.Database := FConn;
+        TempQuery.SQL.Text := 'SELECT miss_count FROM bot_shield WHERE machine_name = ' + QuotedStr(AMachineName) + ';';
+        TempQuery.Open;
+        if not TempQuery.EOF then
+          Result := TempQuery.Fields[0].AsInteger // Твоя снайперская поправка индекса!
+        else
+          Result := 1;
+        TempQuery.Close;
+      finally
+        TempQuery.Free;
+      end;
+    end
+    else
+    begin
+      {=== ТАКТ УСПЕШНОГО СБРОСА СУЩЕСТВОВАВШЕГО НАРУШЕНИЯ ===}
+      FConn.ExecuteDirect('UPDATE bot_shield SET miss_count = 0, unlock_time = NULL WHERE machine_name = ' + QuotedStr(AMachineName) + ';');
+      Result := 0;
+    end;
+
+    FConn.Transaction.Commit; // Запекаем изменения в файл базы на диске!
+
+  except
+    FConn.Transaction.Rollback;
+    Result := 0;
+  end;
 end;
 
 

@@ -7,9 +7,9 @@
       <Unit>
         <Filename Value="semanticserver.lpr"/>
         <IsPartOfProject Value="True"/>
-        <TopLine Value="10"/>
-        <CursorPos Y="173"/>
-        <FoldState Value=" T3L2f1 pjKkM0(2 PiBka0 T1o90P T0pc2412131315111 Pkflb21"/>
+        <TopLine Value="474"/>
+        <CursorPos X="24" Y="523"/>
+        <FoldState Value=" T3lD2f1 pjKkM0(012 PiAka0 T1s10P T0td241D1]O4lS8a"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
       </Unit>
@@ -17,7 +17,7 @@
         <Filename Value="unit_worker.pas"/>
         <UnitName Value="Unit_Worker"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="307"/>
+        <TopLine Value="219"/>
         <CursorPos X="102" Y="219"/>
         <FoldState Value=" T3iI0I12115 Piem80 T1jT]Ju"/>
         <UsageCount Value="100"/>
@@ -28,122 +28,14 @@
         <UnitName Value="Unit_DB"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="2"/>
-        <TopLine Value="204"/>
-        <CursorPos X="116" Y="237"/>
-        <FoldState Value=" T3jL0p01612 PiWn31e"/>
+        <TopLine Value="236"/>
+        <CursorPos X="74" Y="239"/>
+        <FoldState Value=" T3jN0p018 PiWnI1w"/>
         <UsageCount Value="100"/>
         <Loaded Value="True"/>
       </Unit>
     </Units>
     <JumpHistory HistoryIndex="29">
-      <Position>
-        <Filename Value="unit_worker.pas"/>
-        <Caret Line="340" Column="23" TopLine="325"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_worker.pas"/>
-        <Caret Line="344" Column="6" TopLine="325"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_worker.pas"/>
-        <Caret Line="345" Column="6" TopLine="325"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_worker.pas"/>
-        <Caret Line="339" Column="16" TopLine="326"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_worker.pas"/>
-        <Caret Line="344" Column="5" TopLine="325"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_db.pas"/>
-        <Caret Line="229" Column="53" TopLine="193"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_db.pas"/>
-        <Caret Line="228" Column="43" TopLine="210"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_db.pas"/>
-        <Caret Line="220" Column="79" TopLine="198"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_db.pas"/>
-        <Caret Line="235" TopLine="203"/>
-      </Position>
-      <Position>
-        <Filename Value="semanticserver.lpr"/>
-        <Caret Line="173" Column="85" TopLine="11"/>
-      </Position>
-      <Position>
-        <Filename Value="semanticserver.lpr"/>
-        <Caret Line="455" Column="8" TopLine="422"/>
-      </Position>
-      <Position>
-        <Filename Value="semanticserver.lpr"/>
-        <Caret Line="439" Column="50" TopLine="420"/>
-      </Position>
-      <Position>
-        <Filename Value="semanticserver.lpr"/>
-        <Caret Line="467" Column="94" TopLine="432"/>
-      </Position>
-      <Position>
-        <Filename Value="semanticserver.lpr"/>
-        <Caret Line="440" Column="94" TopLine="343"/>
-      </Position>
-      <Position>
-        <Filename Value="semanticserver.lpr"/>
-        <Caret Line="345" Column="106" TopLine="307"/>
-      </Position>
-      <Position>
-        <Filename Value="semanticserver.lpr"/>
-        <Caret Line="300" Column="29" TopLine="205"/>
-      </Position>
-      <Position>
-        <Filename Value="semanticserver.lpr"/>
-        <Caret Line="341" Column="6" TopLine="309"/>
-      </Position>
-      <Position>
-        <Filename Value="semanticserver.lpr"/>
-        <Caret Line="323" TopLine="310"/>
-      </Position>
-      <Position>
-        <Filename Value="semanticserver.lpr"/>
-        <Caret Line="342" TopLine="310"/>
-      </Position>
-      <Position>
-        <Filename Value="semanticserver.lpr"/>
-        <Caret Line="329" Column="10" TopLine="310"/>
-      </Position>
-      <Position>
-        <Filename Value="semanticserver.lpr"/>
-        <Caret Line="327" Column="6" TopLine="304"/>
-      </Position>
-      <Position>
-        <Filename Value="semanticserver.lpr"/>
-        <Caret Line="300" Column="24" TopLine="200"/>
-      </Position>
-      <Position>
-        <Filename Value="semanticserver.lpr"/>
-        <Caret Line="469" Column="6" TopLine="435"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_db.pas"/>
-        <Caret Line="465" Column="5" TopLine="426"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_db.pas"/>
-        <Caret Line="466" Column="5" TopLine="433"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_db.pas"/>
-        <Caret Line="460" Column="48" TopLine="438"/>
-      </Position>
-      <Position>
-        <Filename Value="semanticserver.lpr"/>
-        <Caret Line="457" Column="6" TopLine="423"/>
-      </Position>
       <Position>
         <Filename Value="semanticserver.lpr"/>
         <Caret Line="307" Column="23" TopLine="265"/>
@@ -155,6 +47,114 @@
       <Position>
         <Filename Value="semanticserver.lpr"/>
         <Caret Line="259" Column="24" TopLine="232"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="601" Column="101" TopLine="576"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="604" Column="75" TopLine="589"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="892" Column="6" TopLine="854"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="523" Column="25" TopLine="184"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="522" Column="3" TopLine="502"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="828" Column="5" TopLine="769"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="885" Column="6" TopLine="847"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="900" Column="38" TopLine="865"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="901" Column="15" TopLine="863"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="184" Column="5" TopLine="184"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="707" Column="54" TopLine="680"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="884" Column="6" TopLine="846"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="883" Column="6" TopLine="845"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="702" Column="14" TopLine="685"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="863" Column="6" TopLine="815"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_db.pas"/>
+        <Caret Line="494" Column="5" TopLine="446"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_db.pas"/>
+        <Caret Line="496" TopLine="447"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_db.pas"/>
+        <Caret Line="464" Column="25" TopLine="430"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="694" TopLine="692"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="705" Column="52" TopLine="681"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="715" TopLine="687"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_db.pas"/>
+        <Caret Line="31" Column="3" TopLine="11"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="821" Column="32"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="43" Column="38" TopLine="8"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="421" Column="25" TopLine="228"/>
+      </Position>
+      <Position>
+        <Filename Value="semanticserver.lpr"/>
+        <Caret Line="853" Column="127" TopLine="815"/>
+      </Position>
+      <Position>
+        <Filename Value="unit_db.pas"/>
+        <Caret Line="600" TopLine="561"/>
       </Position>
     </JumpHistory>
     <RunParams>
