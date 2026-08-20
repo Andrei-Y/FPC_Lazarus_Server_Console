@@ -1,7 +1,6 @@
 unit Unit_DB;
 
 {$mode objfpc}{$H+}
-
 interface
 
 uses
@@ -137,15 +136,24 @@ begin
 
     // Вставляем новый узел
     FQuery.Close;
-    FQuery.SQL.Text := 'INSERT INTO nodes (content, chronology) VALUES (:cnt, :chr) RETURNING id;';
-    FQuery.ParamByName('cnt').AsString := AContent;
-     ////////////////////////
-  //   WriteLn('[DIAG] reply_text raw bytes: ', HexStr(PChar(AContent), Length(AContent)));
-WriteLn('[DIAG] reply_text as string UNIT DB: "', AContent, '"');
-    FQuery.ParamByName('chr').AsString := NewChrono;
-    FQuery.Open;
-    NewID := FQuery.Fields[0].AsInteger;
-    FQuery.Close;
+//    FQuery.SQL.Text := 'INSERT INTO nodes (content, chronology) VALUES (:cnt, :chr) RETURNING id;';
+//    FQuery.ParamByName('cnt').AsString := AContent;
+//     ////////////////////////
+//  //   WriteLn('[DIAG] reply_text raw bytes: ', HexStr(PChar(AContent), Length(AContent)));
+//WriteLn('[DIAG] reply_text as string UNIT DB: "', AContent, '"');
+//    FQuery.ParamByName('chr').AsString := NewChrono;
+//    FQuery.Open;
+//    NewID := FQuery.Fields[0].AsInteger;
+//    FQuery.Close;
+// ЮВЕЛИРНАЯ СБОРКА ТЕКСТОВОГО ЗАПРОСА С ДЕЙСТВУЮЩИМИ КООРДИНАТАМИ-ЗАГЛУШКАМИ
+FQuery.Close;
+FQuery.SQL.Text := 'INSERT INTO nodes (content, coords_x, coords_y, chronology, activity_index) VALUES (' +
+                   QuotedStr(AContent) + ', 0.0, 0.0, ' + QuotedStr(NewChrono) + ', 1.0) RETURNING id;';
+
+// Открываем запрос, так как SQLite вернет нам ID новой записи через RETURNING
+FQuery.Open;
+NewID := FQuery.Fields[0].AsInteger;
+FQuery.Close;
     //////// ниже до комментария надо удалить
      FQuery.SQL.Text := 'SELECT content FROM nodes WHERE id = last_insert_rowid();';
     FQuery.Open;
