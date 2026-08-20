@@ -17,6 +17,9 @@ type
     procedure DoRun; override;
   end;
 
+
+
+
  // 0. КОНСТРУКТОР СТРАНИЦЫ РЕГИСТРАЦИИ
 // function HTML_RenderRegisterForm(ANum1, ANum2: Integer; const AErrorMsg: string): string;
 //var
@@ -334,6 +337,8 @@ end;
             '</script></body></html>';
         end;
   // 3. КОНСТРУКТОР ОКНА взаимодействия
+ // 3. КОНСТРУКТОР окна взаимодействия
+  // 3. КОНСТРУКТОР окна взаимодействия
 function HTML_RenderInteraction(const AParentID, AGateStack: string; ARank: Integer): string;
 begin
   Result :=
@@ -361,6 +366,13 @@ begin
       '          </button>' +
       '          ' +
       '          <div style="display:flex; gap:6px; flex-wrap:wrap;">' +
+
+
+      '   <button type="submit" name="action_type" value="request_text_edit" ' +
+      '     style="background:transparent; border:1px solid #00FFFF; color:#00FFFF; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:16px; outline:none; display:flex; align-items:center; justify-content:center;">' +
+      '     ?' +
+      '   </button>' +
+
       '            <button type="submit" name="action_type" value="apply_moderation" ' +
       '                    style="background:transparent; border:1px solid #BB99FF; color:#BB99FF; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:15px; outline:none; display:flex; align-items:center; justify-content:center;">' +
       '               §' +
@@ -629,16 +641,6 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
 
 
   else if Path = '/interaction' then
- // begin
- //   TargetParent := ARequest.QueryFields.Values['pid'];
- //   GateStackDNA := ARequest.QueryFields.Values['gate_stack'];
- //
- //   WriteLn('   [СЕКЬЮРИТИ] Перехвачен импульс ответа! Родословная считана из ОЗУ кнопки.');
- //
- //   AResponse.ContentType := 'text/html; charset=utf-8';
- //     AResponse.Content := HTML_RenderInteraction(TargetParent, GateStackDNA);///////////////////////////////////////////////////
- ////   AResponse.SendContent;
- // end
     begin
     // 1. Первый барьер безопасности: гостя отсекаем сразу
     if ReqUser = '' then
@@ -666,27 +668,58 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
   // -----МАРШРУТ : ПРИЁМ ОТВЕТА
     else if Path = '/save_reply' then
   begin
-    // Извлекаем "мелкоту" и текст ответа из POST-параметров сетевого кабеля:
-    TargetParent := ARequest.ContentFields.Values['parent_id'];
-    GateStackDNA := ARequest.ContentFields.Values['gate_stack'];
-    TextContent  := ARequest.ContentFields.Values['reply_text'];
+    //// Извлекаем "мелкоту" и текст ответа из POST-параметров сетевого кабеля:
+    //TargetParent := ARequest.ContentFields.Values['parent_id'];
+    //GateStackDNA := ARequest.ContentFields.Values['gate_stack'];
+    //TextContent  := ARequest.ContentFields.Values['reply_text'];
+    //
+    //// Пишем зрячий лог в консоль Jetson Nano для контроля транзита данных:
+    //WriteLn('   [БЭКЕНД] Принят пакет сохранения ответа!');
+    //WriteLn('            Родительский узел: #', TargetParent);
+    //WriteLn('            Родословная (DNA): ', GateStackDNA);
+    //WriteLn('            Текст сообщения  : "', TextContent, '"');
+    //
+    //AResponse.ContentType := 'text/html; charset=utf-8';
+    //
+    //// Временно выдаем во фрейм текстовое подтверждение, чтобы проверить физику моста:
+    //AResponse.Content :=
+    //  '<html><body style="font-family:sans-serif; background:#1e1e1e; color:#00FFFF; padding:20px;">' +
+    //  '  <h4 style="margin:0 0 10px 0;">✔ Пакет успешно доставлен на Jetson Nano!</h4>' +
+    //  '  <p style="color:#aaa; font-size:13px; margin:0;">Текст зафиксирован в ОЗУ сервера. База данных SQLite готова к записи.</p>' +
+    //  '</body></html>';
+    //
+    //// Никаких ручных SendContent! Паскаль вытолкнет буфер автоматически при выходе из процедуры
+  // Вытягиваем текст и хронологию из полей формы Хрома
+  // 1. Принудительно заставляем Паскаль распарсить POST-тело из сети
+  // 1. Принудительно заставляем Паскаль распарсить POST-тело из сети
+   // 1. Извлекаем данные запроса
+   // 🎯 ТОТ САМЫЙ СЕТЕВОЙ ПИНОК: принудительно выкачиваем POST-тело из сети в ОЗУ
+  // 1. Сетевой пинок — выкачиваем буфер POST
 
-    // Пишем зрячий лог в консоль Jetson Nano для контроля транзита данных:
-    WriteLn('   [БЭКЕНД] Принят пакет сохранения ответа!');
-    WriteLn('            Родительский узел: #', TargetParent);
-    WriteLn('            Родословная (DNA): ', GateStackDNA);
-    WriteLn('            Текст сообщения  : "', TextContent, '"');
+  //Dummy := ARequest.ContentFields.Text;
 
-    AResponse.ContentType := 'text/html; charset=utf-8';
+  // 2. Считываем данные строго в твои родные переменные
+  TextContent := ARequest.ContentFields.Values['reply_text'];
+  TargetParent := ARequest.ContentFields.Values['parent_id'];
+  ShieldQuery  := ARequest.ContentFields.Values['action_type'];
 
-    // Временно выдаем во фрейм текстовое подтверждение, чтобы проверить физику моста:
-    AResponse.Content :=
-      '<html><body style="font-family:sans-serif; background:#1e1e1e; color:#00FFFF; padding:20px;">' +
-      '  <h4 style="margin:0 0 10px 0;">✔ Пакет успешно доставлен на Jetson Nano!</h4>' +
-      '  <p style="color:#aaa; font-size:13px; margin:0;">Текст зафиксирован в ОЗУ сервера. База данных SQLite готова к записи.</p>' +
-      '</body></html>';
+  // 3. Обработка импульса кнопки [+]
+  if (ShieldQuery = 'reply_confirm') and (TargetParent <> '') then
+  begin
+    try
+      // Просто вызываем твой готовый метод! SQLite сама выдаст ID новой записи
+      Self.FDB.LandingNode(StrToIntDef(TargetParent, 0), TextContent);
+      WriteLn(' [БЭКЕНД] Кнопка [+] успешно отработала через LandingNode!');
+    except
+      on E: Exception do WriteLn(' !!! [БЭКЕНД ОШИБКА]: ', E.Message);
+    end;
+  end;
 
-    // Никаких ручных SendContent! Паскаль вытолкнет буфер автоматически при выходе из процедуры
+  // 4. Бесшумно закрываем фрейм редактора через JavaScript
+  AResponse.ContentType := 'text/html; charset=utf-8';
+  AResponse.Content := '<html><body><script>if (parent && parent.CloseEditorTab) parent.CloseEditorTab();</script></body></html>';
+
+
   end
     // --- МАРШРУТ : РЕГИСТРАЦИЯ ---
     else if Path = '/register' then

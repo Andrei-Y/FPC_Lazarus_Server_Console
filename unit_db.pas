@@ -138,7 +138,8 @@ begin
     // Вставляем новый узел
     FQuery.Close;
     FQuery.SQL.Text := 'INSERT INTO nodes (content, chronology) VALUES (:cnt, :chr) RETURNING id;';
-    FQuery.ParamByName('cnt').AsString := AContent;
+ //   FQuery.ParamByName('cnt').AsString := AContent;
+ FQuery.ParamByName('cnt').Value := UnicodeString(AContent);
     FQuery.ParamByName('chr').AsString := NewChrono;
     FQuery.Open;
     NewID := FQuery.Fields[0].AsInteger;
@@ -208,7 +209,7 @@ begin
       'perm_id INTEGER PRIMARY KEY AUTOINCREMENT, ' +
       'phys_id INTEGER);');
 
-    // 3. Mod_Queue - Очередь для "Судьи" / Бота-модератора
+    // 3. Mod_Queue - Очередь для Бота/модератора
     FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS mod_queue (' +
       'id INTEGER PRIMARY KEY AUTOINCREMENT, ' +
       'node_id INTEGER, report TEXT, status INTEGER DEFAULT 0);');
@@ -483,121 +484,6 @@ begin
 end;
 
 {=== 2. НАШ НОВЫЙ МЕТОД ЩИТА БОТОВ ===}
-
-//function TDatabaseModule.LogBotAttempt(const AMachineName: string; AIsMiss: Boolean): Integer;
-//var
-//  TempQuery: TSQLQuery; // Временный радар для чтения данных из SQLite
-//begin
-//  Result := 0;
-//
-//  if not FConn.Transaction.Active then
-//    FConn.Transaction.StartTransaction;
-//
-//  try
-//    if AIsMiss then
-//    begin
-//      {=== ТАКТ ПРОВЕРКИ ПРОМАХА БОТА ===}
-//      // 1. Апдейтим глобальный счетчик интернета
-//      FConn.ExecuteDirect('UPDATE bot_shield SET miss_count = miss_count + 1 WHERE machine_name = ''GLOBAL_BOT_MISS_COUNT'';');
-//
-//      // 2. Накручиваем личные промахи этой конкретной машине (IP-адресу)
-//      FConn.ExecuteDirect('INSERT INTO bot_shield (machine_name, miss_count) VALUES (' + QuotedStr(AMachineName) + ', 1) ' +
-//                          'ON CONFLICT(machine_name) DO UPDATE SET miss_count = miss_count + 1;');
-//
-//      // 🎯 3. ЗРЯЧЕЕ ЧТЕНИЕ: Вытаскиваем реальный miss_count нарушителя из SQLite
-//      TempQuery := TSQLQuery.Create(nil);
-//      try
-//        TempQuery.Database := FConn; // Привязываем к твоему соединению SQLite
-//        TempQuery.SQL.Text := 'SELECT miss_count FROM bot_shield WHERE machine_name = ' + QuotedStr(AMachineName) + ';';
-//        TempQuery.Open;
-//
-//        if not TempQuery.EOF then
-//          Result := TempQuery.Fields[0].AsInteger // Присваиваем реальное число промахов (1, 2 или 3)
-//        else
-//          Result := 1;
-//
-//        TempQuery.Close;
-//      finally
-//        TempQuery.Free; // Намертво вычищаем радар из ОЗУ, чтобы не было утечек памяти
-//      end;
-//    end
-//    else
-//    begin
-//      {=== ТАКТ УСПЕШНОГО ПОПАДАНИЯ ЧЕЛОВЕКА ===}
-//      FConn.ExecuteDirect('UPDATE bot_shield SET miss_count = 0, unlock_time = NULL WHERE machine_name = ' + QuotedStr(AMachineName) + ';');
-//      Result := 0;
-//    end;
-//
-//    FConn.Transaction.Commit; // Запекаем изменения в файл базы на диске!
-//
-//  except
-//    FConn.Transaction.Rollback;
-//    Result := 0;
-//  end;
-//end;
-
-// function TDatabaseModule.LogBotAttempt(const AMachineName: string; AIsMiss: Boolean): Integer;
-//var
-//  TempQuery: TSQLQuery;
-//  CurrentDbMisses: Integer;
-//begin
-//  Result := 0;
-//
-//  if not FConn.Transaction.Active then
-//    FConn.Transaction.StartTransaction;
-//
-//  try
-//    if AIsMiss then
-//    begin
-//      {=== ТАКТ ПРОМАХА БОТА ===}
-//      // 1. Апдейтим глобальный счетчик интернета (факт каждого промаха для истории)
-//      FConn.ExecuteDirect('UPDATE bot_shield SET miss_count = miss_count + 1 WHERE machine_name = ''GLOBAL_BOT_MISS_COUNT'';');
-//
-//      // 2. Считываем, сколько промахов (или банов) уже числится за этой машиной в базе
-//      CurrentDbMisses := 0;
-//      TempQuery := TSQLQuery.Create(nil);
-//      try
-//        TempQuery.Database := FConn;
-//        TempQuery.SQL.Text := 'SELECT miss_count FROM bot_shield WHERE machine_name = ' + QuotedStr(AMachineName) + ';';
-//        TempQuery.Open;
-//        if not TempQuery.EOF then
-//          CurrentDbMisses := TempQuery.Fields[0].AsInteger;
-//        TempQuery.Close;
-//      finally
-//        TempQuery.Free;
-//      end;
-//
-//      // 3. Вычисляем виртуальный шаг.
-//      // Если в базе пусто (0) или это прошлые баны, мы увеличиваем локальный шаг нарушителя.
-//      // Чтобы сохранить логику роутера (который ждет цифру 3 для триггера бана),
-//      // мы симулируем промахи, но в саму базу запишем +1 к банам только на 3-й клик!
-//
-//      // Для простоты и надёжности: пускай база хранит реальные промахи, НО
-//      // если ты хочешь видеть именно количество банов, давай временно оставим
-//      // подсчет кликов на стороне роутера, а в базу отправим инкремент инцидента:
-//
-//      { Мы вернем роутеру число 3, чтобы он вывел бан, но в базу запишем +1 к инцидентам }
-//      FConn.ExecuteDirect('INSERT INTO bot_shield (machine_name, miss_count) VALUES (' + QuotedStr(AMachineName) + ', 1) ' +
-//                          'ON CONFLICT(machine_name) DO UPDATE SET miss_count = miss_count + 1;');
-//
-//      // Заставляем роутер сработать на бан
-//      Result := 3;
-//    end
-//    else
-//    begin
-//      {=== ТАКТ УСПЕШНОГО ПОПАДАНИЯ ЧЕЛОВЕКА ===}
-//      FConn.ExecuteDirect('UPDATE bot_shield SET miss_count = 0, unlock_time = NULL WHERE machine_name = ' + QuotedStr(AMachineName) + ';');
-//      Result := 0;
-//    end;
-//
-//    FConn.Transaction.Commit;
-//
-//  except
-//    FConn.Transaction.Rollback;
-//    Result := 0;
-//  end;
-//end;
-
    function TDatabaseModule.LogBotAttempt(const AMachineName: string; AIsMiss: Boolean): Integer;
 var
   TempQuery: TSQLQuery;
