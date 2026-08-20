@@ -138,13 +138,19 @@ begin
     // Вставляем новый узел
     FQuery.Close;
     FQuery.SQL.Text := 'INSERT INTO nodes (content, chronology) VALUES (:cnt, :chr) RETURNING id;';
- //   FQuery.ParamByName('cnt').AsString := AContent;
- FQuery.ParamByName('cnt').Value := UnicodeString(AContent);
+    FQuery.ParamByName('cnt').AsString := AContent;
+     ////////////////////////
+  //   WriteLn('[DIAG] reply_text raw bytes: ', HexStr(PChar(AContent), Length(AContent)));
+WriteLn('[DIAG] reply_text as string UNIT DB: "', AContent, '"');
     FQuery.ParamByName('chr').AsString := NewChrono;
     FQuery.Open;
     NewID := FQuery.Fields[0].AsInteger;
     FQuery.Close;
-
+    //////// ниже до комментария надо удалить
+     FQuery.SQL.Text := 'SELECT content FROM nodes WHERE id = last_insert_rowid();';
+    FQuery.Open;
+    WriteLn('[DIAG] РЕАЛЬНО ЗАПИСАНО В ТАБЛИЦУ: "', FQuery.Fields[0].AsString, '"');
+    FQuery.Close;
     // ОБНОВЛЯЕМ РОДИТЕЛЯ
     Parts[2] := IntToStr(NewID); // Теперь индекс 2 точно есть
     UpdatedParentChrono := string.Join('.', Parts);
