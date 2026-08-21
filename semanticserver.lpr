@@ -702,6 +702,7 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
   TextContent := ARequest.ContentFields.Values['reply_text'];
   TargetParent := ARequest.ContentFields.Values['parent_id'];
   ShieldQuery  := ARequest.ContentFields.Values['action_type'];
+WriteLn('[DIAG] reply_text as string LPR: "', TextContent, '"');
 
   // 3. Обработка импульса кнопки [+]
   if (ShieldQuery = 'reply_confirm') and (TargetParent <> '') then
@@ -926,6 +927,8 @@ end;
 
 procedure TSemanticApp.DoRun;
 begin
+  //  SetMultiByteConversionCodePage(CP_UTF8);
+  //SetMultiByteRTLFileSystemCodePage(CP_UTF8);
   // 1. ПЕРВЫМ ДЕЛОМ создаем базу.
   // Теперь она будет доступна всем потокам сервера через Self.FDB
   FDB := TDatabaseModule.Create('forum.db');
