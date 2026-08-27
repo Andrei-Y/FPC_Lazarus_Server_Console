@@ -147,8 +147,8 @@ begin
 //    FQuery.Close;
 // ЮВЕЛИРНАЯ СБОРКА ТЕКСТОВОГО ЗАПРОСА С ДЕЙСТВУЮЩИМИ КООРДИНАТАМИ-ЗАГЛУШКАМИ
 FQuery.Close;
-FQuery.SQL.Text := 'INSERT INTO nodes (content, coords_x, coords_y, chronology, activity_index) VALUES (' +
-                   QuotedStr(AContent) + ', 0.0, 0.0, ' + QuotedStr(NewChrono) + ', 1.0) RETURNING id;';
+FQuery.SQL.Text := 'INSERT INTO nodes (content, chronology, activity_index) VALUES (' +
+                   QuotedStr(AContent) + ', ' + QuotedStr(NewChrono) + ', 1.0) RETURNING id;';
 
 // Открываем запрос, так как SQLite вернет нам ID новой записи через RETURNING
 FQuery.Open;
@@ -211,12 +211,30 @@ begin
 
     // Создаем таблицы
     // 1. Nodes - Хранилище данных
+    //FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS nodes (' +
+    //      'id INTEGER PRIMARY KEY AUTOINCREMENT, ' +
+    //      'content TEXT, ' +
+    //      'coords_x REAL, coords_y REAL, ' +
+    //      'chronology TEXT, ' +
+    //      'node_rank INTEGER NOT NULL DEFAULT 1, ' +
+    //      'activity_index REAL DEFAULT 0);');
+
+        // Инициализация финальной структуры таблицы НОД (Задача №4)
     FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS nodes (' +
-          'id INTEGER PRIMARY KEY AUTOINCREMENT, ' +
-          'content TEXT, ' +
-          'coords_x REAL, coords_y REAL, ' +
-          'chronology TEXT, ' +
-          'activity_index REAL DEFAULT 0);');
+                        'id INTEGER PRIMARY KEY AUTOINCREMENT, ' +
+                        'content TEXT NOT NULL, ' +                   { Текст сообщения }
+                        'chronology TEXT NOT NULL, ' +                { Хронология }
+                        'node_rank INTEGER NOT NULL DEFAULT 1, ' +    { Ранг }
+                        'node_sign TEXT NOT NULL DEFAULT ''+'', ' +   { Знак }
+                        'activity_index REAL DEFAULT 0, ' +           { Индекс активности}
+                        'node_clean_weight REAL DEFAULT 1.0, ' +      { Вес }
+                        'dust_cloud_weight REAL DEFAULT 0.0, ' +      { Пыль }
+                        'created_at DATETIME DEFAULT CURRENT_TIMESTAMP, ' + { Создано }
+                        'updated_at DATETIME DEFAULT CURRENT_TIMESTAMP);');{ Изменено }
+
+    FConn.ExecuteDirect('INSERT OR IGNORE INTO nodes (id, content, chronology, node_rank, node_sign, activity_index) ' +
+                        'VALUES (1, ''Корень дерева сервера'', ''1.0.0.'', 1, ''+'', 1.0);');
+
 
     // 2. ID_Map - Таблица переадресации (Маппинг)
     FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS id_map (' +
