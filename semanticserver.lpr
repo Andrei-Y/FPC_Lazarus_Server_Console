@@ -881,6 +881,7 @@ WriteLn('[DIAG] reply_text as string LPR: "', TextContent, '"');
     TargetX := StrToIntDef(ARequest.ContentFields.Values['target_x'], 0);
     UserAnswer := StrToIntDef(ARequest.ContentFields.Values['user_answer'], 0);
     ReqEmail := Trim(ARequest.ContentFields.Values['email']);
+    ReqUser := Trim(ARequest.ContentFields.Values['username']);
 
     // НАШ ОТЛАДОЧНЫЙ ТЕСТ (Посмотришь, как изменятся цифры в консоли!)
     WriteLn(' [СЕТЕВОЙ ТЕСТ] Сырой POST: ', ARequest.ContentFields.Text);
@@ -906,15 +907,39 @@ WriteLn('[DIAG] reply_text as string LPR: "', TextContent, '"');
         AResponse.Content := HTML_RenderRegisterForm('Приборы не откалиброваны (промах на ' + IntToStr(Delta) + 'px). Попробуйте совместить метку точнее.');
       end;
       Exit;
-    end;
+    end else begin
 
     {=== ТАКТ СНАЙПЕРСКОГО ПОПАДАНИЯ (ЧЕЛОВЕК ПРОШЁЛ) ===}
     // Сбрасываем промахи в ноль внутри БД (IsMiss = False)
     Self.FDB.LogBotAttempt(MachineName, False);
+    ///////////////////////////////
+    //  НАЧАЛО ДВОЙНОГО ЗАСЛОНА НИКА ЧЕРЕЗ МЕТОД СУБД
+    if Self.FDB.IsUsernameBusy(ReqUser) then
+    begin
+     // КОНЕЦ ДВОЙНОГО ЗАСЛОНА НИКА (ПУТЬ ЗАНЯТ)
+      AResponse.ContentType := 'text/html; charset=utf-8';
+      AResponse.Content := '<html><head><meta charset="utf-8"></head><body style="background:#0f1115; color:#ff5555; text-align:center; padding-top:100px; font-family:monospace;">' +
+                           '<h2>[РАДАР СБОЯ РЕГИСТРАЦИИ]</h2>' +
+                           '<p>Позывной <b>"' + ReqUser + '"</b> уже занят или зарезервирован в ангаре ожидания почты!</p>' +
+                           '<p><a href="/register" style="color:#00ffcc; text-decoration:none;">&lt;&lt; Вернуться на калибровку</a></p>' +
+                           '</body></html>';
+      Exit; // Жесткий сброс такта, шлюз закрыт
+    end else begin
+       //  УНИКАЛЬНЫЙ НИК
+    AResponse.ContentType := 'text/html; charset=utf-8';
+    AResponse.Content := '<html><body><h2> Ник "' + ReqUser + '" уникален. Для подтверждения регистрации перейдите поссылке из письма для указанной почты.</h2></body></html>';
+    /////////////////////////////////////
+       // . ГЕНЕРАЦИЯ ТОКЕНА-ССЫЛКИ
+  // Запекаем случайный 6-значный уникальный токен в твою переменную Dummy
+  Dummy := IntToStr(Random(900000) + 100000);
 
-    // Блокируем дублирование ника по твоей классической схеме:
-    // (Пока выводим успешный маркер прохождения калибровки)
-    AResponse.Content := '<html><head><meta charset="utf-8"></head><body><h2>Калибровка успешна! Проверка ника и отправка письма...</h2></body></html>';
+  //  ФИЗИЧЕСКОЕ ЗАПЕКАНИЕ В ТАБЛИЦУ ПОДТВЕРЖДЕНИЯ РЕГИСТРАЦИИ
+  // Вызываем твой новый метод СУБД для резервирования позывного в ангаре
+  Self.FDB.AddPending(Dummy, ReqUser, ReqEmail);
+
+
+    end;
+   end;
   end
   // 3. Если зашли по непонятному адресу
   else

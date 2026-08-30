@@ -36,9 +36,67 @@ type
   function GetUserRank(const AUsername: string): Integer;
    function RegisterUser(const AUser, APass: string): Boolean; //  рабочая функция
   function LogBotAttempt(const AMachineName: string; AIsMiss: Boolean): Integer; // НОВЫЙ МЕТОД ЩИТА
+  function IsUsernameBusy(const AUsername: string): Boolean;// проверка совпадения ника с существующим в таблицах
+  procedure AddPending(const AToken, AUser, AEmail: string);
   end;
 
 implementation
+
+//procedure TDatabaseModule.AddPending(const AToken, AUser, AEmail: string);
+//begin
+//  FQuery.Close;
+//  FQuery.SQL.Text := 'INSERT INTO pending_registrations (token, username, email) VALUES (' +
+//                     QuotedStr(AToken) + ', ' + QuotedStr(AUser) + ', ' + QuotedStr(AEmail) + ');';
+//  FQuery.ExecSQL;
+//    WriteLn(' Запись пользователя произведена "', AUser);
+//end;
+
+ procedure TDatabaseModule.AddPending(const AToken, AUser, AEmail: string);
+begin
+  FQuery.Close;
+  FQuery.SQL.Text := 'INSERT INTO pending_registrations (token, username, email) VALUES (' +
+                     QuotedStr(AToken) + ', ' + QuotedStr(AUser) + ', ' + QuotedStr(AEmail) + ');';
+  FQuery.ExecSQL;
+
+  // 🎯 ВРЕЗАЕМ СНАЙПЕРСКИЙ КОММИТ: Принудительно впекаем данные в кремний диска!
+  FTran.CommitRetaining; // или просто FTran.Commit; в зависимости от твоей структуры
+
+  WriteLn(' Запись пользователя произведена "', AUser, '"');
+end;
+
+
+  function TDatabaseModule.IsUsernameBusy(const AUsername: string): Boolean;
+var
+  FoundCount: Integer; // Временный цифровой фиксатор
+begin
+  Result := False;
+  FQuery.Close;
+  FQuery.SQL.Text := 'SELECT COUNT(*) FROM (' +
+                     '  SELECT 1 FROM users WHERE username = ' + QuotedStr(AUsername) +
+                     '  UNION ALL ' +
+                     '  SELECT 1 FROM pending_registrations WHERE username = ' + QuotedStr(AUsername) +
+                     ');';
+  FQuery.Open;
+
+  // Считываем точную цифру из первой ячейки СУБД [1.3]
+  FoundCount := FQuery.Fields[0].AsInteger;
+
+  // 🎯 ВЫВОД В КОНСОЛЬ JUNI BOX:
+  WriteLn(' ');
+  WriteLn(' 📡 [РАДАР СУБД] Проверка позывного: "', AUsername, '"');
+  if FoundCount = 0 then
+    WriteLn('    -> Совпадений не найдено! Путь свободен.')
+  else
+    WriteLn('    -> ВНИМАНИЕ! Найдено совпадений: ', FoundCount, '. Вход заблокирован.');
+  WriteLn(' ');
+
+  // Бронированный контроль на основе считанного числа
+  if FoundCount > 0 then
+    Result := True;
+  WriteLn('    [ФИНАЛ СУБД] Функция IsUsernameBusy возвращает значение -> ', Result);
+  FQuery.Close;
+end;
+
 
 function TDatabaseModule.CreateHead(AContent: string): Integer;
 begin
