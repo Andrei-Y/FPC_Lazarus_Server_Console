@@ -4,7 +4,7 @@ program semanticserver;
 
 uses
   {$IFDEF UNIX}cthreads,{$ENDIF}
-  SysUtils, Classes, CustApp, fphttpserver, Unit_DB, Unit_Worker, md5, DateUtils, netdb;
+  SysUtils, Classes, CustApp, fphttpserver, Unit_DB, Unit_Worker, md5, DateUtils, netdb, Process;
 
 type
   TSemanticApp = class(TCustomApplication)
@@ -80,6 +80,100 @@ type
 //    '</body></html>';
 //end;
   // 1. КОНСТРУКТОР ГЛАВНОЙ СТРАНИЦЫ
+
+  function SendActivationCode(const AEmail, AUsername, ACode: string): Boolean;// работает с https://smtp.bz/
+//  Простой пример отправки письма CURL (API)
+//curl --location 'https://api.smtp.bz/v1/smtp/send' \
+//--header 'Authorization: API-KEY' \
+//--header 'Content-Type: application/json' \
+//--data-raw '{
+//        "name": "My Name",
+//        "from": "info@mycompany.com",
+//        "to": "postmasterbz@mail.ru",
+//        "subject": "My letter subject",
+//        "html": "<html><head></head><body><p>My text</p></body></html>"
+//    }'
+var
+  CProcess: TProcess;
+  MailHTML, JSONData: string;
+begin
+  Result := False;
+  CProcess := TProcess.Create(nil);
+  try
+    WriteLn(' 🛰 [JSON API ШЛЮЗ] Сборка защищённого пакета для: ', AEmail);
+
+    // 1. Формируем чистый HTML-текст письма. Внутри стилей — ТОЛЬКО одинарные кавычки! [INDEX]
+    MailHTML := '<html><body style=''font-family:monospace; background:#0f1115; color:#00ffcc; padding:20px;''>' +
+                '<div style=''border:1px solid #00ffcc; padding:20px; display:inline-block;''>' +
+                '<h2>ПРИВЕТСТВУЕМ НА БОРТУ, ПИЛОТ ' + UpperCase(AUsername) + '!</h2>' +
+                '<p>Твой профиль успешно зарезервирован в ангаре системы.</p>' +
+                '<p>Для окончательного входа в созвездие форума кликни по ссылке ниже:</p>' +
+                '<p><a href=''http://localhost:8080/activate?token=' + ACode + ''' style=''color:#0066cc; font-weight:bold; text-decoration:none;''>[ АКТИВИРОВАТЬ ПРОФИЛЬ ]</a></p>' +
+                '</div></body></html>';
+
+    // 2. 🎯 СБОРКА СТРОГО ПО ОФИЦИАЛЬНОМУ ПРИМЕРУ CURL (Плоский JSON, ключ "html") [INDEX]
+    JSONData := '{' +
+                '"name": "МАТРИЦА ФОРУМА", ' +
+                '"from": "no-reply@cross-section.ru", ' + // Вставьте свой домен вместо cross-section.ru
+                '"to": "' + AEmail + '", ' +
+                '"subject": "Activation link", ' +
+                '"html": "' + MailHTML + '"' + // Ключ "html" строго по твоему примеру! [INDEX]
+                '}';
+
+
+
+
+    // 3. Задаём исполняемый файл системы
+    CProcess.Executable := '/usr/bin/curl';
+
+    // 4. Нанизываем параметры запуска (Каждый флаг и значение — отдельной строкой!)
+    CProcess.Parameters.Add('-s'); // Бесшумный режим (чтобы не спамить в консоль)
+    CProcess.Parameters.Add('--location');
+    CProcess.Parameters.Add('-X');
+    CProcess.Parameters.Add('POST');
+    CProcess.Parameters.Add('https://api.smtp.bz/v1/smtp/send');
+
+    // Первая пара заголовка: Авторизация
+    CProcess.Parameters.Add('--header');
+    CProcess.Parameters.Add('Authorization: прямо сюда'); // Впиши свой API-ключ, который в профиле на https://smtp.bz/panel/user
+
+    // Вторая пара заголовка: Тип контента (JSON)
+    CProcess.Parameters.Add('--header');
+    CProcess.Parameters.Add('Content-Type: application/json');
+
+    // Передача сырых данных
+    CProcess.Parameters.Add('--data-raw');
+    CProcess.Parameters.Add(JSONData);
+
+    // 5. Флаги скрытого выполнения
+    // СТАЛО (Зрячий режим):
+        // 🎯 1. ДОБАВЛЯЕМ ПАРАМЕТР ЗАПИСИ ОТВЕТА В ФАЙЛ:
+    // Флаг -o заставляет curl принудительно запечь ответ шлюза на диск!
+    CProcess.Parameters.Add('-o');
+    CProcess.Parameters.Add('smtp_log.txt');
+
+    // 🎯 2. СБРАСЫВАЕМ ВСЕ ПАЙПЫ И СКРЫТИЯ (Чистый стандартный запуск):
+    CProcess.Options := [poWaitOnExit];
+
+
+    // 6. Выстрел процесса в ОЗУ Linux!
+    CProcess.Execute;
+
+    // Проверяем статус завершения утилиты curl
+    if CProcess.ExitStatus = 0 then
+    begin
+      Result := True;
+      WriteLn('    -> JSON-пакет успешно передан утилите curl и выстрелен в сеть!');
+    end
+    else
+      WriteLn('    ⚠️ [СБОЙ JSON API] Ошибка вызова curl. Код возврата ОС: ', CProcess.ExitStatus);
+
+  finally
+    CProcess.Free;
+  end;
+end;
+
+
 
  function HTML_RenderRegisterForm(const AErrorMsg: string): string;
 var
@@ -936,7 +1030,8 @@ WriteLn('[DIAG] reply_text as string LPR: "', TextContent, '"');
   //  ФИЗИЧЕСКОЕ ЗАПЕКАНИЕ В ТАБЛИЦУ ПОДТВЕРЖДЕНИЯ РЕГИСТРАЦИИ
   // Вызываем твой новый метод СУБД для резервирования позывного в ангаре
   Self.FDB.AddPending(Dummy, ReqUser, ReqEmail);
-
+      // Вызываем почтовый шлюз: стреляем API-пакетом прямо на лету!
+    SendActivationCode(ReqEmail, ReqUser, Dummy);
 
     end;
    end;
