@@ -19,68 +19,6 @@ type
 
 
 
-
- // 0. КОНСТРУКТОР СТРАНИЦЫ РЕГИСТРАЦИИ
-// function HTML_RenderRegisterForm(ANum1, ANum2: Integer; const AErrorMsg: string): string;
-//var
-//  ErrorBlock: string;
-//begin
-//  // Если бэкенд передал ошибку (например, "Ник уже занят"), формируем зрячий блок
-//  if AErrorMsg <> '' then
-//    ErrorBlock := '<div style="background:#CC3355; color:#fff; padding:10px; border-radius:4px; margin-bottom:15px; font-size:13px; font-weight:bold; border:1px solid #ff3366;">⚠️ ' + AErrorMsg + '</div>'
-//  else
-//    ErrorBlock := '';
-//
-//  Result :=
-//    '<html><head><meta charset="utf-8"></head>' + // 🎯 НАМЕРТВО ЛЕЧИТ КРАКОЗЯБРЫ В БРАУЗЕРЕ
-//    '<body style="font-family:sans-serif; background:#1e1e1e; color:#d4d4d4; padding:40px; margin:0; display:flex; align-items:center; justify-content:center; min-height:100vh;">' +
-//    '  <div style="width:100%; max-width: 400px; background:#111; border:1px solid #333; padding:30px; border-radius:8px; box-shadow: 0 0 20px rgba(0,255,255,0.05);">' +
-//    '    ' +
-//    '    <div style="text-align:center; margin-bottom:25px;">' +
-//    '      <div style="font-size:24px; font-weight:bold; color:#00FFFF; letter-spacing:1px; margin-bottom:8px;">🛰️ РЕГИСТРАЦИЯ ПИЛОТА</div>' +
-//    '      <div style="font-size:12px; color:#888;">Подайте заявку на подключение к графу созвездий</div>' +
-//    '    </div>' +
-//    '    ' +
-//    '    ' + ErrorBlock +
-//    '    ' +
-//    '    <form action="/do_register" method="POST" style="margin:0; padding:0;">' +
-//    '      ' +
-//    '      <div style="margin-bottom:15px;">' +
-//    '        <label style="display:block; font-size:12px; color:#aaa; font-weight:bold; margin-bottom:6px; letter-spacing:0.5px;">ПОЗЫВНОЙ (USERNAME):</label>' +
-//    '        <input type="text" name="username" required autocomplete="off" placeholder="Введите уникальный ник..." ' +
-//    '               style="width:100%; background:#252526; color:#fff; border:1px solid #444; border-radius:4px; padding:10px; font-size:14px; outline:none; box-sizing:border-box;">' +
-//    '      </div>' +
-//    '      ' +
-//    '      <div style="margin-bottom:20px;">' +
-//    '        <label style="display:block; font-size:12px; color:#aaa; font-weight:bold; margin-bottom:6px; letter-spacing:0.5px;">СТОРОННЯЯ ПОЧТА (EMAIL):</label>' +
-//    '        <input type="email" name="email" required autocomplete="off" placeholder="your-mail@domain.com" ' +
-//    '               style="width:100%; background:#252526; color:#fff; border:1px solid #444; border-radius:4px; padding:10px; font-size:14px; outline:none; box-sizing:border-box;">' +
-//    '      </div>' +
-//    '      ' +
-//    '      <div style="margin-bottom:25px; background:#161616; border:1px dashed #333; padding:12px; border-radius:4px;">' +
-//    '        <label style="display:block; font-size:11px; color:#888; font-weight:bold; margin-bottom:8px; letter-spacing:0.5px;">ЗАЩИТА ОТ АВТОМАТИЧЕСКИХ БОТОВ:</label>' +
-//    '        <div style="display:flex; align-items:center; gap:10px;">' +
-//    '          <div style="font-size:16px; font-weight:bold; color:#00FFaa; background:#252526; border:1px solid #444; padding:6px 12px; border-radius:4px; white-space:nowrap;">' +
-//               IntToStr(ANum1) + ' + ' + IntToStr(ANum2) + ' = ' +
-//    '          </div>' +
-//    '          <input type="number" name="captcha_answer" required autocomplete="off" placeholder="Ответ" ' +
-//    '                 style="width:100%; background:#252526; color:#fff; border:1px solid #444; border-radius:4px; padding:8px; font-size:14px; outline:none; box-sizing:border-box; text-align:center;">' +
-//    '        </div>' +
-//    '      </div>' +
-//    '      ' +
-//    '      <input type="hidden" name="c_n1" value="' + IntToStr(ANum1) + '">' +
-//    '      <input type="hidden" name="c_n2" value="' + IntToStr(ANum2) + '">' +
-//    '      ' +
-//    '      <button type="submit" style="width:100%; background:transparent; border:1px solid #00FFFF; color:#00FFFF; padding:12px; border-radius:4px; font-size:14px; font-weight:bold; cursor:pointer; outline:none; transition: 0.2s; letter-spacing:1px;">' +
-//    '        ОТПРАВИТЬ ССЫЛКУ АКТИВАЦИИ' +
-//    '      </button>' +
-//    '      ' +
-//    '    </form>' +
-//    '  </div>' +
-//    '</body></html>';
-//end;
-  // 1. КОНСТРУКТОР ГЛАВНОЙ СТРАНИЦЫ
-
   function SendActivationCode(const AEmail, AUsername, ACode: string): Boolean;// работает с https://smtp.bz/
 //  Простой пример отправки письма CURL (API)
 //curl --location 'https://api.smtp.bz/v1/smtp/send' \
@@ -105,15 +43,15 @@ begin
     // 1. Формируем чистый HTML-текст письма. Внутри стилей — ТОЛЬКО одинарные кавычки! [INDEX]
     MailHTML := '<html><body style=''font-family:monospace; background:#0f1115; color:#00ffcc; padding:20px;''>' +
                 '<div style=''border:1px solid #00ffcc; padding:20px; display:inline-block;''>' +
-                '<h2>ПРИВЕТСТВУЕМ НА БОРТУ, ПИЛОТ ' + UpperCase(AUsername) + '!</h2>' +
-                '<p>Твой профиль успешно зарезервирован в ангаре системы.</p>' +
-                '<p>Для окончательного входа в созвездие форума кликни по ссылке ниже:</p>' +
+                '<h2>Приветствуем в сообществе портала cross-section.ru ' + UpperCase(AUsername) + '!</h2>' +
+                '<p>Ваш профиль успешно зарезервирован в ангаре системы.</p>' +
+                '<p>Для завершения регистрации перейдите по ссылке ниже:</p>' +
                 '<p><a href=''http://localhost:8080/activate?token=' + ACode + ''' style=''color:#0066cc; font-weight:bold; text-decoration:none;''>[ АКТИВИРОВАТЬ ПРОФИЛЬ ]</a></p>' +
                 '</div></body></html>';
 
     // 2. 🎯 СБОРКА СТРОГО ПО ОФИЦИАЛЬНОМУ ПРИМЕРУ CURL (Плоский JSON, ключ "html") [INDEX]
     JSONData := '{' +
-                '"name": "МАТРИЦА ФОРУМА", ' +
+                '"name": "Регистрация", ' +
                 '"from": "no-reply@cross-section.ru", ' + // Вставьте свой домен вместо cross-section.ru
                 '"to": "' + AEmail + '", ' +
                 '"subject": "Activation link", ' +
@@ -135,7 +73,7 @@ begin
 
     // Первая пара заголовка: Авторизация
     CProcess.Parameters.Add('--header');
-    CProcess.Parameters.Add('Authorization: прямо сюда'); // Впиши свой API-ключ, который в профиле на https://smtp.bz/panel/user
+    CProcess.Parameters.Add('Authorization: '); // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Впиши свой API-ключ, который в профиле на https://smtp.bz/panel/user
 
     // Вторая пара заголовка: Тип контента (JSON)
     CProcess.Parameters.Add('--header');
@@ -214,6 +152,7 @@ begin
     '        <input type="email" name="email" required autocomplete="off" placeholder="your-mail@domain.com" ' +
     '               style="width:100%; background:#252526; color:#fff; border:1px solid #444; border-radius:4px; padding:10px; font-size:14px; outline:none; box-sizing:border-box;">' +
     '      </div>' +
+    '<input type="password" name="req_password" placeholder="Придумайте ваш пароль" required style="width:100%; padding:10px; margin-bottom:15px; background:#141822; border:1px solid #00ffcc; color:#00ffcc; font-family:monospace;"> ' +
     '      ' +
     '      {--- ИНТЕРАКТИВНЫЙ КООРДИНАТНЫЙ ПОЛЗУНОК ---}' +
     '      <div style="margin-bottom:25px; background:#161616; border:1px solid #444; padding:15px; border-radius:4px;">' +
@@ -622,6 +561,7 @@ var
    ClientIP: string;
   MachineName: string;
   ShieldQuery: string;
+  ReqToken: string; //для подтверждения регистрации
   HasBan: Boolean;
   CurrentMisses: Integer;
   TargetX, UserAnswer, Delta: Integer;
@@ -948,19 +888,6 @@ WriteLn('[DIAG] reply_text as string LPR: "', TextContent, '"');
   end
    else if Path = '/do_register' then
   begin
- //WriteLn(' [СЕТЕВОЙ ТЕСТ] Сырой POST: ', ARequest.ContentFields.Text);
- //   WriteLn(' [СЕТЕВОЙ ТЕСТ] Считано из формы -> TargetX: ', TargetX, ' | UserAnswer: ', UserAnswer);
- //   AResponse.ContentType := 'text/html; charset=utf-8';
- //
- //   // 1. ИДЕНТИФИКАЦИЯ МАШИНЫ: Берем чистый IP-адрес Хрома в качестве хостнейма
- //   ClientIP := ARequest.RemoteAddr;
- //   MachineName := ClientIP;
- //
- //   // 2. СБОР КООРДИНАТ ИЗ ФОРМЫ
- //   TargetX := StrToIntDef(ARequest.ContentFields.Values['target_x'], 0);
- //   UserAnswer := StrToIntDef(ARequest.ContentFields.Values['user_answer'], 0);
- //   ReqEmail := Trim(ARequest.ContentFields.Values['email']);
-
   AResponse.ContentType := 'text/html; charset=utf-8';
 
     // 1. ИДЕНТИФИКАЦИЯ МАШИНЫ
@@ -976,6 +903,7 @@ WriteLn('[DIAG] reply_text as string LPR: "', TextContent, '"');
     UserAnswer := StrToIntDef(ARequest.ContentFields.Values['user_answer'], 0);
     ReqEmail := Trim(ARequest.ContentFields.Values['email']);
     ReqUser := Trim(ARequest.ContentFields.Values['username']);
+    ReqPass  := MD5Print(MD5String(Trim(ARequest.ContentFields.Values['req_password'])));
 
     // НАШ ОТЛАДОЧНЫЙ ТЕСТ (Посмотришь, как изменятся цифры в консоли!)
     WriteLn(' [СЕТЕВОЙ ТЕСТ] Сырой POST: ', ARequest.ContentFields.Text);
@@ -1029,13 +957,58 @@ WriteLn('[DIAG] reply_text as string LPR: "', TextContent, '"');
 
   //  ФИЗИЧЕСКОЕ ЗАПЕКАНИЕ В ТАБЛИЦУ ПОДТВЕРЖДЕНИЯ РЕГИСТРАЦИИ
   // Вызываем твой новый метод СУБД для резервирования позывного в ангаре
-  Self.FDB.AddPending(Dummy, ReqUser, ReqEmail);
+  Self.FDB.AddPending(Dummy, ReqUser, ReqEmail, ReqPass);
       // Вызываем почтовый шлюз: стреляем API-пакетом прямо на лету!
     SendActivationCode(ReqEmail, ReqUser, Dummy);
 
     end;
    end;
   end
+     // --- МАРШРУТ : АКТИВАЦИЯ ПО ССЫЛКЕ ИЗ ПИСЬМА ---
+  else if Path = '/activate' then
+  begin
+    // 1. Извлекаем токен из GET-параметра строки запроса Хрома
+    ReqToken := Trim(ARequest.QueryFields.Values['token']);
+
+    // Блокируем пустые выстрелы в шлюз
+    if ReqToken = '' then
+    begin
+      AResponse.ContentType := 'text/html; charset=utf-8';
+      AResponse.Content := '<html><body style="background:#0f1115; color:#ff5555; text-align:center; font-family:monospace; padding-top:100px;">' +
+                           '<h2>[РАДАР СЕТИ: КРИТИЧЕСКИЙ СБОЙ]</h2><p>Токен верификации отсутствует в запросе!</p></body></html>';
+      Exit;
+    end;
+
+    WriteLn(' 📡 [ШЛЮЗ АКТИВАЦИИ] Входной импульс с токеном: ', ReqToken);
+
+    // 2. Вызываем новый метод СУБД, который проверит токен и перенесёт данные
+    if Self.FDB.ConfirmRegistration(ReqToken) then
+    begin
+      // УСПЕХ: Пользователь официально впечён в ядро ноократии!
+      AResponse.ContentType := 'text/html; charset=utf-8';
+      AResponse.Content := '<html><head><meta charset="utf-8"><style>' +
+                           'body { background: #0f1115; color: #00ffcc; text-align: center; padding-top: 100px; font-family: monospace; }' +
+                           '.box { border: 1px solid #00ffcc; display: inline-block; padding: 30px; box-shadow: 0 0 20px #00ffcc33; }' +
+                           'a { color: #ffff00; text-decoration: none; font-weight: bold; }</style></head><body>' +
+                           '<div class="box">' +
+                           '<h2>[МАТРИЦА СЕТИ: ВЕРИФИКАЦИЯ УСПЕШНА]</h2>' +
+                           '<p>Ваш позывной успешно перенесён в постоянный реестр базы данных.</p>' +
+                           '<p>Теперь вы являетесь полноправным участником глубокого семантического пространства!</p><br>' +
+                           '<p><a href="/login">[ ПЕРЕЙТИ К АВТОРИЗАЦИИ ]</a></p>' +
+                           '</div></body></html>';
+    end
+    else
+    begin
+      // СБОЙ: Токен фальшивый, устарел или уже был использован
+      AResponse.ContentType := 'text/html; charset=utf-8';
+      AResponse.Content := '<html><body style="background:#0f1115; color:#ff3333; text-align:center; font-family:monospace; padding-top:100px;">' +
+                           '<h2>[ОШИБКА МАТРИЦЫ ПОДТВЕРЖДЕНИЯ]</h2>' +
+                           '<p>Указанный токен не найден в ангаре ожидания или его время жизни истекло!</p>' +
+                           '<p><a href="/register" style="color:#00ffcc;">Пройти калибровку заново &gt;&gt;</a></p></body></html>';
+    end;
+    Exit;
+  end
+
   // 3. Если зашли по непонятному адресу
   else
   begin
@@ -1079,6 +1052,7 @@ var
 begin
   Application := TSemanticApp.Create(nil);
   Application.Title := 'Semantic Server';
+    Randomize;
   Application.Run;
   Application.Free;
 end.

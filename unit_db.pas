@@ -37,7 +37,9 @@ type
    function RegisterUser(const AUser, APass: string): Boolean; //  рабочая функция
   function LogBotAttempt(const AMachineName: string; AIsMiss: Boolean): Integer; // НОВЫЙ МЕТОД ЩИТА
   function IsUsernameBusy(const AUsername: string): Boolean;// проверка совпадения ника с существующим в таблицах
-  procedure AddPending(const AToken, AUser, AEmail: string);
+  procedure AddPending(const AToken, AUser, AEmail, APasswordHash: string);
+  function ConfirmRegistration(const AToken: string): Boolean;
+
   end;
 
 implementation
@@ -51,11 +53,11 @@ implementation
 //    WriteLn(' Запись пользователя произведена "', AUser);
 //end;
 
- procedure TDatabaseModule.AddPending(const AToken, AUser, AEmail: string);
+ procedure TDatabaseModule.AddPending(const AToken, AUser, AEmail, APasswordHash: string);
 begin
   FQuery.Close;
-  FQuery.SQL.Text := 'INSERT INTO pending_registrations (token, username, email) VALUES (' +
-                     QuotedStr(AToken) + ', ' + QuotedStr(AUser) + ', ' + QuotedStr(AEmail) + ');';
+  FQuery.SQL.Text := 'INSERT INTO pending_registrations (token, username, email, password) VALUES (' +
+                     QuotedStr(AToken) + ', ' + QuotedStr(AUser) + ', ' + QuotedStr(AEmail) + ', ' + QuotedStr(APasswordHash) + ');';
   FQuery.ExecSQL;
 
   // 🎯 ВРЕЗАЕМ СНАЙПЕРСКИЙ КОММИТ: Принудительно впекаем данные в кремний диска!
@@ -322,16 +324,17 @@ begin
       'pref_nodes_limit INTEGER DEFAULT 50, ' +  // Лимит "эстафеты"
       'pref_theme TEXT DEFAULT "dark", ' +       // Тема оформления (dark/light)
       'profile_node_id INTEGER DEFAULT 0, ' +    // Идентификатор узла профиля
-      'email TEXT UNIQUE, ' +                    // 🎯 ВРЕЗАЛИ ПОЧТУ, УНИКАЛЬНУЮ КАК ИМЯ!
+      'email TEXT UNIQUE, ' +                    //  ВРЕЗАЛИ ПОЧТУ, УНИКАЛЬНУЮ КАК ИМЯ!
       'access_rank INTEGER DEFAULT 1);');        // Поле ранга прав (1 - Исследователь)
 
 
-     // 6. ДОБАВОЧНЫЙ КОД ВРЕМЕННОГО АНГАРА РЕГИСТРАЦИИ (ДЛЯ СБОРКИ С НУЛЯ) ---
-    FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS pending_registrations (' +
-      'token TEXT PRIMARY KEY, ' +                 // Уникальный хэш-токен ссылки из письма
-      'username TEXT UNIQUE, ' +                   // Резервируем ник (чтобы боты не перехватили во время ожидания клика)
-      'email TEXT, ' +                             // Куда ушло письмо верификации
-      'created_at DATETIME DEFAULT CURRENT_TIMESTAMP);'); // Штамп времени (для автоочистки заявок старше 24 часов)
+     // 6. ДОБАВОЧНЫЙ КОД ВРЕМЕННОГО АНГАРА РЕГИСТРАЦИИ (ВАРИАНТ А) ---
+     FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS pending_registrations (' +
+       'token TEXT PRIMARY KEY, ' +
+       'username TEXT UNIQUE, ' +
+       'email TEXT UNIQUE, ' + //  ЗАПЕКЛИ UNIQUE СЮДА!
+       'password TEXT, ' +     //  ДОБАВИЛИ ПОЛЕ ХРАНЕНИЯ ПАРОЛЯ!
+       'created_at DATETIME DEFAULT CURRENT_TIMESTAMP);');
 
     // 7. МАТЕРИАЛИЗАЦИЯ ЩИТА БОТОВ (ДЛЯ РЕГИСТРАЦИИ) ---
     FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS bot_shield (' +
@@ -647,6 +650,58 @@ begin
   except
     FConn.Transaction.Rollback;
     Result := 0;
+  end;
+end;
+
+   function TDatabaseModule.ConfirmRegistration(const AToken: string): Boolean;
+var
+  SavedUser, SavedEmail, SavedPass: string;
+begin
+  Result := False;
+  SavedUser := '';
+  SavedEmail := '';
+  SavedPass := '';
+
+  // 1. Ищем токен во временном ангаре ожидания
+  FQuery.Close;
+  FQuery.SQL.Text := 'SELECT username, email, password FROM pending_registrations WHERE token = ' + QuotedStr(AToken) + ';'; //
+  FQuery.Open;
+
+  // Если токен найден — фиксируем данные в ОЗУ
+  if not FQuery.EOF then
+  begin
+    SavedUser  := FQuery.FieldByName('username').AsString;
+    SavedEmail := FQuery.FieldByName('email').AsString;
+    SavedPass :=  FQuery.FieldByName('password').AsString;
+  end;
+  FQuery.Close;
+
+  // Если переменные пустые — токен фальшивый, выходим со сбоем!
+  if SavedUser = '' then Exit;
+
+  try
+    // 2. Впекаем пилота в постоянную таблицу пользователей users!
+    FQuery.SQL.Text := 'INSERT INTO users (username, email, password) VALUES (' +
+                       QuotedStr(SavedUser) + ', ' + QuotedStr(SavedEmail) + ', ' + QuotedStr(SavedPass) + ');';
+    FQuery.ExecSQL;
+
+    // 3. Выжигаем временный след из ангара ожидания, чтобы исключить повторы!
+    FQuery.SQL.Text := 'DELETE FROM pending_registrations WHERE token = ' + QuotedStr(AToken) + ';';
+    FQuery.ExecSQL;
+
+    // 4. Намертво прижимаем транзакцию к физическому накопителю!
+    FTran.CommitRetaining;
+
+    WriteLn(' 🛰 [СУБД УСПЕХ] Пользователь "', SavedUser, '" успешно верифицирован и перенесён в users!');
+    Result := True;
+  except
+    on E: Exception do
+    begin
+      WriteLn(' ⚠️ [КРИТИЧЕСКИЙ СБОЙ СУБД ПРИ АКТИВАЦИИ]: ', E.Message);
+      // Если что-то пошло не так (например, ник успели занять) — откатываемся, не ломая базу
+      FTran.RollbackRetaining;
+      Result := False;
+    end;
   end;
 end;
 
