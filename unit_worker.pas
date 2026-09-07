@@ -309,13 +309,13 @@ begin
     LastLevel := 0;
     ////////////////////////////////////////////////////////////////////////
     try
+      // парсер читает пришедшую строку перехода
     NetParser.Delimiter := '&'; // Разделитель параметров в HTTP-строке (start=11&stack=1,4,7,9)
     NetParser.Text := AStrRaw;
     DoLog('AStrRaw = ??? ' + AStrRaw);
-    // Записываем данные СТРОГО в поле класса из репозитория
-    AStartID := StrToIntDef(NetParser.Values['start'], 0);
+    AStartID := StrToIntDef(NetParser.Values['start'], 0);// Чанк бесшовной подгрузки
     DoLog(' AStartID = ' + IntToStr(AStartID));
-    FSavedStack := NetParser.Values['stack'];
+    FSavedStack := NetParser.Values['stack'];// Чанк бесшовной подгрузки
     DoLog('>>> Обходим в ' + FSavedStack + ')');
 
     //  ЗАЩИТА ГЛАВНОЙ СТРАНИЦЫ: Если строка пуста (первый заход), принудительно стартуем с корня 1
@@ -329,8 +329,8 @@ begin
 
           DoLog('>>> Обходим в ' + IntToStr(FNextStartID) + ')');
 
-    if FChunk then
-  begin // задача этого блока ввести первую карточку в пакет и далее передать его формирование циклу
+    if FChunk then // задача этого блока ввести первую карточку в пакет и далее передать его формирование циклу
+  begin
     StringToStack(FSavedStack);// распаковываем стёк из строки переданной в качестве параметра
         DoLog('>>> Обходим в ' + FSavedStack + ')');
 
@@ -469,7 +469,10 @@ emToArtist:
          SetLength(TailStack, Length(TailStack) - 1);
          DoLog('<<< ВСПЛЫТИЕ ИЗ ВЕТКИ (возврат в ' + IntToStr(CurrentID) + ')');
       end;
-
+           // 🛡️ СИСТЕМНЫЙ ТОРМОЗ СТАРОЙ ПАГИНАЦИИ И СТРАХОВКА ОТ ЗАЦИКЛИВАНИЯ
+           // Срабатывает, когда стек полностью пуст (мы на поверхности дерева),
+           // а текущая нода совпала со стартовым маркером.
+           // Останавливает цикл, предотвращая уход сервера в мертвую петлю.
            if (CurrentID = FNextStartID) and (Length(TailStack) = 0) then begin
              FSavedStack := StackToString(TailStack);
             FNextStartID := CurrentID;
@@ -478,7 +481,11 @@ emToArtist:
            end;
       CurrentID := NodeB;
                 Inc(NodeCount);
-          if NodeCount >= FMaxNodes then
+          // 🏛️ СТАРЫЙ ЛИНЕЙНЫЙ ПРЕДОХРАНИТЕЛЬ (ГОРИЗОНТАЛЬНАЯ ПАГИНАЦИЯ КОНТЕНТА)
+          // Данный узел считает общее число выведенных карточек на экран.
+          // При превышении лимита FMaxNodes он жестко обрубает цикл,
+          // чтобы разгрузить процессор JUNI BOX и ОЗУ Хрома.
+          if (FMaxNodes > 0) and (NodeCount >= FMaxNodes) then
           begin
             FSavedStack := StackToString(TailStack);
             FNextStartID := CurrentID;
@@ -494,7 +501,7 @@ emToViewer:
 
   begin
         //  1. ЕСЛИ ЦИКЛ ПРЕРВАН ПО ЛИМИТУ — СРАЗУ ГЕНЕРИРУЕМ КНОПКУ:
-        if NodeCount >= FMaxNodes then
+        if (FMaxNodes > 0) and (NodeCount >= FMaxNodes) then
         begin
 
           // Вызываем  утилиту кнопки по условию!

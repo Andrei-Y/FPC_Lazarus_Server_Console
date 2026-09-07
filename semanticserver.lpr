@@ -536,7 +536,7 @@ begin
           '  <div class="info">Пилот семантического пространства: <b>' + ReqUser + '</b></div>' +
           '  <form method="POST" action="/profile">' +
           '    <label>Лимит узлов среза на страницу:</label>' +
-          '    <input type="number" name="limit" value="' + IntToStr(ULimit) + '" min="1" max="500" required>' +
+          '    <input type="number" name="limit" value="' + IntToStr(ULimit) + '" min="0" max="500" required>' +
           '    <input type="submit" value="Сохранить настройки">' +
           '  </form>' +
           '  <div class="link"><a href="/forum">🌌 Назад к срезу</a> | <a href="/">Главная</a></div>' +
