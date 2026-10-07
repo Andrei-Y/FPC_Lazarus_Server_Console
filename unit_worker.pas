@@ -39,6 +39,7 @@ type
     FArtistBuffer: string;
         //  поле для хранения лимита:
     FMaxNodes: Integer;
+    FMaxDepth: Integer;
         FNextStartID: Integer;
     FSavedStack: string;
         //ДЕЛАЕМ МАССИВ ГЛОБАЛЬНЫМ ПОЛЕМ КЛАССА В ОЗУ:
@@ -57,6 +58,7 @@ type
   end;
 
 implementation
+
 
 // 1. МЕТОД УПАКОВКИ: Твой быстрый StringBuilder (Green Computing)
 function TServerWorker.StackToString(const AStack: TIntStack): string;
@@ -295,15 +297,35 @@ end;
 
 procedure TServerWorker.ExposeSystem(AStrRaw: string);
 var
-  CurrentID, NodeB, NodeT, VisualLevel: Integer;
+  CurrentID, NodeB, NodeT, NodeB_Prev, NodeT_Prev, VisualLevel: Integer;
   Chrono: string;
   StrList, NetParser: TStringList;
   LastLevel: Integer;
   HTML_Acc: TStringBuilder;
-  NodeCount: Integer;
+  NodeCount, BaseStackDepth: Integer;
   IsParentNode: Boolean;
   AStartID: Integer;
+  IsLinearLimitReached: Boolean; //ФЛАГ: Сработал линейный ограничитель чанка!
+  CountStack: TIntStack;
+  //  ЛОКАЛЬНЫЙ PUSH ДЛЯ ВОРКЕРА
+procedure Push(var AStack: TIntStack; const AValue: Integer);
 begin
+  SetLength(AStack, Length(AStack) + 1);
+  AStack[High(AStack)] := AValue;
+end;
+
+// ЛОКАЛЬНЫЙ POP ДЛЯ ВОРКЕРА
+function Pop(var AStack: TIntStack): Integer;
+begin
+  Result := 0;
+  if Length(AStack) > 0 then
+  begin
+    Result := AStack[High(AStack)];
+    SetLength(AStack, Length(AStack) - 1);
+  end;
+end;
+begin
+    IsLinearLimitReached := False;
     NodeCount := 0;
     NetParser := TStringList.Create;
     LastLevel := 0;
@@ -375,7 +397,7 @@ begin
     end;
 
 //    TailStack := nil;
-    CurrentID := AStartID;
+    CurrentID := AStartID;// [T1] ПЕРВЫЙ ТАКТ ПРОВЕРОК УСЛОВИЙ
     StrList := TStringList.Create;
 //    SetLength(TailStack, 0);
           DoLog('--- СТАРТ ФОРМИРОВАНИЯ СТРУКТУРЫ ---');
@@ -396,31 +418,45 @@ emToArtist:
     StrList.Delimiter := '.';
     StrList.StrictDelimiter := True;
     {$REGION 'ЦИКЛ ФОРМИРОВАНИЯ ПАКЕТА СООБЩЕНИЙ'}
-
-    while (CurrentID <> 0) do
+    BaseStackDepth := Length(TailStack)+FMaxDepth;// [2] смотрим глубину стёка при старте
+    SetLength(CountStack, Length(TailStack)); // увеличиваем стек нырков на один
+    while (CurrentID <> 0) do // Основной цикл//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     begin
 
   if Terminated then Exit;
       Chrono := FDB.GetNodeChrono(CurrentID);
       StrList.DelimitedText := Chrono;
       if StrList.Count < 3 then Break;
-      NodeB := StrToIntDef(StrList[1], 0);
-      NodeT := StrToIntDef(StrList[2], 0);
-      // --- ШАГ 1: НЫРОК ---
+      NodeB := StrToIntDef(StrList[1], 0);//читаем предшественника
+      NodeT := StrToIntDef(StrList[2], 0);//читаем конец хвоста
+      NodeB_Prev := StrToIntDef(StrList[3], 0); // читаем последователя (Инверсия / Сшивание)
+      NodeT_Prev := StrToIntDef(StrList[4], 0); // читаем начало хвоста
+      // --- ШАГ 1: НЫРОК ---  НЫРОК --- НЫРОК --- НЫРОК --- НЫРОК --- НЫРОК --- НЫРОК --- НЫРОК --- НЫРОК --- НЫРОК --- НЫРОК --- НЫРОК ---
       if (NodeT <> 0) and
-         ((Length(TailStack) = 0) or (TailStack[High(TailStack)] <> CurrentID)) then
+         ((Length(TailStack) = 0) or (TailStack[High(TailStack)] <> CurrentID)) then  //
   //если узел имеет хвост и дышащий стек нырков равен нулю или ID его верхнего элемента не равен ID текущего узла, то производим
          begin
+        if Length(TailStack) > BaseStackDepth then // если глубина стёка превышает установленый лимит углубления то
+          begin
+          //пока ничего не делаем
+          end else  // в противном случае извлекаем ветку
+          begin
         DoLog('>>> НЫРОК В ВЕТКУ (из ' + IntToStr(CurrentID) + ')');
-        SetLength(TailStack, Length(TailStack) + 1); // увеличиваем стек нырков на один
-        TailStack[High(TailStack)] := CurrentID; //записываем в него последним ID текущего узла
-        CurrentID := NodeT;//текущим узлом для обхода назначаем хвост
+        /////
+        //Push(CountStack, NodeCount);
+        /////
+        //SetLength(TailStack, Length(TailStack) + 1); // увеличиваем стек нырков на один
+        //TailStack[High(TailStack)] := CurrentID; //записываем в него последним ID текущего узла
+        Push(TailStack, CurrentID);// 1 стандартный обход дерева
+        Push(CountStack, NodeCount);// 2 обход в глубину
+        //NodeCount:=0;////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////!!!!!!!!!!!!
+        CurrentID := NodeT;// [T1] текущим узлом для обхода назначаем хвост
         Continue;
-      end;
+        end;
+        end;
 
       // --- ШАГ 2: ОПРЕДЕЛЯЕМ ВИЗУАЛЬНЫЙ УРОВЕНЬ (для префикса карточки сообщения) ---
       // Если узел в стеке — значит это РОДИТЕЛЬ, из которого мы вынырнули.
-      // Чтобы дети были ПРАВЕЕ него, его уровень должен быть меньше.////////////////////////////////////////////////////////////////////////////
       IsParentNode := (Length(TailStack) > 0) and (TailStack[High(TailStack)] = CurrentID);
       if IsParentNode then
      VisualLevel := Length(TailStack) - 1
@@ -467,6 +503,7 @@ emToArtist:
       if IsParentNode then ////////////////////////////////////////////////////////////////////////
       begin
          SetLength(TailStack, Length(TailStack) - 1);
+         //NodeCount:= Pop(CountStack);//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
          DoLog('<<< ВСПЛЫТИЕ ИЗ ВЕТКИ (возврат в ' + IntToStr(CurrentID) + ')');
       end;
            // 🛡️ СИСТЕМНЫЙ ТОРМОЗ СТАРОЙ ПАГИНАЦИИ И СТРАХОВКА ОТ ЗАЦИКЛИВАНИЯ
@@ -475,22 +512,26 @@ emToArtist:
            // Останавливает цикл, предотвращая уход сервера в мертвую петлю.
            if (CurrentID = FNextStartID) and (Length(TailStack) = 0) then begin
              FSavedStack := StackToString(TailStack);
-            FNextStartID := CurrentID;
             WriteLn('Запекаем CurrentID = FNextStartID'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
              Break;
            end;
-      CurrentID := NodeB;
+      CurrentID := NodeB;// [T1] СМЕНА ТАКТА ПРОВЕРКИ УСЛОВИЙ - ТЕКУЩИЙ УЗЕЛ РАВЕН ПРЕДШЕСТВЕННИКУ
                 Inc(NodeCount);
           // 🏛️ СТАРЫЙ ЛИНЕЙНЫЙ ПРЕДОХРАНИТЕЛЬ (ГОРИЗОНТАЛЬНАЯ ПАГИНАЦИЯ КОНТЕНТА)
           // Данный узел считает общее число выведенных карточек на экран.
           // При превышении лимита FMaxNodes он жестко обрубает цикл,
-          // чтобы разгрузить процессор JUNI BOX и ОЗУ Хрома.
           if (FMaxNodes > 0) and (NodeCount >= FMaxNodes) then
           begin
+            IsLinearLimitReached := True;// Задали значение флагу, чтобы применять после выхода из цикла, свзяно с наличием CASE
             FSavedStack := StackToString(TailStack);
             FNextStartID := CurrentID;
             WriteLn('Запекаем >'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
-            Break; // Очищаем ОЗУ и мгновенно выходим
+                           if (FNextStartID <> 0) and (CurrentID <> 0) then
+        begin
+                      WriteLn('Запекаем в кнопку'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
+          HTML_Acc.Append(RenderAjaxButton(FNextStartID, FSavedStack));
+         end;
+            Break;
           end;
     end;
     {$ENDREGION} // КОНЕЦ ЦИКЛА ФОРМИРОВАНИЯ ПАКЕТА
@@ -500,18 +541,17 @@ emToArtist:
 emToViewer:
 
   begin
-        //  1. ЕСЛИ ЦИКЛ ПРЕРВАН ПО ЛИМИТУ — СРАЗУ ГЕНЕРИРУЕМ КНОПКУ:
-        if (FMaxNodes > 0) and (NodeCount >= FMaxNodes) then
+          //1. ЕСЛИ ЦИКЛ ПРЕРВАН ПО ЛИМИТУ — СРАЗУ ГЕНЕРИРУЕМ КНОПКУ:
+        if IsLinearLimitReached then
         begin
 
           // Вызываем  утилиту кнопки по условию!
-                if (FNextStartID <> 0) and (CurrentID <> 0) then
-        begin
- //        HTML_Acc.Append(RenderAjaxButton(FNextStartID, ButtonGateStack));
-                      WriteLn('Запекаем в кнопку'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
-          HTML_Acc.Append(RenderAjaxButton(FNextStartID, FSavedStack));
-         end;
-
+ //               if (FNextStartID <> 0) and (CurrentID <> 0) then
+ //       begin
+ ////        HTML_Acc.Append(RenderAjaxButton(FNextStartID, ButtonGateStack));
+ //                     WriteLn('Запекаем в кнопку'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
+ //         HTML_Acc.Append(RenderAjaxButton(FNextStartID, FSavedStack));
+ //        end;
         end;
 
         //  2. ЗАКРЫВАЕМ СТРАНИЦУ СТРОГО ДЛЯ ГЛАВНОГО ОКНА (ЕСЛИ ЭТО НЕ ЧАНК):
