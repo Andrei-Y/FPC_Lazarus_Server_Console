@@ -25,14 +25,16 @@ type
       function GetTailFromDB(AID: Integer): Integer;
       function GetNodeChronoFromDB(AID: Integer): string;
       function LandingNode(AParentID: Integer; AContent: string): Integer;
+      //function LandingNode(AParentID: Integer; AContent: string; const ATailStackStr: string): Integer;
+
       function GetNodeChrono(AID: Integer): string;
       function GetNodeContent(AID: Integer): string;
 //      function RegisterUser(const AName, APassHash: string; AProfileNodeID: Integer = 0): Boolean;
    function VerifyUser(const AName, APassHash: string): Boolean;//    function VerifyUser(const AName, APassHash: string; out AUserID, ANodesLimit: Integer; out ATheme: string): Boolean;
       procedure ExecSQL(const ASQL: string);
       function CreateHead(AContent: string): Integer;
-      function GetUserLimit(const AName: string): Integer;
-  function UpdateUserPrefs(const AName: string; ALimit: Integer): Boolean;
+      procedure GetUserLimit(const AName: string; out ANodesLimit, ADepthLimit: Integer);
+  function UpdateUserPrefs(const AName: string; ALimit, ADepthLimit: Integer): Boolean;
   function GetUserRank(const AUsername: string): Integer;
    function RegisterUser(const AUser, APass: string): Boolean; //  рабочая функция
   function LogBotAttempt(const AMachineName: string; AIsMiss: Boolean): Integer; // НОВЫЙ МЕТОД ЩИТА
@@ -137,7 +139,7 @@ function TDatabaseModule.GetNodeChrono(AID: Integer): string;
 begin
   Result := '';
 
-  // МАЯК 1: Проверка соединения
+   //МАЯК 1: Проверка соединения
   if not Assigned(FConn) or not FConn.Connected then
   begin
     WriteLn('!!! [БАЗА] ОШИБКА: FConn не подключен !!!');
@@ -148,7 +150,7 @@ begin
     FQuery.SQL.Text := 'SELECT chronology FROM nodes WHERE id = :id';
     FQuery.ParamByName('id').AsInteger := AID;
 
-     //WriteLn('   [БАЗА] Выполняю запрос для ID: ', AID); // МАЯК 2
+     WriteLn('   [БАЗА] Выполняю запрос для ID: ', AID); // МАЯК 2
     FQuery.Open;
 
     if not FQuery.EOF then
@@ -166,70 +168,166 @@ begin
   end;
 end;
 
+//function TDatabaseModule.LandingNode(AParentID: Integer; AContent: string): Integer;
+//var
+//  ParentChrono, OldTailID, NewChrono, UpdatedParentChrono: string;
+//  Parts, NewParts: TStringArray;
+//  NewID: Integer;
+//begin
+//  Result := -1;
+//  if not FTran.Active then FTran.StartTransaction;
+//  try
+//        // 1. Узнаем, кто сейчас хвост у предшественника (AParentID)
+//    ParentChrono := GetNodeChrono(AParentID);
+//    Parts := ParentChrono.Split('.');
+//
+//    if Length(Parts) > 2 then
+//      OldTailID := Parts[2]
+//    else
+//      OldTailID := '0';
+//    // Если хвоста у родителя нет (0), то наш "предшественник" — это сам родитель (AParentID)
+//    if OldTailID = '0' then
+//       OldTailID := IntToStr(AParentID);
+//
+//    // Теперь NewChrono будет "0.ParentID.0", а не "0.0.0"
+//    NewChrono := '0.' + OldTailID + '.0.';
+////    NewChrono := '0.' + OldTailID + '.0.';
+//
+//    // Вставляем новый узел
+//    FQuery.Close;
+//
+//// ЮВЕЛИРНАЯ СБОРКА ТЕКСТОВОГО ЗАПРОСА С ДЕЙСТВУЮЩИМИ КООРДИНАТАМИ-ЗАГЛУШКАМИ
+//FQuery.SQL.Text := 'INSERT INTO nodes (content, chronology, activity_index) VALUES (' +
+//                   QuotedStr(AContent) + ', ' + QuotedStr(NewChrono) + ', 1.0) RETURNING id;';
+//
+//// Открываем запрос, так как SQLite вернет нам ID новой записи через RETURNING
+//FQuery.Open;
+//NewID := FQuery.Fields[0].AsInteger;
+//FQuery.Close;
+//    //////// ниже до комментария надо удалить
+//     FQuery.SQL.Text := 'SELECT content FROM nodes WHERE id = last_insert_rowid();';
+//    FQuery.Open;
+//    WriteLn('[DIAG] РЕАЛЬНО ЗАПИСАНО В ТАБЛИЦУ: "', FQuery.Fields[0].AsString, '"');
+//    FQuery.Close;
+//    // ОБНОВЛЯЕМ РОДИТЕЛЯ
+//    Parts[2] := IntToStr(NewID); // Теперь индекс 2 точно есть
+//    UpdatedParentChrono := string.Join('.', Parts);
+//
+//    FQuery.SQL.Text := 'UPDATE nodes SET chronology = :nc WHERE id = :id';
+//    FQuery.ParamByName('nc').AsString := UpdatedParentChrono;
+//    FQuery.ParamByName('id').AsInteger := AParentID;
+//    FQuery.ExecSQL;
+//
+//    FTran.CommitRetaining;
+//    Result := NewID;
+//  except
+//    on E: Exception do begin FTran.RollbackRetaining; raise; end;
+//  end;
+//end;
+
 function TDatabaseModule.LandingNode(AParentID: Integer; AContent: string): Integer;
 var
-  ParentChrono, OldTailID, NewChrono, UpdatedParentChrono: string;
-  Parts: TStringArray;
+  ParentChrono, OldTailID, NewChrono, UpdatedParentChrono, UpdatedTailChrono: string;
+  Parts, NewParts: TStringArray;
   NewID: Integer;
 begin
-  Result := -1;
+    Result := -1;
   if not FTran.Active then FTran.StartTransaction;
   try
-        // 1. Узнаем, кто сейчас хвост у родителя (AParentID)
-    ParentChrono := GetNodeChrono(AParentID);
-    Parts := ParentChrono.Split('.');
-
-    if Length(Parts) > 2 then
-      OldTailID := Parts[2]
+     ParentChrono := GetNodeChrono(AParentID);
+     Parts := ParentChrono.Split('.');
+         if Length(Parts) > 2 then
+      OldTailID := Parts[2];
+  // =========================================================================
+    //  ШАГ 1: СБОРКА NEWPARTS (Индексы 0..6, длина 7) СТРОГО ЧЕРЕЗ МАССИВЫ
+    // =========================================================================
+    SetLength(NewParts, 7);
+    NewParts[0] := '0';          // Собственный ID нового узла (на случай)
+    //NewParts[1] := IntToStr(AParentID);    // предшественник
+        if OldTailID = '0' then
+      NewParts[1] := IntToStr(AParentID)
     else
-      OldTailID := '0';
+      NewParts[1] := OldTailID;
+    NewParts[2] := '0';          // Окончание собственного хвоста пока нет
+    NewParts[3] := '0';          // Последователя пока нет
+    NewParts[4] := '0';          // Начало собственного хвоста пока нет
 
-    // ВОТ ТУТ РЕШЕНИЕ ПРОБЛЕМЫ:
-    // Если хвоста у родителя нет (0), то наш "предшественник"
-    // — это сам родитель (AParentID)
-    if OldTailID = '0' then
-       OldTailID := IntToStr(AParentID);
+    //  НАШЕ СВЯЩЕННОЕ НАСЛЕДОВАНИЕ СТЕКА: Стек предка + ',' + ID самого предка
+    // Выуживаем прямо из уже поднятого на строке 7 массива Parts!
+    if (Length(Parts) > 5) and (Parts[5] <> '') then
+      NewParts[5] := Parts[5] + ',' + IntToStr(AParentID)
+    else
+      NewParts[5] := IntToStr(AParentID);
 
-    // Теперь NewChrono будет "0.ParentID.0", а не "0.0.0"
-    NewChrono := '0.' + OldTailID + '.0.';
-    NewChrono := '0.' + OldTailID + '.0.';
+    NewParts[6] := ''; // Замыкающая точка
 
-    // Вставляем новый узел
+    NewChrono := string.Join('.', NewParts);
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////
+      // =========================================================================
+    //  ШАГ 2: Новый узел в базу и перехват его ID
+    // =========================================================================
     FQuery.Close;
-//    FQuery.SQL.Text := 'INSERT INTO nodes (content, chronology) VALUES (:cnt, :chr) RETURNING id;';
-//    FQuery.ParamByName('cnt').AsString := AContent;
-//     ////////////////////////
-//  //   WriteLn('[DIAG] reply_text raw bytes: ', HexStr(PChar(AContent), Length(AContent)));
-//WriteLn('[DIAG] reply_text as string UNIT DB: "', AContent, '"');
-//    FQuery.ParamByName('chr').AsString := NewChrono;
-//    FQuery.Open;
-//    NewID := FQuery.Fields[0].AsInteger;
-//    FQuery.Close;
-// ЮВЕЛИРНАЯ СБОРКА ТЕКСТОВОГО ЗАПРОСА С ДЕЙСТВУЮЩИМИ КООРДИНАТАМИ-ЗАГЛУШКАМИ
-FQuery.Close;
-FQuery.SQL.Text := 'INSERT INTO nodes (content, chronology, activity_index) VALUES (' +
-                   QuotedStr(AContent) + ', ' + QuotedStr(NewChrono) + ', 1.0) RETURNING id;';
-
-// Открываем запрос, так как SQLite вернет нам ID новой записи через RETURNING
-FQuery.Open;
-NewID := FQuery.Fields[0].AsInteger;
-FQuery.Close;
-    //////// ниже до комментария надо удалить
-     FQuery.SQL.Text := 'SELECT content FROM nodes WHERE id = last_insert_rowid();';
+    FQuery.SQL.Text := 'INSERT INTO nodes (content, chronology, activity_index) VALUES (' +
+                       QuotedStr(AContent) + ', ' + QuotedStr(NewChrono) + ', 1.0) RETURNING id;';
     FQuery.Open;
-    WriteLn('[DIAG] РЕАЛЬНО ЗАПИСАНО В ТАБЛИЦУ: "', FQuery.Fields[0].AsString, '"');
+    NewID := FQuery.Fields[0].AsInteger;
     FQuery.Close;
-    // ОБНОВЛЯЕМ РОДИТЕЛЯ
-    Parts[2] := IntToStr(NewID); // Теперь индекс 2 точно есть
+
+    // =========================================================================
+    //  ШАГ 3: Впекаем NewID в хронологию нового узла!
+    // =========================================================================
+    NewParts[0] := IntToStr(NewID);
+    NewChrono := string.Join('.', NewParts);
+
+    FQuery.SQL.Text := 'UPDATE nodes SET chronology = :nc WHERE id = :id';
+    FQuery.ParamByName('nc').AsString := NewChrono;
+    FQuery.ParamByName('id').AsInteger := NewID;
+    FQuery.ExecSQL;
+    // =========================================================================
+    //  ШАГ 4: Указание конца и начала хвоста
+    // =========================================================================
+    // Если OldTailID  равен '0', значит, предшественником нового узла
+    // является корневой узел, а не его хвост, и тогда новый узел является и началом и концом хвоста, состоящего всего из одного узла.
+    if OldTailID = '0' then
+    begin
+     Parts[2] := IntToStr(NewID);//конец хвоста
+     Parts[4] := IntToStr(NewID);//начало хвоста
+        // Склеиваем массив обратно в дисковую строку хронологии
+        UpdatedParentChrono := string.Join('.', Parts);
+
+        // Запекаем обновленный двухсвязный паспорт предшественника на диск SQLite3!
+        FQuery.SQL.Text := 'UPDATE nodes SET chronology = :nc WHERE id = :id';
+        FQuery.ParamByName('nc').AsString := UpdatedParentChrono;
+        FQuery.ParamByName('id').AsInteger := AParentID;
+
+        FQuery.ExecSQL;
+    end else
+
+    // =========================================================================
+    //  ШАГ 5: Указание хвоста и последователя в разных узлах
+    // =========================================================================
+    // Если OldTailID  не равен '0'
+    // Обновляем родителю индекс 2 — прописываем туда наш NewID как край нового хвоста
+    Parts[2] := IntToStr(NewID);
     UpdatedParentChrono := string.Join('.', Parts);
 
     FQuery.SQL.Text := 'UPDATE nodes SET chronology = :nc WHERE id = :id';
     FQuery.ParamByName('nc').AsString := UpdatedParentChrono;
     FQuery.ParamByName('id').AsInteger := AParentID;
     FQuery.ExecSQL;
+    // Обновляем последователя в окончании хвоста
+    UpdatedTailChrono := GetNodeChrono(StrToIntDef(OldTailID, 0));
+    Parts := UpdatedTailChrono.Split('.');
+    Parts[3]:= IntToStr(NewID);
+    UpdatedTailChrono := string.Join('.', Parts);
+    FQuery.SQL.Text := 'UPDATE nodes SET chronology = :nc WHERE id = :id';
+    FQuery.ParamByName('nc').AsString := UpdatedTailChrono;
+    FQuery.ParamByName('id').AsInteger := StrToIntDef(OldTailID, 0);
+    FQuery.ExecSQL;
 
     FTran.CommitRetaining;
     Result := NewID;
+
   except
     on E: Exception do begin FTran.RollbackRetaining; raise; end;
   end;
@@ -281,7 +379,7 @@ begin
 
         // Инициализация финальной структуры таблицы НОД (Задача №4)
     FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS nodes (' +
-                        'id INTEGER PRIMARY KEY AUTOINCREMENT, ' +
+                        'id INTEGER PRIMARY KEY, ' +
                         'content TEXT NOT NULL, ' +                   { Текст сообщения }
                         'chronology TEXT NOT NULL, ' +                { Хронология }
                         'node_rank INTEGER NOT NULL DEFAULT 1, ' +    { Ранг }
@@ -292,8 +390,11 @@ begin
                         'created_at DATETIME DEFAULT CURRENT_TIMESTAMP, ' + { Создано }
                         'updated_at DATETIME DEFAULT CURRENT_TIMESTAMP);');{ Изменено }
 
+    //FConn.ExecuteDirect('INSERT OR IGNORE INTO nodes (id, content, chronology, node_rank, node_sign, activity_index) ' +
+    //                    'VALUES (1, ''Корень дерева сервера'', ''1.0.0.'', 1, ''+'', 1.0);');
     FConn.ExecuteDirect('INSERT OR IGNORE INTO nodes (id, content, chronology, node_rank, node_sign, activity_index) ' +
-                        'VALUES (1, ''Корень дерева сервера'', ''1.0.0.'', 1, ''+'', 1.0);');
+                    'VALUES (1, ''Корень дерева сервера'', ''1.0.0.0.0.0.'', 1, ''+'', 1.0);');
+
 
 
     // 2. ID_Map - Таблица переадресации (Маппинг)
@@ -322,13 +423,22 @@ begin
       'reg_date DATETIME DEFAULT CURRENT_TIMESTAMP, ' + // Дата регистрации
       'karma INTEGER DEFAULT 100, ' +            // Карма для модератора
       'pref_nodes_limit INTEGER DEFAULT 50, ' +  // Лимит "эстафеты"
+      'pref_depth_limit INTEGER DEFAULT 2, ' +   //  ПРОСТО ДОПИСАЛИ СЮДА НАШ НАВИГАТОР ГЛУБИНЫ!
       'pref_theme TEXT DEFAULT "dark", ' +       // Тема оформления (dark/light)
       'profile_node_id INTEGER DEFAULT 0, ' +    // Идентификатор узла профиля
       'email TEXT UNIQUE, ' +                    //  ВРЕЗАЛИ ПОЧТУ, УНИКАЛЬНУЮ КАК ИМЯ!
       'access_rank INTEGER DEFAULT 1);');        // Поле ранга прав (1 - Исследователь)
 
 
-     // 6. ДОБАВОЧНЫЙ КОД ВРЕМЕННОГО АНГАРА РЕГИСТРАЦИИ (ВАРИАНТ А) ---
+     //    // 6. ТАБЛИЦА ПОЛЬЗОВАТЕЛЬСКИХ НАСТРОЕК (ПЕРЕНОС ИНТЕРФЕЙСНЫХ КАСТОМИЗАЦИЙ) ---
+     //FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS user_preferences (' +
+     //  'user_id INTEGER PRIMARY KEY, ' +
+     //  'pref_nodes_limit INTEGER DEFAULT 50, ' + // ГОРИЗОНТАЛЬНЫЙ ЧАНК (ЛИНЕЙНАЯ ПАГИНАЦИЯ)
+     //  'pref_depth_limit INTEGER DEFAULT 2);');   // ВЕРТИКАЛЬНЫЙ НАВИГАТОР ГЛУБИНЫ ВЛОЖЕНИЙ
+
+
+
+     // 7. ДОБАВОЧНЫЙ КОД ВРЕМЕННОГО АНГАРА РЕГИСТРАЦИИ (ВАРИАНТ А) ---
      FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS pending_registrations (' +
        'token TEXT PRIMARY KEY, ' +
        'username TEXT UNIQUE, ' +
@@ -336,7 +446,7 @@ begin
        'password TEXT, ' +     //  ДОБАВИЛИ ПОЛЕ ХРАНЕНИЯ ПАРОЛЯ!
        'created_at DATETIME DEFAULT CURRENT_TIMESTAMP);');
 
-    // 7. МАТЕРИАЛИЗАЦИЯ ЩИТА БОТОВ (ДЛЯ РЕГИСТРАЦИИ) ---
+    // 8. МАТЕРИАЛИЗАЦИЯ ЩИТА БОТОВ (ДЛЯ РЕГИСТРАЦИИ) ---
     FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS bot_shield (' +
       'machine_name TEXT PRIMARY KEY, ' +          // Сетевое имя машины (хостнейм) или спец-ключ
       'miss_count INTEGER DEFAULT 0, ' +           // Число промахов ползунка
@@ -489,22 +599,28 @@ end;
  end;
 
 
-function TDatabaseModule.GetUserLimit(const AName: string): Integer;
+procedure TDatabaseModule.GetUserLimit(const AName: string; out ANodesLimit, ADepthLimit: Integer);
 var
   LConn: TSQLite3Connection; LTran: TSQLTransaction; LQuery: TSQLQuery;
 begin
-  Result := 50; // Жесткий дефолт-предохранитель от мусора в памяти
+ // Result := 50; // Жесткий дефолт-предохранитель от мусора в памяти
+
   if AName = '' then Exit;
   try
     LConn := TSQLite3Connection.Create(nil); LTran := TSQLTransaction.Create(LConn); LQuery := TSQLQuery.Create(nil);
     LConn.Transaction := LTran; LQuery.Database := LConn; LQuery.Transaction := LTran;
     LConn.DatabaseName := FConn.DatabaseName; LConn.Open;
 
-    LQuery.SQL.Text := 'SELECT pref_nodes_limit FROM users WHERE username = :name;';
-    LQuery.ParamByName('name').AsString := AName; LQuery.Open;
+//    LQuery.SQL.Text := 'SELECT pref_nodes_limit FROM users WHERE username = :name;';
+    LQuery.SQL.Text := 'SELECT pref_nodes_limit, pref_depth_limit FROM users WHERE username = ' + QuotedStr(AName) + ';';
+    LQuery.Open;
 
     if not LQuery.EOF then
-      Result := LQuery.FieldByName('pref_nodes_limit').AsInteger;
+      ANodesLimit := LQuery.FieldByName('pref_nodes_limit').AsInteger;
+      //  ЧИТАЕМ НАШ НОВЫЙ ВЕРТИКАЛЬНЫЙ НАВИГАТОР ГЛУБИНЫ (ЛЕГАЛИЗОВАННЫЙ НУЛЬ):
+      ADepthLimit := LQuery.FieldByName('pref_depth_limit').AsInteger;
+            WriteLn('💾 [БАЗА ДАННЫХ] Успешная выборка для пилота: ', AName);
+      WriteLn('   -> Из полей SQLite вытянуто: nodes_limit = ', ANodesLimit, ', depth_limit = ', ADepthLimit);
 
     LQuery.Close;
     LQuery.Free; LTran.Free; LConn.Free;
@@ -513,29 +629,60 @@ begin
   end;
 end;
 
-function TDatabaseModule.UpdateUserPrefs(const AName: string; ALimit: Integer): Boolean;
-var
-  LConn: TSQLite3Connection; LTran: TSQLTransaction; LQuery: TSQLQuery;
+//function TDatabaseModule.UpdateUserPrefs(const AName: string; ALimit, ADepthLimit: Integer): Boolean;
+//var
+//  LConn: TSQLite3Connection; LTran: TSQLTransaction; LQuery: TSQLQuery;
+//begin
+//  Result := False; if AName = '' then Exit;
+//  try
+//    LConn := TSQLite3Connection.Create(nil); LTran := TSQLTransaction.Create(LConn); LQuery := TSQLQuery.Create(nil);
+//    LConn.Transaction := LTran; LQuery.Database := LConn; LQuery.Transaction := LTran;
+//    LConn.DatabaseName := FConn.DatabaseName; LConn.Open;
+//
+//    //  ОДИН КРАСИВЫЙ СНАЙПЕРСКИЙ UPDATE НА ОБА ПОЛЯ НА ДИСКЕ:
+//    LQuery.SQL.Text := 'UPDATE users SET pref_nodes_limit = ' + IntToStr(ALimit) +
+//                       ', pref_depth_limit = ' + IntToStr(ADepthLimit) +
+//                       ' WHERE username = ' + QuotedStr(AName) + ';';
+//    LQuery.ExecSQL;
+//    LTran.Commit;
+//    Result := True;
+//    WriteLn('  [ПОТОК БД] Настройки изменены: limit=', ALimit, ', depth=', ADepthLimit, ' для ', AName);
+//
+//    LQuery.Free; LTran.Free; LConn.Free;
+//  except
+//    on E: Exception do WriteLn('!!! [ПОТОК БД] Ошибка в UpdateUserPrefs: ', E.Message);
+//  end;
+//end;
+
+function TDatabaseModule.UpdateUserPrefs(const AName: string; ALimit, ADepthLimit: Integer): Boolean;
 begin
-  Result := False; if AName = '' then Exit;
+  Result := False;
+  if AName = '' then Exit;
+
+  // Если главная транзакция модуля почему-то не взведена — ламинарно запускаем её
+  if not FTran.Active then FTran.StartTransaction;
+
   try
-    LConn := TSQLite3Connection.Create(nil); LTran := TSQLTransaction.Create(LConn); LQuery := TSQLQuery.Create(nil);
-    LConn.Transaction := LTran; LQuery.Database := LConn; LQuery.Transaction := LTran;
-    LConn.DatabaseName := FConn.DatabaseName; LConn.Open;
+    // Используем строго наше родное, проверенное оборудование!
+    FQuery.Close;
+    FQuery.SQL.Text := 'UPDATE users SET pref_nodes_limit = ' + IntToStr(ALimit) +
+                       ', pref_depth_limit = ' + IntToStr(ADepthLimit) +
+                       ' WHERE username = ' + QuotedStr(AName) + ';';
+    FQuery.ExecSQL;
 
-    LQuery.SQL.Text := 'UPDATE users SET pref_nodes_limit = :limit WHERE username = :name;';
-    LQuery.ParamByName('limit').AsInteger := ALimit;
-    LQuery.ParamByName('name').AsString := AName; LQuery.ExecSQL;
+    // Фиксируем настройки на диске JUNI BOX единым монолитом
+    FTran.CommitRetaining;
 
-    LTran.Commit; Result := True;
-    WriteLn('   [ПОТОК БД] Лимит обновлен в базе для пилота: ', AName);
-
-    LQuery.Free; LTran.Free; LConn.Free;
+    Result := True;
+    WriteLn('  [ПОТОК БД] Настройки изменены: limit=', ALimit, ', depth=', ADepthLimit, ' для ', AName);
   except
-    on E: Exception do WriteLn('!!! [ПОТОК БД] Ошибка в UpdateUserPrefs: ', E.Message);
+    on E: Exception do
+    begin
+      FTran.RollbackRetaining; // В случае сбоя ламинарно откатываем затвор назад
+      WriteLn('!!! [ПОТОК БД] Ошибка в UpdateUserPrefs: ', E.Message);
+    end;
   end;
 end;
-
 
 function TDatabaseModule.GetUserRank(const AUsername: string): Integer;
 var

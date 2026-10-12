@@ -73,7 +73,7 @@ begin
 
     // Первая пара заголовка: Авторизация
     CProcess.Parameters.Add('--header');
-    CProcess.Parameters.Add('Authorization: '); // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Впиши свой API-ключ, который в профиле на https://smtp.bz/panel/user
+    CProcess.Parameters.Add('Authorization: key'); // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Впишите свой API-ключ, который в профиле на https://smtp.bz/panel/user
 
     // Вторая пара заголовка: Тип контента (JSON)
     CProcess.Parameters.Add('--header');
@@ -516,7 +516,7 @@ begin
           '</body></html>';
 end;
  // 6. КОНСТРУКТОР ЛИЧНОГО КАБИНЕТА
-function HTML_RenderProfilePage(const ReqUser: string; ULimit: Integer): string;
+function HTML_RenderProfilePage(const ReqUser: string; ULimit, UDepthLimit: Integer): string;
 begin
   Result :=           '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Личный кабинет</title>' +
           '<style>' +
@@ -537,6 +537,9 @@ begin
           '  <form method="POST" action="/profile">' +
           '    <label>Лимит узлов среза на страницу:</label>' +
           '    <input type="number" name="limit" value="' + IntToStr(ULimit) + '" min="0" max="500" required>' +
+          '<label>Глубина дерева нод (уровней):</label>' +
+          '<input type="number" name="depth_limit" value="' + IntToStr(UDepthLimit) + '" min="0" max="10" required>' +
+
           '    <input type="submit" value="Сохранить настройки">' +
           '  </form>' +
           '  <div class="link"><a href="/forum">🌌 Назад к срезу</a> | <a href="/">Главная</a></div>' +
@@ -550,7 +553,7 @@ var
   Path: string;
   TempWorker: TServerWorker;
   ReqUser, ReqPass: string;
-  UID, ULimit,UserRankInt: Integer;
+  UID, ULimit,UserRankInt,UDepthLimit: Integer;
   UTheme: string;
   UserBlock: string;
   ForumHeader: string;
@@ -613,6 +616,7 @@ begin
         SetLength(TempWorker.TailStack, 0);
     WriteLn('   [СИСТЕМА] Запуск обхода дерева для браузера...');
     ULimit := 50;
+    UDepthLimit := 2;
     UTheme := 'dark';
         //  Если пользователь распознан (ReqUser не пустой) — вытягиваем ЕГО личный лимит из базы
     if ReqUser <> '' then
@@ -624,7 +628,7 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
         if ReqUser <> '' then
     begin
       // Вызываем  рабочий метод модуля базы данных:
-      ULimit := FDB.GetUserLimit(ReqUser);
+      FDB.GetUserLimit(ReqUser, ULimit, UDepthLimit);
     end;
     TempWorker := TServerWorker.Create(Self.FDB, nil, nil, emToViewer, IsUserAuth);
 
@@ -633,6 +637,7 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
     //TempWorker.FChunk := True;
     try
        TempWorker.FMaxNodes := ULimit;
+       TempWorker.FMaxDepth := UDepthLimit;
       TempWorker.ExposeSystem('');
       AResponse.ContentType := 'text/html; charset=utf-8';
 
@@ -652,10 +657,11 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
   begin
     // Считываем лимит из СУБД (ReqUser у тебя вычислен сервером выше по коду)
     ULimit := 50; // Базовый предохранитель
-    if ReqUser <> '' then ULimit := FDB.GetUserLimit(ReqUser);
+    if ReqUser <> '' then FDB.GetUserLimit(ReqUser, ULimit, UDepthLimit);
         // Создаем экземпляр воркера (False на конце — поток не заморожен)
     TempWorker := TServerWorker.Create(Self.FDB, nil, nil, emToViewer, IsUserAuth);
     TempWorker.FMaxNodes := ULimit;
+    TempWorker.FMaxDepth := UDepthLimit;
     TempWorker.FChunk := True; // Включаем режим чанка
 
     try
@@ -856,25 +862,27 @@ WriteLn('[DIAG] reply_text as string LPR: "', TextContent, '"');
         ULimit := 0;
 
         // Запрашиваем лимит у базы данных
-        ULimit := Self.FDB.GetUserLimit(ReqUser);
+        FDB.GetUserLimit(ReqUser, ULimit, UDepthLimit);
 
         // Страховочный предохранитель: если база почему-то вернула 0, ставим жесткие 50
         if ULimit <= 0 then ULimit := 50;
 
         WriteLn('   [СЕРВЕР] ЛК отображается для пилота: "', ReqUser, '". Выводимый лимит: ', ULimit);
 
-        AResponse.Content := HTML_RenderProfilePage(ReqUser, ULimit);
+        AResponse.Content := HTML_RenderProfilePage(ReqUser, ULimit, UDepthLimit);
       end
 
       // POST: Принимаем измененные настройки от пользователя
       else if ARequest.Method = 'POST' then
       begin
-        ReqPass := ARequest.ContentFields.Values['limit'];
-        ULimit := StrToIntDef(ReqPass, 50);
+        // 1. Выкачиваем обе ручки из сетевого HTML-кабеля Хрома:
+        ULimit := StrToIntDef(ARequest.ContentFields.Values['limit'], 50);
+        UDepthLimit := StrToIntDef(ARequest.ContentFields.Values['depth_limit'], 2); // 🎯 НАШ НОВЫЙ НУЛЬ ПРИЛЕТЕЛ!
 
-        WriteLn('   [СЕРВЕР] Получен POST-запрос на смену лимита для "', ReqUser, '": ', ULimit);
+        WriteLn(' [СЕРВЕР] Получен POST-запрос смены лимитов для "', ReqUser, '": limit=', ULimit, ', depth=', UDepthLimit);
 
-        if Self.FDB.UpdateUserPrefs(ReqUser, ULimit) then
+        // 2. Стреляем обновлённым методом прямо в СУБД SQLite3:
+        if Self.FDB.UpdateUserPrefs(ReqUser, ULimit, UDepthLimit) then
         begin
           AResponse.SendRedirect('/forum');
           Exit;
@@ -884,6 +892,8 @@ WriteLn('[DIAG] reply_text as string LPR: "', TextContent, '"');
           AResponse.Content := '<html><body><h2>Ошибка сохранения настроек</h2><a href="/profile">Назад</a></body></html>';
         end;
       end;
+
+
     end;
   end
    else if Path = '/do_register' then
