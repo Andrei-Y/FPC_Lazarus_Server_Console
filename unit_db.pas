@@ -230,6 +230,7 @@ var
   ParentChrono, OldTailID, NewChrono, UpdatedParentChrono, UpdatedTailChrono: string;
   Parts, NewParts: TStringArray;
   NewID: Integer;
+  CurrentUnixTime: Int64;
 begin
     Result := -1;
   if not FTran.Active then FTran.StartTransaction;
@@ -264,11 +265,20 @@ begin
     NewChrono := string.Join('.', NewParts);
   /////////////////////////////////////////////////////////////////////////////////////////////////////////
       // =========================================================================
-    //  ШАГ 2: Новый узел в базу и перехват его ID
+    ////  ШАГ 2: Новый узел в базу и перехват его ID
+    //// =========================================================================
+    //FQuery.Close;
+    //FQuery.SQL.Text := 'INSERT INTO nodes (content, chronology, activity_index) VALUES (' +
+    //                   QuotedStr(AContent) + ', ' + QuotedStr(NewChrono) + ', 1.0) RETURNING id;';
+    //FQuery.Open;
+    //NewID := FQuery.Fields[0].AsInteger;
+    //FQuery.Close;
+
+       //  ШАГ 2: Новый узел в базу и перехват его ID
     // =========================================================================
     FQuery.Close;
-    FQuery.SQL.Text := 'INSERT INTO nodes (content, chronology, activity_index) VALUES (' +
-                       QuotedStr(AContent) + ', ' + QuotedStr(NewChrono) + ', 1.0) RETURNING id;';
+    FQuery.SQL.Text := 'INSERT INTO nodes (author_id, content, chronology, node_rank) VALUES (0, ' +
+                       QuotedStr(AContent) + ', ' + QuotedStr(NewChrono) + ', 0) RETURNING id;';
     FQuery.Open;
     NewID := FQuery.Fields[0].AsInteger;
     FQuery.Close;
@@ -299,7 +309,6 @@ begin
         FQuery.SQL.Text := 'UPDATE nodes SET chronology = :nc WHERE id = :id';
         FQuery.ParamByName('nc').AsString := UpdatedParentChrono;
         FQuery.ParamByName('id').AsInteger := AParentID;
-
         FQuery.ExecSQL;
     end else
 
@@ -324,6 +333,24 @@ begin
     FQuery.ParamByName('nc').AsString := UpdatedTailChrono;
     FQuery.ParamByName('id').AsInteger := StrToIntDef(OldTailID, 0);
     FQuery.ExecSQL;
+
+        // =========================================================================
+    //  ШАГ 6: Инициализация паспорта весов и хронологического маяка (Связь 1:1)
+    // =========================================================================
+    // Вычисляем текущий штамп времени для двухфакторного маяка (Unix Time)
+    // ВНИМАНИЕ: Не забудь объявить переменную CurrentUnixTime: Int64 в var!
+    CurrentUnixTime := DateTimeToUnix(Now);
+
+    FQuery.Close;
+    // Используем универсальный IntToStr для всех чисел, включая Int64
+    FQuery.SQL.Text := 'INSERT INTO node_analytics (node_id, parent_relation_sign, moderation_status, ' +
+                       'node_own_crystallization, node_own_questions, cascade_direct_force, ' +
+                       'cascade_counter_force, total_cascade_weight, created_at, edited_at) ' +
+                       'VALUES (' + IntToStr(NewID) + ', 1, 0, 0, 0, 0, 0, 0, ' +
+                       IntToStr(CurrentUnixTime) + ', ' + IntToStr(CurrentUnixTime) + ');';
+    FQuery.ExecSQL;
+
+
 
     FTran.CommitRetaining;
     Result := NewID;
@@ -368,33 +395,68 @@ begin
     // ... дальше твой стандартный код создания таблиц ...
 
     // Создаем таблицы
-    // 1. Nodes - Хранилище данных
-    //FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS nodes (' +
-    //      'id INTEGER PRIMARY KEY AUTOINCREMENT, ' +
-    //      'content TEXT, ' +
-    //      'coords_x REAL, coords_y REAL, ' +
-    //      'chronology TEXT, ' +
-    //      'node_rank INTEGER NOT NULL DEFAULT 1, ' +
-    //      'activity_index REAL DEFAULT 0);');
 
-        // Инициализация финальной структуры таблицы НОД (Задача №4)
+    //    // Инициализация структуры таблицы НОД (Задача №4)
+    //FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS nodes (' +
+    //                    'id INTEGER PRIMARY KEY, ' +
+    //                    'content TEXT NOT NULL, ' +                   { Текст сообщения }
+    //                    'chronology TEXT NOT NULL, ' +                { Хронология }
+    //                    'node_rank INTEGER NOT NULL DEFAULT 1, ' +    { Ранг }
+    //                    'node_sign TEXT NOT NULL DEFAULT ''+'', ' +   { Знак }
+    //                    'activity_index REAL DEFAULT 0, ' +           { Индекс активности}
+    //                    'node_clean_weight REAL DEFAULT 1.0, ' +      { Вес }
+    //                    'dust_cloud_weight REAL DEFAULT 0.0, ' +      { Пыль }
+    //                    'created_at DATETIME DEFAULT CURRENT_TIMESTAMP, ' + { Создано }
+    //                    'updated_at DATETIME DEFAULT CURRENT_TIMESTAMP);');{ Изменено }
+    //
+    ////FConn.ExecuteDirect('INSERT OR IGNORE INTO nodes (id, content, chronology, node_rank, node_sign, activity_index) ' +
+    ////                    'VALUES (1, ''Корень дерева сервера'', ''1.0.0.'', 1, ''+'', 1.0);');
+    //FConn.ExecuteDirect('INSERT OR IGNORE INTO nodes (id, content, chronology, node_rank, node_sign, activity_index) ' +
+    //                'VALUES (1, ''Корень дерева сервера'', ''1.0.0.0.0.0.'', 1, ''+'', 1.0);');
+
+
+     // 1. ОСНОВНАЯ ТАБЛИЦА НОД (Тексты, хронологический путь префиксов, ранг и АВТОР)
     FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS nodes (' +
                         'id INTEGER PRIMARY KEY, ' +
-                        'content TEXT NOT NULL, ' +                   { Текст сообщения }
-                        'chronology TEXT NOT NULL, ' +                { Хронология }
-                        'node_rank INTEGER NOT NULL DEFAULT 1, ' +    { Ранг }
-                        'node_sign TEXT NOT NULL DEFAULT ''+'', ' +   { Знак }
-                        'activity_index REAL DEFAULT 0, ' +           { Индекс активности}
-                        'node_clean_weight REAL DEFAULT 1.0, ' +      { Вес }
-                        'dust_cloud_weight REAL DEFAULT 0.0, ' +      { Пыль }
-                        'created_at DATETIME DEFAULT CURRENT_TIMESTAMP, ' + { Создано }
-                        'updated_at DATETIME DEFAULT CURRENT_TIMESTAMP);');{ Изменено }
+                        'author_id INTEGER NOT NULL, ' +              { Уникальный ID автора сообщения }
+                        'content TEXT NOT NULL, ' +                   { TEXT сообщения / Название раздела }
+                        'chronology TEXT NOT NULL, ' +                { Цепочка предков для твоего парсера }
+                        'node_rank INTEGER NOT NULL DEFAULT 1);');    { Семантический ранг-тип }
 
-    //FConn.ExecuteDirect('INSERT OR IGNORE INTO nodes (id, content, chronology, node_rank, node_sign, activity_index) ' +
-    //                    'VALUES (1, ''Корень дерева сервера'', ''1.0.0.'', 1, ''+'', 1.0);');
-    FConn.ExecuteDirect('INSERT OR IGNORE INTO nodes (id, content, chronology, node_rank, node_sign, activity_index) ' +
-                    'VALUES (1, ''Корень дерева сервера'', ''1.0.0.0.0.0.'', 1, ''+'', 1.0);');
+    // Мгновенная инициализация Корня системы (Автор Корня = 0, Системный аккаунт)
+    FConn.ExecuteDirect('INSERT OR IGNORE INTO nodes (id, author_id, content, chronology, node_rank) ' +
+                        'VALUES (1, 0, ''Корень дерева сервера'', ''1.0.0.0.0.0.'', 1);');
 
+    // 2. ИЗОЛИРОВАННАЯ ТАБЛИЦА АНАЛИТИКИ И ВЕСОВ (Паспорт карточки для ОЗУ воркера и визуализации)
+    FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS node_analytics (' +
+                        'node_id INTEGER PRIMARY KEY, ' +
+                        'parent_relation_sign INTEGER DEFAULT 0, ' + { +1 Аргумент, -1 Контраргумент, 0 Вопрос }
+                        'moderation_status INTEGER DEFAULT 0, ' +    { 0 Проверка, 1 Замок модерации, 2 Снят }
+                        'node_own_crystallization INTEGER DEFAULT 0, ' + { Число прямых привязок к Истинам }
+                        'node_own_questions INTEGER DEFAULT 0, ' +     { Число вопросов к самой ноде }
+                        'cascade_direct_force INTEGER DEFAULT 0, ' +   { Прямая сила ноды с потомками }
+                        'cascade_counter_force INTEGER DEFAULT 0, ' +  { Прямая сила её контраргументов }
+                        'total_cascade_weight INTEGER DEFAULT 0, ' +   { Общий физический вес каскада }
+                        'created_at INTEGER NOT NULL, ' +              { Часть 1 маяка хронологии (Unix Time) }
+                        'edited_at INTEGER NOT NULL);');               { Часть 2 маяка хронологии (Unix Time) }
+
+    // Паспорт Корня системы (отправная точка для будущих LEFT JOIN)
+    FConn.ExecuteDirect('INSERT OR IGNORE INTO node_analytics (node_id, parent_relation_sign, created_at, edited_at) ' +
+                        'VALUES (1, 1, strftime(''%s'',''now''), strftime(''%s'',''now''));');
+
+    // 3. БУФЕР-ОЧЕРЕДЬ (Амортизатор дисковой нагрузки, разгружающий LandingNode от пересчёта весов)
+    FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS weight_queue (' +
+                        'task_id INTEGER PRIMARY KEY AUTOINCREMENT, ' +
+                        'target_node_id INTEGER NOT NULL, ' +
+                        'action_type INTEGER NOT NULL, ' +             { 1: Создание ноды, 2: Запрос на модерацию }
+                        'status INTEGER DEFAULT 0, ' +                 { 0: Ожидает воркера, 1: В обработке }
+                        'created_at INTEGER NOT NULL);');
+
+    // СНАЙПЕРСКИЕ ИНДЕКСЫ ДЛЯ НАНОСЕКУНДНОЙ НАВИГАЦИИ И АНАЛИТИКИ
+    FConn.ExecuteDirect('CREATE INDEX IF NOT EXISTS idx_queue_status ON weight_queue(status);'); { Для ленивого воркера }
+    FConn.ExecuteDirect('CREATE INDEX IF NOT EXISTS idx_nodes_author ON nodes(author_id);');     { Для мгновенного поиска по автору }
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
     // 2. ID_Map - Таблица переадресации (Маппинг)

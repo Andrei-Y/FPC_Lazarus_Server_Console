@@ -73,7 +73,7 @@ begin
 
     // Первая пара заголовка: Авторизация
     CProcess.Parameters.Add('--header');
-    CProcess.Parameters.Add('Authorization: key'); // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Впишите свой API-ключ, который в профиле на https://smtp.bz/panel/user
+    CProcess.Parameters.Add('Authorization: 4O2Oj14evsbdtkdtNkj5ybKKpdX4SU4MzUqI'); // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Впишите свой API-ключ, который в профиле на https://smtp.bz/panel/user
 
     // Вторая пара заголовка: Тип контента (JSON)
     CProcess.Parameters.Add('--header');
