@@ -440,9 +440,33 @@ begin
                         'created_at INTEGER NOT NULL, ' +              { Часть 1 маяка хронологии (Unix Time) }
                         'edited_at INTEGER NOT NULL);');               { Часть 2 маяка хронологии (Unix Time) }
 
-    // Паспорт Корня системы (отправная точка для будущих LEFT JOIN)
-    FConn.ExecuteDirect('INSERT OR IGNORE INTO node_analytics (node_id, parent_relation_sign, created_at, edited_at) ' +
-                        'VALUES (1, 1, strftime(''%s'',''now''), strftime(''%s'',''now''));');
+    //// Паспорт Корня системы (отправная точка для будущих LEFT JOIN)
+    //FConn.ExecuteDirect('INSERT OR IGNORE INTO node_analytics (node_id, parent_relation_sign, created_at, edited_at) ' +
+    //                    'VALUES (1, 1, strftime(''%s'',''now''), strftime(''%s'',''now''));');
+     // Идеальный паспорт Корня системы (Явное заполнение всех 10 полей для пулестойкого LEFT JOIN)
+    FConn.ExecuteDirect('INSERT OR IGNORE INTO node_analytics (' +
+                        '  node_id, ' +                 { 1 }
+                        '  parent_relation_sign, ' +    { 2 }
+                        '  moderation_status, ' +       { 3 }
+                        '  node_own_crystallization, ' +{ 4 }
+                        '  node_own_questions, ' +      { 5 }
+                        '  cascade_direct_force, ' +    { 6 }
+                        '  cascade_counter_force, ' +   { 7 }
+                        '  total_cascade_weight, ' +    { 8 }
+                        '  created_at, ' +              { 9 }
+                        '  edited_at' +                 { 10 }
+                        ') VALUES (' +
+                        '  1, ' +                       { id = 1 }
+                        '  1, ' +                       { sign = 1 (Аргумент) }
+                        '  1, ' +                       { mod = 1 (Утвержден модерацией, Замок закрыт) }
+                        '  1, ' +                       { own_cryst = 1 (Корень верифицирован по умолчанию) }
+                        '  0, ' +                       { own_quest = 0 }
+                        '  1, ' +                       { direct = 1 (Начальный вектор силы) }
+                        '  0, ' +                       { counter = 0 }
+                        '  1, ' +                       { total_w = 1 (Корень — первая физическая нода) }
+                        '  strftime(''%s'',''now''), ' +{ created_at }
+                        '  strftime(''%s'',''now'')' +  { edited_at }
+                        ');');
 
     // 3. БУФЕР-ОЧЕРЕДЬ (Амортизатор дисковой нагрузки, разгружающий LandingNode от пересчёта весов)
     FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS weight_queue (' +
