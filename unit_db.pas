@@ -334,22 +334,49 @@ begin
     FQuery.ParamByName('id').AsInteger := StrToIntDef(OldTailID, 0);
     FQuery.ExecSQL;
 
+    //    // =========================================================================
+    ////  ШАГ 6: Инициализация паспорта весов и хронологического маяка (Связь 1:1)
+    //// =========================================================================
+    //// Вычисляем текущий штамп времени для двухфакторного маяка (Unix Time)
+    //// ВНИМАНИЕ: Не забудь объявить переменную CurrentUnixTime: Int64 в var!
+    //CurrentUnixTime := DateTimeToUnix(Now);
+    //
+    //FQuery.Close;
+    //// Используем универсальный IntToStr для всех чисел, включая Int64
+    //FQuery.SQL.Text := 'INSERT INTO node_analytics (node_id, parent_relation_sign, moderation_status, ' +
+    //                   'node_own_crystallization, node_own_questions, cascade_direct_force, ' +
+    //                   'cascade_counter_force, total_cascade_weight, created_at, edited_at) ' +
+    //                   'VALUES (' + IntToStr(NewID) + ', 1, 0, 0, 0, 0, 0, 0, ' +
+    //                   IntToStr(CurrentUnixTime) + ', ' + IntToStr(CurrentUnixTime) + ');';
+    //FQuery.ExecSQL;
+
         // =========================================================================
-    //  ШАГ 6: Инициализация паспорта весов и хронологического маяка (Связь 1:1)
+    //  ШАГ 6: Бронированная численная параметризация (Без строкового оверхеда)
     // =========================================================================
-    // Вычисляем текущий штамп времени для двухфакторного маяка (Unix Time)
-    // ВНИМАНИЕ: Не забудь объявить переменную CurrentUnixTime: Int64 в var!
-    CurrentUnixTime := DateTimeToUnix(Now);
-
     FQuery.Close;
-    // Используем универсальный IntToStr для всех чисел, включая Int64
-    FQuery.SQL.Text := 'INSERT INTO node_analytics (node_id, parent_relation_sign, moderation_status, ' +
-                       'node_own_crystallization, node_own_questions, cascade_direct_force, ' +
-                       'cascade_counter_force, total_cascade_weight, created_at, edited_at) ' +
-                       'VALUES (' + IntToStr(NewID) + ', 1, 0, 0, 0, 0, 0, 0, ' +
-                       IntToStr(CurrentUnixTime) + ', ' + IntToStr(CurrentUnixTime) + ');';
-    FQuery.ExecSQL;
 
+    // Прописываем монолитный SQL-шаблон. Никаких склеек строк и IntToStr!
+    // Поля весов и сил (с 4 по 8) база сама инициализирует дефолтными нулями.
+    FQuery.SQL.Text := 'INSERT INTO node_analytics (' +
+                       '  node_id, ' +
+                       '  parent_relation_sign, ' +
+                       '  moderation_status, ' +
+                       '  created_at, ' +
+                       '  edited_at' +
+                       ') VALUES (' +
+                       '  :node_id, ' +
+                       '  :sign, ' +
+                       '  0, ' + { mod = 0 (На проверке) }
+                       '  strftime(''%s'',''now''), ' + {created_at на уровне СУБД}
+                       '  strftime(''%s'',''now'')' +   {edited_at на уровне СУБД}
+                       ');';
+
+    // Передаем данные строго в численном бинарном виде на уровне протокола!
+    FQuery.ParamByName('node_id').AsInteger := NewID;
+    FQuery.ParamByName('sign').AsInteger := 1; { Начальный знак +1 (Аргумент) }
+
+    // Прямой силовой выстрел в кремний диска без текстовых конвертаций
+    FQuery.ExecSQL;
 
 
     FTran.CommitRetaining;
