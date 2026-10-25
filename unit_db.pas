@@ -253,7 +253,7 @@ begin
     NewParts[3] := '0';          // Последователя пока нет
     NewParts[4] := '0';          // Начало собственного хвоста пока нет
 
-    //  НАШЕ СВЯЩЕННОЕ НАСЛЕДОВАНИЕ СТЕКА: Стек предка + ',' + ID самого предка
+    // НАСЛЕДОВАНИЕ СТЕКА: Стек предка + ',' + ID самого предка!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // Выуживаем прямо из уже поднятого на строке 7 массива Parts!
     if (Length(Parts) > 5) and (Parts[5] <> '') then
       NewParts[5] := Parts[5] + ',' + IntToStr(AParentID)
@@ -284,7 +284,7 @@ begin
     FQuery.Close;
 
     // =========================================================================
-    //  ШАГ 3: Впекаем NewID в хронологию нового узла!
+    //  ШАГ 3: Впекаем  NewID в хронологию ноаого узла!
     // =========================================================================
     NewParts[0] := IntToStr(NewID);
     NewChrono := string.Join('.', NewParts);
@@ -334,21 +334,7 @@ begin
     FQuery.ParamByName('id').AsInteger := StrToIntDef(OldTailID, 0);
     FQuery.ExecSQL;
 
-    //    // =========================================================================
-    ////  ШАГ 6: Инициализация паспорта весов и хронологического маяка (Связь 1:1)
-    //// =========================================================================
-    //// Вычисляем текущий штамп времени для двухфакторного маяка (Unix Time)
-    //// ВНИМАНИЕ: Не забудь объявить переменную CurrentUnixTime: Int64 в var!
-    //CurrentUnixTime := DateTimeToUnix(Now);
-    //
-    //FQuery.Close;
-    //// Используем универсальный IntToStr для всех чисел, включая Int64
-    //FQuery.SQL.Text := 'INSERT INTO node_analytics (node_id, parent_relation_sign, moderation_status, ' +
-    //                   'node_own_crystallization, node_own_questions, cascade_direct_force, ' +
-    //                   'cascade_counter_force, total_cascade_weight, created_at, edited_at) ' +
-    //                   'VALUES (' + IntToStr(NewID) + ', 1, 0, 0, 0, 0, 0, 0, ' +
-    //                   IntToStr(CurrentUnixTime) + ', ' + IntToStr(CurrentUnixTime) + ');';
-    //FQuery.ExecSQL;
+
 
         // =========================================================================
     //  ШАГ 6: Бронированная численная параметризация (Без строкового оверхеда)
@@ -378,6 +364,31 @@ begin
     // Прямой силовой выстрел в кремний диска без текстовых конвертаций
     FQuery.ExecSQL;
 
+    // =========================================================================
+//  ШАГ 7: Выстрел мгновенного импульса в буфер очереди по твоей схеме
+// =========================================================================
+FQuery.Close;
+
+// Пишем строго без target_node_id. Наносекундный пакет!
+FQuery.SQL.Text := 'INSERT INTO weight_queue (' +
+                   '  target_chronology, ' +
+                   '  target_relation_sign, ' +
+                   '  action_type, ' +
+                   '  status, ' +
+                   '  created_at' +
+                   ') VALUES (' +
+                   '  :chrono, ' +
+                   '  :sign, ' +
+                   '  1, ' + { action_type = 1 (Создание ноды) }
+                   '  0, ' + { status = 0 (Ожидает) }
+                   '  strftime(''%s'',''now'')' +
+                   ');';
+
+// Бинарная привязка данных — быстро и без строкового мусора
+FQuery.ParamByName('chrono').AsString := NewParts[5]; { Передаем чистый стек предков из твоего массива! }
+FQuery.ParamByName('sign').AsInteger := 1;            { Стартовый знак ребра (+1 Аргумент) }
+
+FQuery.ExecSQL;
 
     FTran.CommitRetaining;
     Result := NewID;
@@ -447,7 +458,7 @@ begin
                         'id INTEGER PRIMARY KEY, ' +
                         'author_id INTEGER NOT NULL, ' +              { Уникальный ID автора сообщения }
                         'content TEXT NOT NULL, ' +                   { TEXT сообщения / Название раздела }
-                        'chronology TEXT NOT NULL, ' +                { Цепочка предков для твоего парсера }
+                        'chronology TEXT NOT NULL, ' +                { Цепочка предков и связи }
                         'node_rank INTEGER NOT NULL DEFAULT 1);');    { Семантический ранг-тип }
 
     // Мгновенная инициализация Корня системы (Автор Корня = 0, Системный аккаунт)
@@ -498,7 +509,8 @@ begin
     // 3. БУФЕР-ОЧЕРЕДЬ (Амортизатор дисковой нагрузки, разгружающий LandingNode от пересчёта весов)
     FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS weight_queue (' +
                         'task_id INTEGER PRIMARY KEY AUTOINCREMENT, ' +
-                        'target_node_id INTEGER NOT NULL, ' +
+                        'target_chronology TEXT NOT NULL, ' +        { НАШ  ГЕНОКОД: Цепочка предков }
+                         'target_relation_sign INTEGER NOT NULL, ' +
                         'action_type INTEGER NOT NULL, ' +             { 1: Создание ноды, 2: Запрос на модерацию }
                         'status INTEGER DEFAULT 0, ' +                 { 0: Ожидает воркера, 1: В обработке }
                         'created_at INTEGER NOT NULL);');
