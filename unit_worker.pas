@@ -19,6 +19,7 @@ type
     FDB: TDatabaseModule;
     FOnLog: TLogEvent; // Теперь компилятор знает, что это такое
     FMsgForLog: string;
+    AWeight: Integer;
     FMode: TExtractMode; // Скрытое поле режима
     FOnHtml: THTMLEvent; // Ссылка на вывод HTML
 
@@ -134,6 +135,48 @@ Result :=
    '  </button>' +
    '</div>';
 end;
+
+function RenderMiniWeightButton(ANextID: Integer; ASavedStack: string; AWeight: Integer): string;
+var
+  ReplyCount: Integer;
+  ButtonText: string;
+  UniqueGateID: string;
+begin
+  Result := '';
+
+  // МАТЕМАТИКА ВЕСА (Закон Rector'а): Число скрытых ответов — это общий вес ветки минус сама нода!
+  ReplyCount := AWeight - 1;
+
+  // ПРЕДОХРАНИТЕЛЬ: Если под нодой физически нет ответов, кнопку разворота не выводим
+  //if ReplyCount <= 0 then Exit;
+
+  // Динамический, лаконичный текст емкости ветки
+  ButtonText := '💬 Развернуть ветку (' + IntToStr(ReplyCount) + ')';
+
+  // Генерируем уникальный маркер ID контейнера на основе ID ноды, чтобы скрипты Ajax не путали контейнеры в дереве
+  UniqueGateID := 'branch-gate-' + IntToStr(ANextID);
+
+  // ЮВЕЛИРНАЯ HTML-СБОРКА С ВЕРТИКАЛЬНЫМ ЧАНК-МАНЕВРОМ:
+  // 1. Контейнер поджат вверх (margin-top: -6px) и сдвинут вправо по уровню вложенности (padding-left: 20px)
+  // 2. Метод fetch стучит по адресу /forum_chunk, передавая параметры снайперского старта
+  // 3. insertAdjacentHTML с флагом 'beforebegin' вклеивает догруженный чанк СВЕРХУ от кнопки (от листьев к корням)
+  Result :=
+     '<div id="' + UniqueGateID + '" style="margin-top: -6px; text-align: right; padding-right: 16px; margin-bottom: 12px; clear:both; display:block;">' +
+     '  <button onclick="' +
+     '    var oldGate = document.getElementById(''' + UniqueGateID + ''');' +
+     '    fetch(''/forum_chunk?start=' + IntToStr(ANextID) + '&stack=' + ASavedStack + ''')' +
+     '    .then(r => r.text()).then(html => {' +
+     '       if (oldGate) {' +
+     '         oldGate.insertAdjacentHTML(''beforebegin'', html);' + // Вклеиваем чанк строго СВЕРХУ от кнопки
+     '         oldGate.remove();' + // Намертво выжигаем саму кнопку из DOM-дерева браузера
+     '       }' +
+     '    });" ' +
+     '    style="color:#00FFFF; background:#252526; border:1px dashed #555; padding:4px 10px; border-radius:4px; font-size:0.75rem; font-family:monospace; font-weight:bold; cursor:pointer;">' +
+     '     ' + ButtonText +
+     '  </button>' +
+     '</div>';
+end;
+
 
 
 
@@ -434,12 +477,15 @@ emToArtist:
       // --- ШАГ 1: НЫРОК ---  НЫРОК --- НЫРОК --- НЫРОК --- НЫРОК --- НЫРОК --- НЫРОК --- НЫРОК --- НЫРОК --- НЫРОК --- НЫРОК --- НЫРОК ---
       if (NodeT <> 0) and
          ((Length(TailStack) = 0) or (TailStack[High(TailStack)] <> CurrentID)) then  //
-  //если узел имеет хвост и дышащий стек нырков равен нулю или ID его верхнего элемента не равен ID текущего узла, то производим
+  //если узел имеет хвост или дышащий стек нырков равен нулю или ID его верхнего элемента не равен ID текущего узла, то производим
          begin
         if Length(TailStack) > BaseStackDepth then // если глубина стёка превышает установленый лимит углубления то
           begin
-          //пока ничего не делаем
-          end else  // в противном случае извлекаем ветку
+          //пока ничего не делаем - не ныряем
+          FSavedStack := StackToString(TailStack);
+          FNextStartID := NodeT; // Наш поршень зряче взведен на первую скрытую ноду!
+          HTML_Acc.Append(RenderMiniWeightButton(FNextStartID, FSavedStack, AWeight));
+          end else  // в противном случае извлекаем ветку - ныряем
           begin
         DoLog('>>> НЫРОК В ВЕТКУ (из ' + IntToStr(CurrentID) + ')');
         /////
