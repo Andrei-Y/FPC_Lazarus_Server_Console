@@ -143,32 +143,21 @@ var
   UniqueGateID: string;
 begin
   Result := '';
-
-  // МАТЕМАТИКА ВЕСА (Закон Rector'а): Число скрытых ответов — это общий вес ветки минус сама нода!
   ReplyCount := AWeight - 1;
-
-  // ПРЕДОХРАНИТЕЛЬ: Если под нодой физически нет ответов, кнопку разворота не выводим
   //if ReplyCount <= 0 then Exit;
 
-  // Динамический, лаконичный текст емкости ветки
   ButtonText := '💬 Развернуть ветку (' + IntToStr(ReplyCount) + ')';
-
-  // Генерируем уникальный маркер ID контейнера на основе ID ноды, чтобы скрипты Ajax не путали контейнеры в дереве
   UniqueGateID := 'branch-gate-' + IntToStr(ANextID);
 
-  // ЮВЕЛИРНАЯ HTML-СБОРКА С ВЕРТИКАЛЬНЫМ ЧАНК-МАНЕВРОМ:
-  // 1. Контейнер поджат вверх (margin-top: -6px) и сдвинут вправо по уровню вложенности (padding-left: 20px)
-  // 2. Метод fetch стучит по адресу /forum_chunk, передавая параметры снайперского старта
-  // 3. insertAdjacentHTML с флагом 'beforebegin' вклеивает догруженный чанк СВЕРХУ от кнопки (от листьев к корням)
   Result :=
      '<div id="' + UniqueGateID + '" style="margin-top: -6px; text-align: right; padding-right: 16px; margin-bottom: 12px; clear:both; display:block;">' +
      '  <button onclick="' +
      '    var oldGate = document.getElementById(''' + UniqueGateID + ''');' +
-     '    fetch(''/forum_chunk?start=' + IntToStr(ANextID) + '&stack=' + ASavedStack + ''')' +
+     '    fetch(''/forum_chunk?start=' + IntToStr(ANextID) + '&stack=' + ASavedStack + '&mode=line_extract'')' +
      '    .then(r => r.text()).then(html => {' +
      '       if (oldGate) {' +
-     '         oldGate.insertAdjacentHTML(''beforebegin'', html);' + // Вклеиваем чанк строго СВЕРХУ от кнопки
-     '         oldGate.remove();' + // Намертво выжигаем саму кнопку из DOM-дерева браузера
+     '         oldGate.insertAdjacentHTML(''beforebegin'', html);' +
+     '         oldGate.remove();' +
      '       }' +
      '    });" ' +
      '    style="color:#00FFFF; background:#252526; border:1px dashed #555; padding:4px 10px; border-radius:4px; font-size:0.75rem; font-family:monospace; font-weight:bold; cursor:pointer;">' +
@@ -350,6 +339,8 @@ var
   AStartID: Integer;
   IsLinearLimitReached: Boolean; //ФЛАГ: Сработал линейный ограничитель чанка!
   CountStack: TIntStack;
+  FIsLineExtraction: Boolean; // Режим извлечения линии ответов
+  FDepthCeiling: Integer; // Режим потолок всплытия при уходе в линию ответов
   //  ЛОКАЛЬНЫЙ PUSH ДЛЯ ВОРКЕРА
 procedure Push(var AStack: TIntStack; const AValue: Integer);
 begin
@@ -377,6 +368,7 @@ begin
       // парсер читает пришедшую строку перехода
     NetParser.Delimiter := '&'; // Разделитель параметров в HTTP-строке (start=11&stack=1,4,7,9)
     NetParser.Text := AStrRaw;
+    FIsLineExtraction := (NetParser.Values['mode'] = 'line_extract');//12121212122121212122
     DoLog('AStrRaw = ??? ' + AStrRaw);
     AStartID := StrToIntDef(NetParser.Values['start'], 0);// Чанк бесшовной подгрузки
     DoLog(' AStartID = ' + IntToStr(AStartID));
@@ -398,7 +390,18 @@ begin
   begin
     StringToStack(FSavedStack);// распаковываем стёк из строки переданной в качестве параметра
         DoLog('>>> Обходим в ' + FSavedStack + ')');
+  // если чанк с модификатором разворота вложения то
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            // Проверяем наличие нашего текстового штампа-модификатора комментарии выше 12121212122121212122 - перенесли
 
+        if FIsLineExtraction then
+    begin
+      // Сервер сам фиксирует жесткий ПОТОЛОК ГЛУБИНЫ на текущем этаже графа!
+      FDepthCeiling := Length(TailStack);
+
+      FMaxDepth := 0; // Запираем вертикальный лимит в ноль на этот цикл обхода
+    end;
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   // 3. СДВИГ ПОРШНЯ (СКЛЕЙКА СЛОЕВ НА СТЫКЕ ЧАНКОВ):
   // Работаем строго с твоим полем класса FNextStartID
