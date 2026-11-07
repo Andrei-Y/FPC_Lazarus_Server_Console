@@ -339,8 +339,8 @@ var
   AStartID: Integer;
   IsLinearLimitReached: Boolean; //ФЛАГ: Сработал линейный ограничитель чанка!
   CountStack: TIntStack;
-  FIsLineExtraction: Boolean; // Режим извлечения линии ответов
-  FDepthCeiling: Integer; // Режим потолок всплытия при уходе в линию ответов
+  FIsLineExtraction: Boolean; // участок обрыва цикла, если извлекалась линия по нажатию кнопки
+  FDepthCeiling: Integer; // участок обрыва цикла, если извлекалась линия по нажатию кнопки
   //  ЛОКАЛЬНЫЙ PUSH ДЛЯ ВОРКЕРА
 procedure Push(var AStack: TIntStack; const AValue: Integer);
 begin
@@ -485,7 +485,7 @@ emToArtist:
         if Length(TailStack) > BaseStackDepth then // если глубина стёка превышает установленый лимит углубления то
           begin
           //пока ничего не делаем - не ныряем
-          FSavedStack := StackToString(TailStack);
+          FSavedStack := StackToString(TailStack)+ ',' + IntToStr(CurrentID);
           FNextStartID := NodeT; // Наш поршень зряче взведен на первую скрытую ноду!
           HTML_Acc.Append(RenderMiniWeightButton(FNextStartID, FSavedStack, AWeight));
           end else  // в противном случае извлекаем ветку - ныряем
@@ -526,6 +526,7 @@ emToArtist:
 
       emToViewer:
         begin
+
         // Вызываем генерацию HTML function TServerWorker.RenderNodeHTML(AID, ALevel, ALastLevel: Integer; const AContent: string): string;
          // и сразу кладем в список
         HTML_Acc.Append(RenderNodeHTML(CurrentID, VisualLevel, LastLevel, FDB.GetNodeContent(CurrentID), TailStack, IsParentNode));
@@ -552,6 +553,11 @@ emToArtist:
       if IsParentNode then ////////////////////////////////////////////////////////////////////////
       begin
          SetLength(TailStack, Length(TailStack) - 1);
+               if FIsLineExtraction and (Length(TailStack) <= FDepthCeiling) then/// участок обрыва цикла, если извлекалась линия по нажатию кнопки
+      begin
+        // Мы физически поднялись до потолка, где сидит родительский узел! Нить полностью извлечена.
+        Break; // Брутальный, мгновенный выход из цикла while!
+      end;
          //NodeCount:= Pop(CountStack);//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
          DoLog('<<< ВСПЛЫТИЕ ИЗ ВЕТКИ (возврат в ' + IntToStr(CurrentID) + ')');
       end;
