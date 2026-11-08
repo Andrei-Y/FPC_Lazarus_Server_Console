@@ -406,8 +406,8 @@ begin
   // 3. СДВИГ ПОРШНЯ (СКЛЕЙКА СЛОЕВ НА СТЫКЕ ЧАНКОВ):
   // Работаем строго с твоим полем класса FNextStartID
   if  (Length(TailStack) > 0) and (TailStack[High(TailStack)] = FNextStartID) then
-  begin // если стёк хвостов не пустой и ID последнего равен ID с которого начат обход, то:
-    DoLog('>>> Условие проверки выполнено на узелке ' + IntToStr(FNextStartID));
+  if FIsLineExtraction then else  begin // если стёк хвостов не пустой и ID последнего равен ID с которого начат обход, то:
+    DoLog('>>> Условие проверки выполнено на узле ' + IntToStr(FNextStartID));
 
     // Выводим головную карточку стыка
     HTML_Acc.Append(RenderNodeHTML(
@@ -486,7 +486,7 @@ emToArtist:
           begin
           //пока ничего не делаем - не ныряем
           FSavedStack := StackToString(TailStack)+ ',' + IntToStr(CurrentID);
-          FNextStartID := NodeT; // Наш поршень зряче взведен на первую скрытую ноду!
+          FNextStartID := NodeT;
           HTML_Acc.Append(RenderMiniWeightButton(FNextStartID, FSavedStack, AWeight));
           end else  // в противном случае извлекаем ветку - ныряем
           begin
@@ -526,7 +526,17 @@ emToArtist:
 
       emToViewer:
         begin
+               if IsParentNode then ////////////////////////////////////////////////////////////////////////
+      begin
 
+               if FIsLineExtraction and (Length(TailStack) <= FDepthCeiling) then/// участок обрыва цикла, если извлекалась линия по нажатию кнопки
+      begin
+        // Мы физически поднялись до потолка, где сидит родительский узел! Нить полностью извлечена.
+        Break; // Брутальный, мгновенный выход из цикла while!
+      end;
+         //NodeCount:= Pop(CountStack);//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+         DoLog('<<< ВСПЛЫТИЕ ИЗ ВЕТКИ (возврат в ' + IntToStr(CurrentID) + ')');
+      end;
         // Вызываем генерацию HTML function TServerWorker.RenderNodeHTML(AID, ALevel, ALastLevel: Integer; const AContent: string): string;
          // и сразу кладем в список
         HTML_Acc.Append(RenderNodeHTML(CurrentID, VisualLevel, LastLevel, FDB.GetNodeContent(CurrentID), TailStack, IsParentNode));
@@ -588,6 +598,7 @@ emToArtist:
          end;
             Break;
           end;
+
     end;
     {$ENDREGION} // КОНЕЦ ЦИКЛА ФОРМИРОВАНИЯ ПАКЕТА
 
