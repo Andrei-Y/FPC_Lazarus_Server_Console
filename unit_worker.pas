@@ -20,6 +20,7 @@ type
     FOnLog: TLogEvent; // Теперь компилятор знает, что это такое
     FMsgForLog: string;
     AWeight: Integer;
+    FIsLineExtraction: Boolean;
     FMode: TExtractMode; // Скрытое поле режима
     FOnHtml: THTMLEvent; // Ссылка на вывод HTML
 
@@ -339,7 +340,7 @@ var
   AStartID: Integer;
   IsLinearLimitReached: Boolean; //ФЛАГ: Сработал линейный ограничитель чанка!
   CountStack: TIntStack;
-  FIsLineExtraction: Boolean; // участок обрыва цикла, если извлекалась линия по нажатию кнопки
+  //FIsLineExtraction: Boolean; // участок обрыва цикла, если извлекалась линия по нажатию кнопки
   FDepthCeiling: Integer; // участок обрыва цикла, если извлекалась линия по нажатию кнопки
   //  ЛОКАЛЬНЫЙ PUSH ДЛЯ ВОРКЕРА
 procedure Push(var AStack: TIntStack; const AValue: Integer);
@@ -482,9 +483,9 @@ emToArtist:
          ((Length(TailStack) = 0) or (TailStack[High(TailStack)] <> CurrentID)) then  //
   //если узел имеет хвост или дышащий стек нырков равен нулю или ID его верхнего элемента не равен ID текущего узла, то производим
          begin
-        if Length(TailStack) > BaseStackDepth then // если глубина стёка превышает установленый лимит углубления то
+        if Length(TailStack) > BaseStackDepth then // если глубина стёка превышает установленый лимит углубления то устанавливаем кнопку извлечения линии над нодой
           begin
-          //пока ничего не делаем - не ныряем
+          //сбрасываем
           FSavedStack := StackToString(TailStack)+ ',' + IntToStr(CurrentID);
           FNextStartID := NodeT;
           HTML_Acc.Append(RenderMiniWeightButton(FNextStartID, FSavedStack, AWeight));
@@ -498,7 +499,7 @@ emToArtist:
         //TailStack[High(TailStack)] := CurrentID; //записываем в него последним ID текущего узла
         Push(TailStack, CurrentID);// 1 стандартный обход дерева
         Push(CountStack, NodeCount);// 2 обход в глубину
-        //NodeCount:=0;////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////!!!!!!!!!!!!
+        NodeCount:=0;//вернул обнуление плоского счётчика
         CurrentID := NodeT;// [T1] текущим узлом для обхода назначаем хвост
         Continue;
         end;
@@ -564,7 +565,7 @@ emToArtist:
       //         if FIsLineExtraction and (Length(TailStack) <= FDepthCeiling) then/// участок обрыва цикла, если извлекалась линия по нажатию кнопки
       //begin
       //  // Мы физически поднялись до потолка, где сидит родительский узел! Нить полностью извлечена.
-      //  Break; // Брутальный, мгновенный выход из цикла while!
+      //  Break; //мгновенный выход из цикла while!
       //end;
          //NodeCount:= Pop(CountStack);//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
          DoLog('<<< ВСПЛЫТИЕ ИЗ ВЕТКИ (возврат в ' + IntToStr(CurrentID) + ')');
