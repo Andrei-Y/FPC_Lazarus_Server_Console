@@ -363,7 +363,6 @@ var
   NodeCount, BaseStackDepth: Integer;
   IsParentNode: Boolean;
   AStartID: Integer;
-  IsLinearLimitReached: Boolean; //ФЛАГ: Сработал линейный ограничитель чанка!
   CountStack: TIntStack;
   FIsLineExtraction: Boolean; // участок обрыва цикла, если извлекалась линия по нажатию кнопки
   FDepthCeiling: Integer; // участок обрыва цикла, если извлекалась линия по нажатию кнопки
@@ -385,7 +384,6 @@ begin
   end;
 end;
 begin
-    IsLinearLimitReached := False;
     NodeCount := 0;
     NetParser := TStringList.Create;
     LastLevel := 0;
@@ -517,11 +515,6 @@ emToArtist:
           end else  // в противном случае извлекаем ветку - ныряем
           begin
         DoLog('>>> НЫРОК В ВЕТКУ (из ' + IntToStr(CurrentID) + ')');
-        /////
-        //Push(CountStack, NodeCount);
-        /////
-        //SetLength(TailStack, Length(TailStack) + 1); // увеличиваем стек нырков на один
-        //TailStack[High(TailStack)] := CurrentID; //записываем в него последним ID текущего узла
         Push(TailStack, CurrentID);// 1 стандартный обход дерева
         Push(CountStack, NodeCount);// 2 обход в глубину
         NodeCount:=0;//вернул обнуление плоского счётчика
@@ -540,7 +533,6 @@ emToArtist:
       // Защита от отрицательного уровня
       if VisualLevel < 0 then VisualLevel := 0;
       // --- ШАГ 3: ФИКСАЦИЯ И ОТРИСОВКА ---
-    //DoLog('ВЫДЕРНУТ УЗЕЛ: ' + IntToStr(CurrentID));
     // Вычисляем уровень вложенности
     if (CurrentID <> FNextStartID) and (VisualLevel = 0) then VisualLevel := 1;
     //   LastLevel := i; // возможно понадобится где-то ещё
@@ -610,19 +602,18 @@ emToArtist:
           // Данный узел считает общее число выведенных карточек на экран.
           // При превышении лимита FMaxNodes он жестко обрубает цикл,
           if (FMaxNodes > 0) and (NodeCount >= FMaxNodes) then
-          begin
-            IsLinearLimitReached := True;// Задали значение флагу, чтобы применять после выхода из цикла, свзяно с наличием CASE
-            FSavedStack := StackToString(TailStack);
-            FNextStartID := CurrentID;
-            WriteLn('Запекаем >'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
-                           if (FNextStartID <> 0) and (CurrentID <> 0) then
-        begin
-                      WriteLn('Запекаем в кнопку'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
-          HTML_Acc.Append(RenderAjaxButton(FNextStartID, FSavedStack, FIsLineExtraction));
+                  begin
+                    FSavedStack := StackToString(TailStack);
+                    FNextStartID := CurrentID;
+                    WriteLn('Запекаем >'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
+                                                   if (FNextStartID <> 0) and (CurrentID <> 0) then
+                                begin
+                                              WriteLn('Запекаем в кнопку'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
+                                  HTML_Acc.Append(RenderAjaxButton(FNextStartID, FSavedStack, FIsLineExtraction));
 
-         end;
-            Break;
-          end;
+                                 end;
+                                    Break;
+                                  end;
 
     end;
     {$ENDREGION} // КОНЕЦ ЦИКЛА ФОРМИРОВАНИЯ ПАКЕТА
@@ -632,21 +623,7 @@ emToArtist:
 emToViewer:
 
   begin
-          //1. ЕСЛИ ЦИКЛ ПРЕРВАН ПО ЛИМИТУ — СРАЗУ ГЕНЕРИРУЕМ КНОПКУ:
-        if IsLinearLimitReached then
-        begin
-
-          // Вызываем  утилиту кнопки по условию!
- //               if (FNextStartID <> 0) and (CurrentID <> 0) then
- //       begin
- ////        HTML_Acc.Append(RenderAjaxButton(FNextStartID, ButtonGateStack));
- //                     WriteLn('Запекаем в кнопку'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
- //         HTML_Acc.Append(RenderAjaxButton(FNextStartID, FSavedStack));
- //        end;
-        end;
-
         //  2. ЗАКРЫВАЕМ СТРАНИЦУ СТРОГО ДЛЯ ГЛАВНОГО ОКНА (ЕСЛИ ЭТО НЕ ЧАНК):
-        // Используем твое реальное поле из репозитория — FChunk!
         if not FChunk then
         begin
           // финальный тег закрытия страницы
@@ -665,7 +642,7 @@ emToArtist:
         end;
     {$ENDREGION} // КОНЕЦ ПЕРЕДАЧИ ПАКЕТА В ДОСТАВКУ
     finally
-      // ЮВЕЛИРНАЯ И БЕЗОПАСНАЯ ОЧИСТКА:
+      // БЕЗОПАСНАЯ ОЧИСТКА:
       if Assigned(HTML_Acc) then HTML_Acc.Free;
       if Assigned(StrList) then StrList.Free;
     end;
