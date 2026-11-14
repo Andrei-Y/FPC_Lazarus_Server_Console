@@ -20,7 +20,6 @@ type
     FOnLog: TLogEvent; // Теперь компилятор знает, что это такое
     FMsgForLog: string;
     AWeight: Integer;
-    FIsLineExtraction: Boolean;
     FMode: TExtractMode; // Скрытое поле режима
     FOnHtml: THTMLEvent; // Ссылка на вывод HTML
 
@@ -116,14 +115,40 @@ begin
 end;
 
 
-function RenderAjaxButton(ANextID: Integer; ASavedStack: string): string;
+//function RenderAjaxButton(ANextID: Integer; ASavedStack: string): string;
+//begin
+//Result :=
+//   '<div id="ajax-gate-container" style="text-align:center; margin:20px 0; clear:both; display:block;">' +
+//   '  <button onclick="' +
+//   '    var oldGate = document.getElementById(''ajax-gate-container'');' +
+//   '    if (oldGate) oldGate.id = ''old-gate'';' + // Обезопасили старый ID
+//   '    fetch(''/forum_chunk?start=' + IntToStr(ANextID) + '&stack=' + ASavedStack + ''')' +
+//   '    .then(r => r.text()).then(html => {' +
+//   '       var target = document.getElementById(''old-gate'');' +
+//   '       if (target) {' +
+//   '         target.insertAdjacentHTML(''beforebegin'', html);' + // Вклеили чанк строго на своё место
+//   '         target.remove();' + // Намертво стёрли старую нижнюю кнопку из ОЗУ!
+//   '       }' +
+//   '    });" ' +
+//   '    style="color:#00FFFF; background:#252526; border:1px dashed #555; padding:8px 16px; border-radius:4px; font-weight:bold; cursor:pointer;">' +
+//   '     👉 Загрузить еще сообщения' +
+//   '  </button>' +
+//   '</div>';
+//end;
+
+function RenderAjaxButton(ANextID: Integer; ASavedStack: string; AIsLineExtraction: Boolean = False): string;
+var
+  ModeSuffix: string;
 begin
-Result :=
-   '<div id="ajax-gate-container" style="text-align:center; margin:20px 0; clear:both; display:block;">' +
-   '  <button onclick="' +
-   '    var oldGate = document.getElementById(''ajax-gate-container'');' +
-   '    if (oldGate) oldGate.id = ''old-gate'';' + // Обезопасили старый ID
-   '    fetch(''/forum_chunk?start=' + IntToStr(ANextID) + '&stack=' + ASavedStack + ''')' +
+  ModeSuffix := '';
+  if AIsLineExtraction then
+    ModeSuffix := '&mode=line_extract';
+  Result :=
+    '<div id="ajax-gate-container" style="text-align:center; margin:20px 0; clear:both; display:block;">' +
+    '  <button onclick="' +
+    '    var oldGate = document.getElementById(''ajax-gate-container'');' +
+    '    if (oldGate) oldGate.id = ''old-gate'';' +
+    '    fetch(''/forum_chunk?start=' + IntToStr(ANextID) + '&stack=' + ASavedStack + ModeSuffix + ''')' +
    '    .then(r => r.text()).then(html => {' +
    '       var target = document.getElementById(''old-gate'');' +
    '       if (target) {' +
@@ -340,7 +365,7 @@ var
   AStartID: Integer;
   IsLinearLimitReached: Boolean; //ФЛАГ: Сработал линейный ограничитель чанка!
   CountStack: TIntStack;
-  //FIsLineExtraction: Boolean; // участок обрыва цикла, если извлекалась линия по нажатию кнопки
+  FIsLineExtraction: Boolean; // участок обрыва цикла, если извлекалась линия по нажатию кнопки
   FDepthCeiling: Integer; // участок обрыва цикла, если извлекалась линия по нажатию кнопки
   //  ЛОКАЛЬНЫЙ PUSH ДЛЯ ВОРКЕРА
 procedure Push(var AStack: TIntStack; const AValue: Integer);
@@ -443,7 +468,7 @@ begin
   end;
     end;
 
-//    TailStack := nil;
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     CurrentID := AStartID;// [T1] ПЕРВЫЙ ТАКТ ПРОВЕРОК УСЛОВИЙ
     StrList := TStringList.Create;
 //    SetLength(TailStack, 0);
@@ -530,7 +555,7 @@ emToArtist:
                if IsParentNode then ////////////////////////////////////////////////////////////////////////
       begin
 
-               if FIsLineExtraction and (Length(TailStack) <= FDepthCeiling) then/// участок обрыва цикла, если извлекалась линия по нажатию кнопки
+               if FIsLineExtraction and (Length(TailStack) < FDepthCeiling) then/// участок обрыва цикла, если извлекалась линия по нажатию кнопки
       begin
         // Мы физически поднялись до потолка, где сидит родительский узел! Нить полностью извлечена.
         Break; // Брутальный, мгновенный выход из цикла while!
@@ -593,7 +618,8 @@ emToArtist:
                            if (FNextStartID <> 0) and (CurrentID <> 0) then
         begin
                       WriteLn('Запекаем в кнопку'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
-          HTML_Acc.Append(RenderAjaxButton(FNextStartID, FSavedStack));
+          HTML_Acc.Append(RenderAjaxButton(FNextStartID, FSavedStack, FIsLineExtraction));
+
          end;
             Break;
           end;
