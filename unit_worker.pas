@@ -25,7 +25,7 @@ type
 
     function RenderNodeHTML(AID, ALevel, ALastLevel: Integer;
                             const AContent: string;
-                            const AStack: TIntStack; AIsAntecedent: Boolean): string;
+                            const AStack: TIntStack; AIsParent: Boolean): string;
 
     procedure DoLog(const AMsg: string);
     procedure SyncLog;  // Метод для синхронизации ..................................................................................................................
@@ -47,7 +47,7 @@ type
     TailStack: TIntStack;
     ArtistGoal: TArtistGoal; // Кто нас вызвал?
     constructor Create(ADB: TDatabaseModule; ALogEv: TLogEvent; AHtmlEv: THTMLEvent; AMode: TExtractMode; CreateSuspended: boolean);
-    procedure AddMessageTask(AAntecedentID: Integer; AContent: string);
+    procedure AddMessageTask(AParentID: Integer; AContent: string);
     procedure ExposeSystem( AStrRaw: string);
         function StackToString(const AStack: TIntStack): string;
     procedure StringToStack(const AStr: string);
@@ -55,7 +55,7 @@ type
 
   type
   TMapNode = record
-    ID, AntecedentID, Level: Integer;
+    ID, ParentID, Level: Integer;
   end;
 
 implementation
@@ -217,14 +217,14 @@ end;
 
   function TServerWorker.RenderNodeHTML(AID, ALevel, ALastLevel: Integer;
                                        const AContent: string;
-                                       const AStack: TIntStack; AIsAntecedent: Boolean): string;
+                                       const AStack: TIntStack; AIsParent: Boolean): string;
 var
   S_Prefix, LineColor: string;
   j: Integer;
-  TargetAntecedentID: Integer;
+  TargetParentID: Integer;
   ButtonGateStack: string;
 begin
-    if AIsAntecedent then
+    if AIsParent then
     ButtonGateStack := StackToString(AStack)
   else
     ButtonGateStack := StackToString(AStack) + ',' + IntToStr(AID);
@@ -235,13 +235,13 @@ begin
   for j := 1 to ALevel do
   begin
     if (j - 1 >= 0) and (j - 1 < Length(AStack)) then
-      TargetAntecedentID := AStack[j - 1]
+      TargetParentID := AStack[j - 1]
     else
-      TargetAntecedentID := 0;
+      TargetParentID := 0;
 
     if j < ALevel then
       // 1. Промежуточные синие палочки-ссылки
-      S_Prefix := S_Prefix + '<a href="#node_' + IntToStr(TargetAntecedentID) +
+      S_Prefix := S_Prefix + '<a href="#node_' + IntToStr(TargetParentID) +
                   '" style="color:#4A90E2; text-decoration:none; font-weight:bold;">┊</a>&nbsp;&nbsp;'
     else
       begin
@@ -251,9 +251,9 @@ begin
 
         // Оставляем красивое раздельное оформление, где палочка красится в нужный цвет,
         // но при этом ВСЁ остается кликабельной ссылкой
-        S_Prefix := S_Prefix + '<a href="#node_' + IntToStr(TargetAntecedentID) +
+        S_Prefix := S_Prefix + '<a href="#node_' + IntToStr(TargetParentID) +
                     '" style="color:' + LineColor + '; text-decoration:none; font-weight:bold;">' +
-                    '┊(' + IntToStr(TargetAntecedentID) + ')━&nbsp;</a>';
+                    '┊(' + IntToStr(TargetParentID) + ')━&nbsp;</a>';
       end;
   end;
    //ответиь кнопка в карточке
@@ -270,14 +270,14 @@ begin
     if Suspended then
       begin
         Result := Result +
-             '<a href="/interaction?pid=' + IntToStr(AID) + '&gate_stack=' + ButtonGateStack + '" target="editor-viewport" onclick="if(Antecedent && typeof Antecedent.OpenEditorTab===&apos;function&apos;){Antecedent.OpenEditorTab();}else if(typeof OpenEditorTab===&apos;function&apos;){OpenEditorTab();}" ' +
+             '<a href="/interaction?pid=' + IntToStr(AID) + '&gate_stack=' + ButtonGateStack + '" target="editor-viewport" onclick="if(parent && typeof parent.OpenEditorTab===&apos;function&apos;){parent.OpenEditorTab();}else if(typeof OpenEditorTab===&apos;function&apos;){OpenEditorTab();}" ' +
       '    style="color: #00FFFF; text-decoration: none; font-size: 12px; font-weight: bold; ' +
       '           margin-left: 8px; border-bottom: 1px dashed #00FFFF; cursor: pointer;">' +
       '    ↩ Интеракция' +
       ' </a>' +
       // 2. 🎯 НАШ НОВЫЙ БЕСШУМНЫЙ КОМПАКТНЫЙ ОПЕРАТОР КОПИРОВАНИЯ
              '<button type="button" onclick="navigator.clipboard.writeText(&apos;' + ButtonGateStack + '&apos;);" ' +
-             '        style="background: transAntecedent; border: 1px solid #00FFFF; color: #00FFFF; ' +
+             '        style="background: transparent; border: 1px solid #00FFFF; color: #00FFFF; ' +
              '               width: 32px; height: 32px; border-radius: 4px; font-weight: bold; ' +
              '               cursor: pointer; font-size: 14px; outline: none; margin-left: 12px; ' +
              '               display: inline-flex; align-items: center; justify-content: center; vertical-align: middle;">' +
@@ -312,26 +312,26 @@ begin
 end;
 
 
-procedure TServerWorker.AddMessageTask(AAntecedentID: Integer; AContent: string);
+procedure TServerWorker.AddMessageTask(AParentID: Integer; AContent: string);
 var
   NewID: Integer;
   CheckChrono: string;
 begin
   // 1. Приземляем
-  NewID := FDB.LandingNode(AAntecedentID, AContent);
+  NewID := FDB.LandingNode(AParentID, AContent);
 
   if NewID > 0 then
   begin
     // 2. СРАЗУ ПРОВЕРЯЕМ РОДИТЕЛЯ
-    CheckChrono := FDB.GetNodeChrono(AAntecedentID);
+    CheckChrono := FDB.GetNodeChrono(AParentID);
 
     // 3. Докладываем в TMemo
     DoLog('ВОРКЕР: Приземлил ID ' + IntToStr(NewID) +
-          '. У родителя ' + IntToStr(AAntecedentID) +
+          '. У родителя ' + IntToStr(AParentID) +
           ' Хроно теперь = "' + CheckChrono + '"');
   end
   else
-    DoLog('ВОРКЕР: Ошибка приземления к ID ' + IntToStr(AAntecedentID));
+    DoLog('ВОРКЕР: Ошибка приземления к ID ' + IntToStr(AParentID));
 end;
 
 
@@ -361,7 +361,7 @@ var
   LastLevel: Integer;
   HTML_Acc: TStringBuilder;
   NodeCount, BaseStackDepth: Integer;
-  IsAntecedentNode: Boolean;
+  IsParentNode: Boolean;
   AStartID: Integer;
   CountStack: TIntStack;
   FIsLineExtraction: Boolean; // участок обрыва цикла, если извлекалась линия по нажатию кнопки
@@ -525,8 +525,8 @@ emToArtist:
 
       // --- ШАГ 2: ОПРЕДЕЛЯЕМ ВИЗУАЛЬНЫЙ УРОВЕНЬ (для префикса карточки сообщения) ---
       // Если узел в стеке — значит это РОДИТЕЛЬ, из которого мы вынырнули.
-      IsAntecedentNode := (Length(TailStack) > 0) and (TailStack[High(TailStack)] = CurrentID);
-      if IsAntecedentNode then
+      IsParentNode := (Length(TailStack) > 0) and (TailStack[High(TailStack)] = CurrentID);
+      if IsParentNode then
      VisualLevel := Length(TailStack) - 1
       else
         VisualLevel := Length(TailStack);
@@ -544,7 +544,7 @@ emToArtist:
 
       emToViewer:
         begin
-               if IsAntecedentNode then ////////////////////////////////////////////////////////////////////////
+               if IsParentNode then ////////////////////////////////////////////////////////////////////////
       begin
 
                if FIsLineExtraction and (Length(TailStack) < FDepthCeiling) then/// участок обрыва цикла, если извлекалась линия по нажатию кнопки
@@ -555,7 +555,7 @@ emToArtist:
       end;
         // Вызываем генерацию HTML function TServerWorker.RenderNodeHTML(AID, ALevel, ALastLevel: Integer; const AContent: string): string;
          // и сразу кладем в список
-        HTML_Acc.Append(RenderNodeHTML(CurrentID, VisualLevel, LastLevel, FDB.GetNodeContent(CurrentID), TailStack, IsAntecedentNode));
+        HTML_Acc.Append(RenderNodeHTML(CurrentID, VisualLevel, LastLevel, FDB.GetNodeContent(CurrentID), TailStack, IsParentNode));
         LastLevel := VisualLevel;
         end;
 
@@ -576,7 +576,7 @@ emToArtist:
 
     {$ENDREGION}
     // --- ШАГ 4: ВСПЛЫТИЕ ---
-      if IsAntecedentNode then ////////////////////////////////////////////////////////////////////////
+      if IsParentNode then ////////////////////////////////////////////////////////////////////////
       begin
          SetLength(TailStack, Length(TailStack) - 1);
       //         if FIsLineExtraction and (Length(TailStack) <= FDepthCeiling) then/// участок обрыва цикла, если извлекалась линия по нажатию кнопки

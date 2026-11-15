@@ -18,14 +18,14 @@ type
    // Получить физический ID из постоянного (Маппинг)
     function GetPhysicalID(APermanentID: Integer): Integer;
     // Добавление узла с автоматическим созданием маппинга
-    function AddNode(AAntecedentID: Integer; AContent: string; AX, AY: Double): Integer;
+    function AddNode(AParentID: Integer; AContent: string; AX, AY: Double): Integer;
     // Получение данных для пульсации и рендера
     procedure GetSystemData(ARootID: Integer; AList: TList);
     procedure ExecuteMaintenance; // Для запуска VACUUM воркером
       function GetTailFromDB(AID: Integer): Integer;
       function GetNodeChronoFromDB(AID: Integer): string;
-      function LandingNode(AAntecedentID: Integer; AContent: string): Integer;
-      //function LandingNode(AAntecedentID: Integer; AContent: string; const ATailStackStr: string): Integer;
+      function LandingNode(AParentID: Integer; AContent: string): Integer;
+      //function LandingNode(AParentID: Integer; AContent: string; const ATailStackStr: string): Integer;
 
       function GetNodeChrono(AID: Integer): string;
       function GetNodeContent(AID: Integer): string;
@@ -168,28 +168,28 @@ begin
   end;
 end;
 
-//function TDatabaseModule.LandingNode(AAntecedentID: Integer; AContent: string): Integer;
+//function TDatabaseModule.LandingNode(AParentID: Integer; AContent: string): Integer;
 //var
-//  AntecedentChrono, OldTailID, NewChrono, UpdatedAntecedentChrono: string;
+//  ParentChrono, OldTailID, NewChrono, UpdatedParentChrono: string;
 //  Parts, NewParts: TStringArray;
 //  NewID: Integer;
 //begin
 //  Result := -1;
 //  if not FTran.Active then FTran.StartTransaction;
 //  try
-//        // 1. Узнаем, кто сейчас хвост у предшественника (AAntecedentID)
-//    AntecedentChrono := GetNodeChrono(AAntecedentID);
-//    Parts := AntecedentChrono.Split('.');
+//        // 1. Узнаем, кто сейчас хвост у предшественника (AParentID)
+//    ParentChrono := GetNodeChrono(AParentID);
+//    Parts := ParentChrono.Split('.');
 //
 //    if Length(Parts) > 2 then
 //      OldTailID := Parts[2]
 //    else
 //      OldTailID := '0';
-//    // Если хвоста у родителя нет (0), то наш "предшественник" — это сам родитель (AAntecedentID)
+//    // Если хвоста у родителя нет (0), то наш "предшественник" — это сам родитель (AParentID)
 //    if OldTailID = '0' then
-//       OldTailID := IntToStr(AAntecedentID);
+//       OldTailID := IntToStr(AParentID);
 //
-//    // Теперь NewChrono будет "0.AntecedentID.0", а не "0.0.0"
+//    // Теперь NewChrono будет "0.ParentID.0", а не "0.0.0"
 //    NewChrono := '0.' + OldTailID + '.0.';
 ////    NewChrono := '0.' + OldTailID + '.0.';
 //
@@ -211,11 +211,11 @@ end;
 //    FQuery.Close;
 //    // ОБНОВЛЯЕМ РОДИТЕЛЯ
 //    Parts[2] := IntToStr(NewID); // Теперь индекс 2 точно есть
-//    UpdatedAntecedentChrono := string.Join('.', Parts);
+//    UpdatedParentChrono := string.Join('.', Parts);
 //
 //    FQuery.SQL.Text := 'UPDATE nodes SET chronology = :nc WHERE id = :id';
-//    FQuery.ParamByName('nc').AsString := UpdatedAntecedentChrono;
-//    FQuery.ParamByName('id').AsInteger := AAntecedentID;
+//    FQuery.ParamByName('nc').AsString := UpdatedParentChrono;
+//    FQuery.ParamByName('id').AsInteger := AParentID;
 //    FQuery.ExecSQL;
 //
 //    FTran.CommitRetaining;
@@ -225,9 +225,9 @@ end;
 //  end;
 //end;
 
-function TDatabaseModule.LandingNode(AAntecedentID: Integer; AContent: string): Integer;
+function TDatabaseModule.LandingNode(AParentID: Integer; AContent: string): Integer;
 var
-  AntecedentChrono, OldTailID, NewChrono, UpdatedAntecedentChrono, UpdatedTailChrono: string;
+  ParentChrono, OldTailID, NewChrono, UpdatedParentChrono, UpdatedTailChrono: string;
   Parts, NewParts: TStringArray;
   NewID: Integer;
   CurrentUnixTime: Int64;
@@ -235,8 +235,8 @@ begin
     Result := -1;
   if not FTran.Active then FTran.StartTransaction;
   try
-     AntecedentChrono := GetNodeChrono(AAntecedentID);
-     Parts := AntecedentChrono.Split('.');
+     ParentChrono := GetNodeChrono(AParentID);
+     Parts := ParentChrono.Split('.');
          if Length(Parts) > 2 then
       OldTailID := Parts[2];
   // =========================================================================
@@ -244,9 +244,9 @@ begin
     // =========================================================================
     SetLength(NewParts, 7);
     NewParts[0] := '0';          // Собственный ID нового узла (на случай)
-    //NewParts[1] := IntToStr(AAntecedentID);    // предшественник
+    //NewParts[1] := IntToStr(AParentID);    // предшественник
         if OldTailID = '0' then
-      NewParts[1] := IntToStr(AAntecedentID)
+      NewParts[1] := IntToStr(AParentID)
     else
       NewParts[1] := OldTailID;
     NewParts[2] := '0';          // Окончание собственного хвоста пока нет
@@ -256,9 +256,9 @@ begin
     // НАСЛЕДОВАНИЕ СТЕКА: Стек предка + ',' + ID самого предка!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // Выуживаем прямо из уже поднятого на строке 7 массива Parts!
     if (Length(Parts) > 5) and (Parts[5] <> '') then
-      NewParts[5] := Parts[5] + ',' + IntToStr(AAntecedentID)
+      NewParts[5] := Parts[5] + ',' + IntToStr(AParentID)
     else
-      NewParts[5] := IntToStr(AAntecedentID);
+      NewParts[5] := IntToStr(AParentID);
 
     NewParts[6] := ''; // Замыкающая точка
 
@@ -303,12 +303,12 @@ begin
      Parts[2] := IntToStr(NewID);//конец хвоста
      Parts[4] := IntToStr(NewID);//начало хвоста
         // Склеиваем массив обратно в дисковую строку хронологии
-        UpdatedAntecedentChrono := string.Join('.', Parts);
+        UpdatedParentChrono := string.Join('.', Parts);
 
         // Запекаем обновленный двухсвязный паспорт предшественника на диск SQLite3!
         FQuery.SQL.Text := 'UPDATE nodes SET chronology = :nc WHERE id = :id';
-        FQuery.ParamByName('nc').AsString := UpdatedAntecedentChrono;
-        FQuery.ParamByName('id').AsInteger := AAntecedentID;
+        FQuery.ParamByName('nc').AsString := UpdatedParentChrono;
+        FQuery.ParamByName('id').AsInteger := AParentID;
         FQuery.ExecSQL;
     end else
 
@@ -318,11 +318,11 @@ begin
     // Если OldTailID  не равен '0'
     // Обновляем родителю индекс 2 — прописываем туда наш NewID как край нового хвоста
     Parts[2] := IntToStr(NewID);
-    UpdatedAntecedentChrono := string.Join('.', Parts);
+    UpdatedParentChrono := string.Join('.', Parts);
 
     FQuery.SQL.Text := 'UPDATE nodes SET chronology = :nc WHERE id = :id';
-    FQuery.ParamByName('nc').AsString := UpdatedAntecedentChrono;
-    FQuery.ParamByName('id').AsInteger := AAntecedentID;
+    FQuery.ParamByName('nc').AsString := UpdatedParentChrono;
+    FQuery.ParamByName('id').AsInteger := AParentID;
     FQuery.ExecSQL;
     // Обновляем последователя в окончании хвоста
     UpdatedTailChrono := GetNodeChrono(StrToIntDef(OldTailID, 0));
@@ -345,7 +345,7 @@ begin
     // Поля весов и сил (с 4 по 8) база сама инициализирует дефолтными нулями.
     FQuery.SQL.Text := 'INSERT INTO node_analytics (' +
                        '  node_id, ' +
-                       '  Antecedent_relation_sign, ' +
+                       '  parent_relation_sign, ' +
                        '  moderation_status, ' +
                        '  created_at, ' +
                        '  edited_at' +
@@ -468,7 +468,7 @@ begin
     // 2. ИЗОЛИРОВАННАЯ ТАБЛИЦА АНАЛИТИКИ И ВЕСОВ (Паспорт карточки для ОЗУ воркера и визуализации)
     FConn.ExecuteDirect('CREATE TABLE IF NOT EXISTS node_analytics (' +
                         'node_id INTEGER PRIMARY KEY, ' +
-                        'Antecedent_relation_sign INTEGER DEFAULT 0, ' + { +1 Аргумент, -1 Контраргумент, 0 Вопрос }
+                        'parent_relation_sign INTEGER DEFAULT 0, ' + { +1 Аргумент, -1 Контраргумент, 0 Вопрос }
                         'moderation_status INTEGER DEFAULT 0, ' +    { 0 Проверка, 1 Замок модерации, 2 Снят }
                         'node_own_crystallization INTEGER DEFAULT 0, ' + { Число прямых привязок к Истинам }
                         'node_own_questions INTEGER DEFAULT 0, ' +     { Число вопросов к самой ноде }
@@ -479,12 +479,12 @@ begin
                         'edited_at INTEGER NOT NULL);');               { Часть 2 маяка хронологии (Unix Time) }
 
     //// Паспорт Корня системы (отправная точка для будущих LEFT JOIN)
-    //FConn.ExecuteDirect('INSERT OR IGNORE INTO node_analytics (node_id, Antecedent_relation_sign, created_at, edited_at) ' +
+    //FConn.ExecuteDirect('INSERT OR IGNORE INTO node_analytics (node_id, parent_relation_sign, created_at, edited_at) ' +
     //                    'VALUES (1, 1, strftime(''%s'',''now''), strftime(''%s'',''now''));');
      // Идеальный паспорт Корня системы (Явное заполнение всех 10 полей для пулестойкого LEFT JOIN)
     FConn.ExecuteDirect('INSERT OR IGNORE INTO node_analytics (' +
                         '  node_id, ' +                 { 1 }
-                        '  Antecedent_relation_sign, ' +    { 2 }
+                        '  parent_relation_sign, ' +    { 2 }
                         '  moderation_status, ' +       { 3 }
                         '  node_own_crystallization, ' +{ 4 }
                         '  node_own_questions, ' +      { 5 }
@@ -599,7 +599,7 @@ begin
 end;
 
 // 2. Тело функции AddNode
-function TDatabaseModule.AddNode(AAntecedentID: Integer; AContent: string; AX, AY: Double): Integer;
+function TDatabaseModule.AddNode(AParentID: Integer; AContent: string; AX, AY: Double): Integer;
 begin
   // Пока заглушка
   Result := 0;

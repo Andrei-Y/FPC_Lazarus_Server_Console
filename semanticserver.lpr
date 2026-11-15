@@ -164,7 +164,7 @@ begin
     '          <div style="position:absolute; left:' + IntToStr(TargetX) + 'px; top:0; width:32px; height:32px; display:flex; align-items:center; justify-content:center; color:#BB99FF; font-weight:bold; font-size:16px; z-index:1;">§</div>' +
     '          ' +
     '          {--- Подвижный бирюзовый прицел ---}' +
-    '          <div id="slider-thumb" style="position:absolute; left:0; top:0; width:32px; height:32px; background:transAntecedent; border:1px solid #00FFFF; border-radius:50%; box-shadow:0 0 8px rgba(0,255,255,0.3); cursor:grab; z-index:2; display:flex; align-items:center; justify-content:center; background:#111;">' +
+    '          <div id="slider-thumb" style="position:absolute; left:0; top:0; width:32px; height:32px; background:transparent; border:1px solid #00FFFF; border-radius:50%; box-shadow:0 0 8px rgba(0,255,255,0.3); cursor:grab; z-index:2; display:flex; align-items:center; justify-content:center; background:#111;">' +
     '            <div style="width:6px; height:6px; background:#00FFFF; border-radius:50%;"></div>' +
     '          </div>' +
     '        </div>' +
@@ -174,7 +174,7 @@ begin
     '      <input type="hidden" id="user_answer" name="user_answer" value="0">' +
     '      <input type="hidden" name="target_x" value="' + IntToStr(TargetX) + '">' +
     '      ' +
-    '      <button type="submit" style="width:100%; background:transAntecedent; border:1px solid #00FFFF; color:#00FFFF; padding:12px; border-radius:4px; font-size:14px; font-weight:bold; cursor:pointer; outline:none; letter-spacing:1px;">' +
+    '      <button type="submit" style="width:100%; background:transparent; border:1px solid #00FFFF; color:#00FFFF; padding:12px; border-radius:4px; font-size:14px; font-weight:bold; cursor:pointer; outline:none; letter-spacing:1px;">' +
     '        ОТПРАВИТЬ ССЫЛКУ АКТИВАЦИИ' +
     '      </button>' +
     '    </form>' +
@@ -318,7 +318,7 @@ end;
             // 1. Узкая, строгая футуристичная полоска вкладок (высота 30px) на самом чердаке окна:
             '    <div id="right-panel-tabs" style="height: 30px; background: #252526; border-bottom: 1px solid #333; display: flex; align-items: center; padding: 0 10px; box-sizing: border-box;">' +
             '      <button id="btn-tab-map" onclick="CloseEditorTab()" style="background: #1e1e1e; color: #00FFFF; border: 1px solid #00FFFF; padding: 2px 12px; font-size: 11px; font-weight: bold; cursor: pointer; border-radius: 4px; margin-right: 8px; outline: none;">🗺️ КАРТА</button>' +
-            '      <button id="btn-tab-edit" onclick="OpenEditorTab()" style="background: transAntecedent; color: #888; border: 1px solid #444; padding: 2px 12px; font-size: 11px; font-weight: bold; cursor: pointer; border-radius: 4px; outline: none;">📝 РЕДАКТОР</button>' +
+            '      <button id="btn-tab-edit" onclick="OpenEditorTab()" style="background: transparent; color: #888; border: 1px solid #444; padding: 2px 12px; font-size: 11px; font-weight: bold; cursor: pointer; border-radius: 4px; outline: none;">📝 РЕДАКТОР</button>' +
             '    </div>' +
 
             // 2. Слой №1: Наш родной Canvas графической карты (занимает всё оставшееся пространство)
@@ -352,7 +352,7 @@ end;
             '    document.getElementById("btn-tab-edit").style.background = "#1e1e1e";' +
             '    document.getElementById("btn-tab-edit").style.color = "#00FFFF";' +
             '    document.getElementById("btn-tab-edit").style.border = "1px solid #00FFFF";' +
-            '    document.getElementById("btn-tab-map").style.background = "transAntecedent";' +
+            '    document.getElementById("btn-tab-map").style.background = "transparent";' +
             '    document.getElementById("btn-tab-map").style.color = "#888";' +
             '    document.getElementById("btn-tab-map").style.border = "1px solid #444";' +
             '  };' +
@@ -362,7 +362,7 @@ end;
             '    document.getElementById("btn-tab-map").style.background = "#1e1e1e";' +
             '    document.getElementById("btn-tab-map").style.color = "#00FFFF";' +
             '    document.getElementById("btn-tab-map").style.border = "1px solid #00FFFF";' +
-            '    document.getElementById("btn-tab-edit").style.background = "transAntecedent";' +
+            '    document.getElementById("btn-tab-edit").style.background = "transparent";' +
             '    document.getElementById("btn-tab-edit").style.color = "#888";' +
             '    document.getElementById("btn-tab-edit").style.border = "1px solid #444";' +
             '  };' +
@@ -372,12 +372,12 @@ end;
   // 3. КОНСТРУКТОР ОКНА взаимодействия
  // 3. КОНСТРУКТОР окна взаимодействия
   // 3. КОНСТРУКТОР окна взаимодействия
-function HTML_RenderInteraction(const AAntecedentID, AGateStack: string; ARank: Integer): string;
+function HTML_RenderInteraction(const AParentID, AGateStack: string; ARank: Integer): string;
 begin
   Result :=
       '<html><body style="font-family:sans-serif; background:#1e1e1e; color:#d4d4d4; padding:20px; margin:0;">' +
       '  <script>' +
-      '    if (Antecedent && typeof Antecedent.OpenEditorTab === "function") { Antecedent.OpenEditorTab(); }' +
+      '    if (parent && typeof parent.OpenEditorTab === "function") { parent.OpenEditorTab(); }' +
       '  </script>' +
       '  <div style="max-width: 700px; margin: 0 auto;">' +
       '    ' +
@@ -386,15 +386,15 @@ begin
       '    </div>' +
       '    ' +
       '    <form action="/save_reply" method="POST" style="margin:0; padding:0;">' +
-      '      <input type="hidden" name="Antecedent_id" value="' + AAntecedentID + '">' +
+      '      <input type="hidden" name="parent_id" value="' + AParentID + '">' +
       '      <input type="hidden" name="gate_stack" value="' + AGateStack + '">' +
       '      ' +
       '      <textarea name="reply_text" rows="8" placeholder="Введите ваше высказывание, описание синтаксических ошибок или аргументацию для модерации..." ' +
       '                style="width:100%; background:#252526; color:#fff; border:1px solid #444; border-radius:4px; padding:12px; resize:vertical; box-sizing:border-box; font-size:14px; font-family:sans-serif; margin-bottom:20px; outline:none; line-height:1.5;"></textarea>' +
       '      ' +
       '      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px;">' +
-      '          <button type="button" onclick="if(Antecedent && typeof Antecedent.CloseEditorTab === &apos;function&apos;){Antecedent.CloseEditorTab();}" ' +
-      '                  style="background:transAntecedent; border:1px solid #444; color:#888; padding:0 12px; border-radius:4px; cursor:pointer; font-size:13px; font-weight:bold; height:32px; outline:none; display:flex; align-items:center;">' +
+      '          <button type="button" onclick="if(parent && typeof parent.CloseEditorTab === &apos;function&apos;){parent.CloseEditorTab();}" ' +
+      '                  style="background:transparent; border:1px solid #444; color:#888; padding:0 12px; border-radius:4px; cursor:pointer; font-size:13px; font-weight:bold; height:32px; outline:none; display:flex; align-items:center;">' +
       '            ◀ К карте ' +
       '          </button>' +
       '          ' +
@@ -402,52 +402,52 @@ begin
 
 
       '   <button type="submit" name="action_type" value="request_text_edit" ' +
-      '     style="background:transAntecedent; border:1px solid #00FFFF; color:#00FFFF; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:16px; outline:none; display:flex; align-items:center; justify-content:center;">' +
+      '     style="background:transparent; border:1px solid #00FFFF; color:#00FFFF; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:16px; outline:none; display:flex; align-items:center; justify-content:center;">' +
       '     ?' +
       '   </button>' +
 
       '            <button type="submit" name="action_type" value="apply_moderation" ' +
-      '                    style="background:transAntecedent; border:1px solid #BB99FF; color:#BB99FF; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:15px; outline:none; display:flex; align-items:center; justify-content:center;">' +
+      '                    style="background:transparent; border:1px solid #BB99FF; color:#BB99FF; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:15px; outline:none; display:flex; align-items:center; justify-content:center;">' +
       '               §' +
       '            </button>' +
       '            ' +
       '            <button type="submit" name="action_type" value="syntax_error" ' +
-      '                    style="background:transAntecedent; border:1px solid #ff9900; color:#ff9900; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:16px; outline:none; display:flex; align-items:center; justify-content:center;">' +
+      '                    style="background:transparent; border:1px solid #ff9900; color:#ff9900; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:16px; outline:none; display:flex; align-items:center; justify-content:center;">' +
       '               !' +
       '            </button>' +
       '            ' +
       '            <button type="submit" name="action_type" value="report_deletion" ' +
-      '                    style="background:transAntecedent; border:1px solid #ff9900; color:#ff9900; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:16px; outline:none; display:flex; align-items:center; justify-content:center;">' +
+      '                    style="background:transparent; border:1px solid #ff9900; color:#ff9900; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:16px; outline:none; display:flex; align-items:center; justify-content:center;">' +
       '               X' +
       '            </button>' +
       '            ' +
       '            <button type="submit" name="action_type" value="reply_confirm" ' +
-      '                    style="background:transAntecedent; border:1px solid #00FFaa; color:#00FFaa; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:16px; outline:none; display:flex; align-items:center; justify-content:center;">' +
+      '                    style="background:transparent; border:1px solid #00FFaa; color:#00FFaa; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:16px; outline:none; display:flex; align-items:center; justify-content:center;">' +
       '               +' +
       '            </button>' +
       '            ' +
       '            <button type="submit" name="action_type" value="reply_refuse" ' +
-      '                    style="background:transAntecedent; border:1px solid #00FFaa; color:#00FFaa; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:16px; outline:none; display:flex; align-items:center; justify-content:center;">' +
+      '                    style="background:transparent; border:1px solid #00FFaa; color:#00FFaa; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:16px; outline:none; display:flex; align-items:center; justify-content:center;">' +
       '               -' +
       '            </button>' +
       '            ' +
       '            <button type="submit" name="action_type" value="alternative" ' +
-      '                    style="background:transAntecedent; border:1px solid #00FFFF; color:#00FFFF; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:14px; outline:none; display:flex; align-items:center; justify-content:center;">' +
+      '                    style="background:transparent; border:1px solid #00FFFF; color:#00FFFF; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:14px; outline:none; display:flex; align-items:center; justify-content:center;">' +
       '               &lt;' +
       '            </button>' +
       '            ' +
       '            <button type="submit" name="action_type" value="merge_request" ' +
-      '                    style="background:transAntecedent; border:1px solid #00FFFF; color:#00FFFF; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:15px; outline:none; display:flex; align-items:center; justify-content:center;">' +
+      '                    style="background:transparent; border:1px solid #00FFFF; color:#00FFFF; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:15px; outline:none; display:flex; align-items:center; justify-content:center;">' +
       '               &amp;' +
       '            </button>' +
       '            ' +
       '            <button type="submit" name="action_type" value="merge_proposal" ' +
-      '                    style="background:transAntecedent; border:1px solid #00FFFF; color:#00FFFF; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:14px; outline:none; display:flex; align-items:center; justify-content:center;">' +
+      '                    style="background:transparent; border:1px solid #00FFFF; color:#00FFFF; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:14px; outline:none; display:flex; align-items:center; justify-content:center;">' +
       '               &gt;' +
       '            </button>' +
       '            ' +
       '            <button type="submit" name="action_type" value="request_edit" ' +
-      '                    style="background:transAntecedent; border:1px solid #00FFFF; color:#00FFFF; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:16px; outline:none; display:flex; align-items:center; justify-content:center;">' +
+      '                    style="background:transparent; border:1px solid #00FFFF; color:#00FFFF; width:32px; height:32px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:16px; outline:none; display:flex; align-items:center; justify-content:center;">' +
       '               ≈' +
       '            </button>' +
       '          </div>' +
@@ -557,7 +557,7 @@ var
   UTheme: string;
   UserBlock: string;
   ForumHeader: string;
-    TargetAntecedent: string;
+    TargetParent: string;
   GateStackDNA, TextContent: string;
   IsUserAuth: Boolean;
   ////////////////////////////////////////////
@@ -691,7 +691,7 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
     end;
 
     // 2. Считываем параметры "мелкоты" из сетевого кабеля
-    TargetAntecedent := ARequest.QueryFields.Values['pid'];
+    TargetParent := ARequest.QueryFields.Values['pid'];
     GateStackDNA := ARequest.QueryFields.Values['gate_stack'];
 
     // 🎯 3. ИДЕАЛЬНЫЙ АКАДЕМИЧЕСКИЙ ВЫЗОВ:
@@ -703,19 +703,19 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
     AResponse.ContentType := 'text/html; charset=utf-8';
 
     // Скармливаем функции конструктора живую роль, вычисленную по числу из SQLite!
-    AResponse.Content := HTML_RenderInteraction(TargetAntecedent, GateStackDNA, UserRankInt);
+    AResponse.Content := HTML_RenderInteraction(TargetParent, GateStackDNA, UserRankInt);
   end
   // -----МАРШРУТ : ПРИЁМ ОТВЕТА
     else if Path = '/save_reply' then
   begin
     //// Извлекаем "мелкоту" и текст ответа из POST-параметров сетевого кабеля:
-    //TargetAntecedent := ARequest.ContentFields.Values['Antecedent_id'];
+    //TargetParent := ARequest.ContentFields.Values['parent_id'];
     //GateStackDNA := ARequest.ContentFields.Values['gate_stack'];
     //TextContent  := ARequest.ContentFields.Values['reply_text'];
     //
     //// Пишем зрячий лог в консоль Jetson Nano для контроля транзита данных:
     //WriteLn('   [БЭКЕНД] Принят пакет сохранения ответа!');
-    //WriteLn('            Родительский узел: #', TargetAntecedent);
+    //WriteLn('            Родительский узел: #', TargetParent);
     //WriteLn('            Родословная (DNA): ', GateStackDNA);
     //WriteLn('            Текст сообщения  : "', TextContent, '"');
     //
@@ -740,16 +740,16 @@ WriteLn('   [СЕРВЕР] Для пользователя ', ReqUser, ' при�
 
   // 2. Считываем данные строго в твои родные переменные
   TextContent := ARequest.ContentFields.Values['reply_text'];
-  TargetAntecedent := ARequest.ContentFields.Values['Antecedent_id'];
+  TargetParent := ARequest.ContentFields.Values['parent_id'];
   ShieldQuery  := ARequest.ContentFields.Values['action_type'];
 WriteLn('[DIAG] reply_text as string LPR: "', TextContent, '"');
 
   // 3. Обработка импульса кнопки [+]
-  if (ShieldQuery = 'reply_confirm') and (TargetAntecedent <> '') then
+  if (ShieldQuery = 'reply_confirm') and (TargetParent <> '') then
   begin
     try
       // Просто вызываем твой готовый метод! SQLite сама выдаст ID новой записи
-      Self.FDB.LandingNode(StrToIntDef(TargetAntecedent, 0), TextContent);
+      Self.FDB.LandingNode(StrToIntDef(TargetParent, 0), TextContent);
       WriteLn(' [БЭКЕНД] Кнопка [+] успешно отработала через LandingNode!');
     except
       on E: Exception do WriteLn(' !!! [БЭКЕНД ОШИБКА]: ', E.Message);
@@ -758,7 +758,7 @@ WriteLn('[DIAG] reply_text as string LPR: "', TextContent, '"');
 
   // 4. Бесшумно закрываем фрейм редактора через JavaScript
   AResponse.ContentType := 'text/html; charset=utf-8';
-  AResponse.Content := '<html><body><script>if (Antecedent && Antecedent.CloseEditorTab) Antecedent.CloseEditorTab();</script></body></html>';
+  AResponse.Content := '<html><body><script>if (parent && parent.CloseEditorTab) parent.CloseEditorTab();</script></body></html>';
 
 
   end
@@ -1003,7 +1003,7 @@ WriteLn('[DIAG] reply_text as string LPR: "', TextContent, '"');
                            '<div class="box">' +
                            '<h2>[МАТРИЦА СЕТИ: ВЕРИФИКАЦИЯ УСПЕШНА]</h2>' +
                            '<p>Ваш позывной успешно перенесён в постоянный реестр базы данных.</p>' +
-                           '<p>Теперь вы являетесь полноправным участником портала семантического пространства!</p><br>' +
+                           '<p>Теперь вы являетесь полноправным участником глубокого семантического пространства!</p><br>' +
                            '<p><a href="/login">[ ПЕРЕЙТИ К АВТОРИЗАЦИИ ]</a></p>' +
                            '</div></body></html>';
     end
