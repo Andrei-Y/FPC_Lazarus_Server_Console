@@ -601,19 +601,42 @@ emToArtist:
           // 🏛️ СТАРЫЙ ЛИНЕЙНЫЙ ПРЕДОХРАНИТЕЛЬ (ГОРИЗОНТАЛЬНАЯ ПАГИНАЦИЯ КОНТЕНТА)
           // Данный узел считает общее число выведенных карточек на экран.
           // При превышении лимита FMaxNodes он жестко обрубает цикл,
-          if (FMaxNodes > 0) and (NodeCount >= FMaxNodes) then
-                  begin
-                    FSavedStack := StackToString(TailStack);
-                    FNextStartID := CurrentID;
-                    WriteLn('Запекаем >'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
-                                                   if (FNextStartID <> 0) and (CurrentID <> 0) then
-                                begin
-                                              WriteLn('Запекаем в кнопку'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
-                                  HTML_Acc.Append(RenderAjaxButton(FNextStartID, FSavedStack, FIsLineExtraction));
+          //if (FMaxNodes > 0) and (NodeCount >= FMaxNodes) then
+          //        begin
+          //          FSavedStack := StackToString(TailStack);
+          //          FNextStartID := CurrentID;
+          //          WriteLn('Запекаем >'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
+          //                                         if (FNextStartID <> 0) and (CurrentID <> 0) then
+          //                      begin
+          //                                    WriteLn('Запекаем в кнопку'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
+          //                        HTML_Acc.Append(RenderAjaxButton(FNextStartID, FSavedStack, FIsLineExtraction));
+          //
+          //                       end;
+          //                          Break;
+          //                        end;
 
-                                 end;
-                                    Break;
-                                  end;
+          if (FMaxNodes > 0) and (NodeCount >= FMaxNodes) then
+begin
+  FSavedStack := StackToString(TailStack);
+  FNextStartID := CurrentID;
+
+  // Проверяем: не уперся ли следующий узел в потолок всплытия при извлечении линии?
+  // Если CurrentID сидит на вершине стека (это родитель), и после всплытия из него
+  // глубина стека станет меньше FDepthCeiling — значит, продолжать больше нечего!
+  if FIsLineExtraction and (Length(TailStack) > 0) and
+     (TailStack[High(TailStack)] = CurrentID) and
+     ((Length(TailStack) - 1) < FDepthCeiling) then
+  begin
+    DoLog('[ФИНИШ НИТИ] Следующий узел ' + IntToStr(CurrentID) + ' — потолок всплытия. Кнопку не запекаем!');
+  end
+  else if (FNextStartID <> 0) and (CurrentID <> 0) then
+  begin
+    WriteLn('Запекаем в кнопку ' + IntToStr(FNextStartID) + ' стёк-' + FSavedStack + ' NodeB=' + IntToStr(CurrentID));
+    HTML_Acc.Append(RenderAjaxButton(FNextStartID, FSavedStack, FIsLineExtraction));
+  end;
+
+  Break;
+end;
 
     end;
     {$ENDREGION} // КОНЕЦ ЦИКЛА ФОРМИРОВАНИЯ ПАКЕТА
