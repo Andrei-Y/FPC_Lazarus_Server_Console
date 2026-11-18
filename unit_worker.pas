@@ -547,10 +547,10 @@ emToArtist:
                if IsParentNode then ////////////////////////////////////////////////////////////////////////
       begin
 
-               if FIsLineExtraction and (Length(TailStack) < FDepthCeiling) then/// участок обрыва цикла, если извлекалась линия по нажатию кнопки
+               if FIsLineExtraction and (TailStack[High(TailStack)] = CurrentID) then/// участок обрыва цикла, если извлекалась линия по нажатию кнопки
       begin
         // Мы физически поднялись до потолка, где сидит родительский узел! Нить полностью извлечена.
-        Break; // Брутальный, мгновенный выход из цикла while!
+        Break; //Мгновенный выход из цикла while!
       end;
       end;
         // Вызываем генерацию HTML function TServerWorker.RenderNodeHTML(AID, ALevel, ALastLevel: Integer; const AContent: string): string;
@@ -579,12 +579,12 @@ emToArtist:
       if IsParentNode then ////////////////////////////////////////////////////////////////////////
       begin
          SetLength(TailStack, Length(TailStack) - 1);
-      //         if FIsLineExtraction and (Length(TailStack) <= FDepthCeiling) then/// участок обрыва цикла, если извлекалась линия по нажатию кнопки
-      //begin
-      //  // Мы физически поднялись до потолка, где сидит родительский узел! Нить полностью извлечена.
-      //  Break; //мгновенный выход из цикла while!
-      //end;
-         //NodeCount:= Pop(CountStack);//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+               if FIsLineExtraction and (Length(TailStack) <= FDepthCeiling) then/// участок обрыва цикла, если извлекалась линия по нажатию кнопки
+      begin
+        // Мы физически поднялись до потолка, где сидит родительский узел! Нить полностью извлечена.
+        Break; //мгновенный выход из цикла while!
+      end;
+         NodeCount:= Pop(CountStack);//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
          DoLog('<<< ВСПЛЫТИЕ ИЗ ВЕТКИ (возврат в ' + IntToStr(CurrentID) + ')');
       end;
            // 🛡️ СИСТЕМНЫЙ ТОРМОЗ СТАРОЙ ПАГИНАЦИИ И СТРАХОВКА ОТ ЗАЦИКЛИВАНИЯ
