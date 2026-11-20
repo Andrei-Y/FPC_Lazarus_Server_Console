@@ -547,7 +547,8 @@ emToArtist:
                if IsParentNode then ////////////////////////////////////////////////////////////////////////
       begin
 
-               if FIsLineExtraction and (TailStack[High(TailStack)] = CurrentID) then/// участок обрыва цикла, если извлекалась линия по нажатию кнопки
+               if FIsLineExtraction and (Length(TailStack) <= FDepthCeiling) and
+     (TailStack[High(TailStack)] = CurrentID) then/// участок обрыва цикла, если извлекалась линия по нажатию кнопки
       begin
         // Мы физически поднялись до потолка, где сидит родительский узел! Нить полностью извлечена.
         Break; //Мгновенный выход из цикла while!
@@ -587,15 +588,7 @@ emToArtist:
          NodeCount:= Pop(CountStack);//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
          DoLog('<<< ВСПЛЫТИЕ ИЗ ВЕТКИ (возврат в ' + IntToStr(CurrentID) + ')');
       end;
-           // 🛡️ СИСТЕМНЫЙ ТОРМОЗ СТАРОЙ ПАГИНАЦИИ И СТРАХОВКА ОТ ЗАЦИКЛИВАНИЯ
-           // Срабатывает, когда стек полностью пуст (мы на поверхности дерева),
-           // а текущая нода совпала со стартовым маркером.
-           // Останавливает цикл, предотвращая уход сервера в мертвую петлю.
-           if (CurrentID = FNextStartID) and (Length(TailStack) = 0) then begin
-             FSavedStack := StackToString(TailStack);
-            WriteLn('Запекаем CurrentID = FNextStartID'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
-             Break;
-           end;
+
       CurrentID := NodeB;// [T1] СМЕНА ТАКТА ПРОВЕРКИ УСЛОВИЙ - ТЕКУЩИЙ УЗЕЛ РАВЕН ПРЕДШЕСТВЕННИКУ
                 Inc(NodeCount);
           // 🏛️ СТАРЫЙ ЛИНЕЙНЫЙ ПРЕДОХРАНИТЕЛЬ (ГОРИЗОНТАЛЬНАЯ ПАГИНАЦИЯ КОНТЕНТА)
@@ -624,8 +617,9 @@ begin
   // Если CurrentID сидит на вершине стека (это родитель), и после всплытия из него
   // глубина стека станет меньше FDepthCeiling — значит, продолжать больше нечего!
   if FIsLineExtraction and (Length(TailStack) > 0) and
-     (TailStack[High(TailStack)] = CurrentID) and
-     ((Length(TailStack) - 1) < FDepthCeiling) then
+     (TailStack[High(TailStack)] = CurrentID)
+     and ((Length(TailStack) - 1) < FDepthCeiling)
+     then
   begin
     DoLog('[ФИНИШ НИТИ] Следующий узел ' + IntToStr(CurrentID) + ' — потолок всплытия. Кнопку не запекаем!');
   end
@@ -637,6 +631,17 @@ begin
 
   Break;
 end;
+
+                     // 🛡️ СИСТЕМНЫЙ ТОРМОЗ СТАРОЙ ПАГИНАЦИИ И СТРАХОВКА ОТ ЗАЦИКЛИВАНИЯ
+           // Срабатывает, когда стек полностью пуст (мы на поверхности дерева),
+           // а текущая нода совпала со стартовым маркером.
+           // Останавливает цикл, предотвращая уход сервера в мертвую петлю.
+           if (CurrentID = FNextStartID) and (Length(TailStack) = 0) then
+           begin
+             FSavedStack := StackToString(TailStack);
+            WriteLn('Запекаем CurrentID = FNextStartID'+IntToStr(FNextStartID)+ 'стёк-'+FSavedStack+'NodeB='+IntToStr(CurrentID));
+             Break;
+           end;
 
     end;
     {$ENDREGION} // КОНЕЦ ЦИКЛА ФОРМИРОВАНИЯ ПАКЕТА
